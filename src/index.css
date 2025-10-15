@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #FAF9F6;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Noto Serif', serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-vietnam-red text-white px-6 py-3 rounded-lg font-medium hover:opacity-80 transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-vietnam-gold text-white px-6 py-3 rounded-lg font-medium hover:bg-yellow-600 transition-colors duration-200;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-vietnam-red text-vietnam-red px-6 py-3 rounded-lg font-medium hover:bg-vietnam-red hover:text-white transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex flex-col h-full;
+  }
+  
+  .card-content {
+    @apply flex-1 flex flex-col;
+  }
+  
+  .card-body {
+    @apply flex-1;
+  }
+  
+  .card-footer {
+    @apply mt-auto pt-4;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vietnam-red focus:border-transparent outline-none transition-all duration-200;
+  }
+  
+  .ritual-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23DAA520' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Custom animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  /* Sticky positioning */
+  .sticky {
+    position: sticky;
+  }
+
+  /* Backdrop blur support */
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
+
+  /* Enhanced shadows */
+  .shadow-2xl {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+}
