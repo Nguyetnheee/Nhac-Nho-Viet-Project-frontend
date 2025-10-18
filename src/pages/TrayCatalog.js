@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { trayService } from '../services/trayService';
 import { useCart } from '../contexts/CartContext';
+import { toast } from 'react-toastify';
 
 const TrayCatalog = () => {
   const [trays, setTrays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    region: '',
-    category: '',
-    minPrice: '',
-    maxPrice: ''
+    region: 'Tất cả',
+    type: 'Tất cả',
+    minPrice: '0',
+    maxPrice: '10000000',
+    searchQuery: ''
   });
+  const [regions] = useState(['Tất cả', 'Miền Bắc', 'Miền Trung', 'Miền Nam']);
+  const [types] = useState(['Tất cả', 'Mâm cơm', 'Mâm cúng', 'Mâm quả']);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -40,21 +43,32 @@ const TrayCatalog = () => {
   const applyFilters = async () => {
     try {
       setLoading(true);
-      let response;
-      
-      if (filters.region) {
-        response = await trayService.getTraysByRegion(filters.region);
-      } else if (filters.category) {
-        response = await trayService.getTraysByCategory(filters.category);
-      } else if (filters.minPrice && filters.maxPrice) {
-        response = await trayService.getTraysByPriceRange(
-          parseFloat(filters.minPrice),
-          parseFloat(filters.maxPrice)
-        );
-      } else {
-        response = await trayService.getAllTrays();
+      let searchParams = new URLSearchParams();
+
+      if (filters.region !== 'Tất cả') {
+        searchParams.append('region', filters.region);
+      }
+      if (filters.type !== 'Tất cả') {
+        searchParams.append('type', filters.type);
+      }
+      if (filters.minPrice) {
+        searchParams.append('minPrice', filters.minPrice);
+      }
+      if (filters.maxPrice) {
+        searchParams.append('maxPrice', filters.maxPrice);
       }
       
+      if (filters.searchQuery) {
+        searchParams.append('q', filters.searchQuery);
+      }
+      if (filters.minPrice) {
+        searchParams.append('minPrice', parseFloat(filters.minPrice).toString());
+      }
+      if (filters.maxPrice) {
+        searchParams.append('maxPrice', parseFloat(filters.maxPrice).toString());
+      }
+      
+      const response = await trayService.searchTrays(searchParams.toString());
       setTrays(response.data);
     } catch (error) {
       console.error('Error filtering trays:', error);
@@ -65,17 +79,18 @@ const TrayCatalog = () => {
 
   const clearFilters = () => {
     setFilters({
-      region: '',
-      category: '',
-      minPrice: '',
-      maxPrice: ''
+      region: 'Tất cả',
+      type: 'Tất cả',
+      minPrice: '0',
+      maxPrice: '10000000',
+      searchQuery: ''
     });
     fetchTrays();
   };
 
   const handleAddToCart = (tray) => {
     addToCart(tray);
-    alert('Đã thêm vào giỏ hàng!');
+    toast.success('Đã thêm vào giỏ hàng!');
   };
 
   return (
@@ -91,8 +106,39 @@ const TrayCatalog = () => {
           </p>
         </div>
 
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={filters.searchQuery}
+                onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    applyFilters();
+                  }
+                }}
+                className="w-full p-4 pl-12 text-lg border border-gray-300 rounded-lg focus:ring-vietnam-red focus:border-vietnam-red"
+                placeholder="Tìm kiếm mâm cúng..."
+              />
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            <button 
+              onClick={applyFilters}
+              className="px-8 py-4 bg-vietnam-red text-white rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center justify-center min-w-[120px] font-bold"
+            >
+              Tìm kiếm
+            </button>
+          </div>
+        </div>
+
         {/* Filters */}
-        <div className="card mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-vietnam-red mb-6">Bộ lọc</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -100,26 +146,24 @@ const TrayCatalog = () => {
               <select
                 value={filters.region}
                 onChange={(e) => handleFilterChange('region', e.target.value)}
-                className="input-field"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
               >
-                <option value="">Tất cả</option>
-                <option value="Miền Bắc">Miền Bắc</option>
-                <option value="Miền Trung">Miền Trung</option>
-                <option value="Miền Nam">Miền Nam</option>
+                {regions.map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Loại</label>
               <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="input-field"
+                value={filters.type}
+                onChange={(e) => handleFilterChange('type', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
               >
-                <option value="">Tất cả</option>
-                <option value="Cơ bản">Cơ bản</option>
-                <option value="Cao cấp">Cao cấp</option>
-                <option value="Đặc biệt">Đặc biệt</option>
+                {types.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
               </select>
             </div>
 
@@ -164,21 +208,21 @@ const TrayCatalog = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {trays.map((tray) => (
-              <div key={tray.id} className="card hover:shadow-xl transition-shadow duration-300">
+              <div key={tray.productId} className="card hover:shadow-xl transition-shadow duration-300">
                 <div className="card-content">
                   <div className="aspect-w-16 aspect-h-9 mb-4">
                     <img
-                      src={tray.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
-                      alt={tray.name}
+                      src={tray.productImage || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
+                      alt={tray.productName}
                       className="w-full h-48 object-cover rounded-lg"
                     />
                   </div>
                   <div className="card-body">
                     <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
-                      {tray.name}
+                      {tray.productName}
                     </h3>
                     <p className="text-gray-700 mb-4 line-clamp-3">
-                      {tray.description}
+                      {tray.productDescription}
                     </p>
                     
                     <div className="mb-4">
