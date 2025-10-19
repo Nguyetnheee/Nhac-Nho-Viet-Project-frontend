@@ -1,17 +1,29 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    password: '',
+    isStaff: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Hiển thị thông báo từ trang xác thực OTP
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Xóa message khỏi state sau 5 giây
+      setTimeout(() => setSuccessMessage(''), 5000);
+    }
+  }, [location]);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,13 +36,30 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
+
+    console.log('Attempting login with:', {
+      username: formData.username,
+      isStaff: formData.isStaff
+    });
 
     try {
-  const result = await login(formData.username, formData.password);
+      const result = await login(formData.username, formData.password, formData.isStaff);
+      console.log('Login result:', result);
       
       if (result.success) {
-        navigate('/');
+        setSuccessMessage('Đăng nhập thành công!');
+        // Đợi message hiển thị
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (formData.isStaff) {
+          navigate('/staff');
+        } else {
+          const returnUrl = location.state?.from || '/';
+          navigate(returnUrl);
+        }
       } else {
+        console.error('Login failed:', result.error);
         setError(result.error);
       }
     } catch (error) {
@@ -62,6 +91,12 @@ const Login = () => {
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {successMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              {successMessage}
+            </div>
+          )}
+          
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {error}

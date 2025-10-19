@@ -4,11 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    username: '',
     password: '',
     confirmPassword: '',
+    email: '',
     phone: '',
+    customerName: '',
+    birthDate: '',
+    gender: '',
     address: ''
   });
   const [loading, setLoading] = useState(false);
@@ -36,15 +39,19 @@ const Register = () => {
     }
 
     const result = await register({
-      name: formData.name,
-      email: formData.email,
+      username: formData.username,
       password: formData.password,
+      email: formData.email,
       phone: formData.phone,
+      customerName: formData.customerName,
+      birthDate: formData.birthDate,
+      gender: formData.gender,
       address: formData.address
     });
     
     if (result.success) {
-      navigate('/login');
+      // Chuyển đến trang xác thực OTP với email
+      navigate('/verify-otp', { state: { email: formData.email } });
     } else {
       setError(result.error);
     }
@@ -81,15 +88,15 @@ const Register = () => {
           
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Họ và tên
+              <label htmlFor="customerName" className="block text-sm font-medium text-gray-700">
+                Họ và tên <span className="text-red-500">*</span>
               </label>
               <input
-                id="name"
-                name="name"
+                id="customerName"
+                name="customerName"
                 type="text"
                 required
-                value={formData.name}
+                value={formData.customerName}
                 onChange={handleChange}
                 className="input-field mt-1"
                 placeholder="Nhập họ và tên"
@@ -97,8 +104,24 @@ const Register = () => {
             </div>
 
             <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                value={formData.username}
+                onChange={handleChange}
+                className="input-field mt-1"
+                placeholder="Nhập username"
+              />
+            </div>
+
+            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 id="email"
@@ -114,7 +137,7 @@ const Register = () => {
             
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Mật khẩu
+                Mật khẩu <span className="text-red-500">*</span>
               </label>
               <input
                 id="password"
@@ -130,7 +153,7 @@ const Register = () => {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Xác nhận mật khẩu
+                Xác nhận mật khẩu <span className="text-red-500">*</span>
               </label>
               <input
                 id="confirmPassword"
@@ -146,12 +169,13 @@ const Register = () => {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Số điện thoại
+                Số điện thoại <span className="text-red-500">*</span>
               </label>
               <input
                 id="phone"
                 name="phone"
                 type="tel"
+                required
                 value={formData.phone}
                 onChange={handleChange}
                 className="input-field mt-1"
@@ -160,13 +184,48 @@ const Register = () => {
             </div>
 
             <div>
+              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700">
+                Ngày sinh <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="birthDate"
+                name="birthDate"
+                type="date"
+                required
+                value={formData.birthDate}
+                onChange={handleChange}
+                className="input-field mt-1"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                Giới tính <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="gender"
+                name="gender"
+                required
+                value={formData.gender}
+                onChange={handleChange}
+                className="input-field mt-1"
+              >
+                <option value="">Chọn giới tính</option>
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                Địa chỉ
+                Địa chỉ <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="address"
                 name="address"
                 rows={3}
+                required
                 value={formData.address}
                 onChange={handleChange}
                 className="input-field mt-1"
