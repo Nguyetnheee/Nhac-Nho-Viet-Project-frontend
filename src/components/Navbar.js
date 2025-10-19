@@ -7,13 +7,18 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
-  const { getTotalItems } = useCart();
+  const { cart, loading } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
     setIsUserMenuOpen(false);
+  };
+
+  const getCartItemCount = () => {
+    if (!cart?.items || loading) return 0;
+    return cart.items.length;
   };
 
   return (
@@ -45,71 +50,72 @@ const Navbar = () => {
             >
               Tra cứu lễ
             </Link>
+            {isAuthenticated && (
+              <Link
+                to="/checklist"
+                className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Checklist
+              </Link>
+            )}
             <Link
               to="/trays"
               className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Mâm cúng
             </Link>
-            <Link
+              <Link
               to="/cart"
               className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors relative"
             >
               Giỏ hàng
-              {getTotalItems() > 0 && (
+              {!loading && getCartItemCount() > 0 && (
                 <span className="absolute -top-1 -right-1 bg-vietnam-gold text-vietnam-red text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getTotalItems()}
+                  {getCartItemCount()}
                 </span>
               )}
             </Link>
 
             {isAuthenticated ? (
-              <div className="relative">
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/profile"
+                  className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
-                  <span>{user?.name}</span>
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Thông tin cá nhân
-                    </Link>
-                    {user?.role === 'Admin' && (
-                      <Link
-                        to="/admin"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Quản trị
-                      </Link>
-                    )}
-                    {user?.role === 'Shipper' && (
-                      <Link
-                        to="/shipper"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Giao hàng
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Đăng xuất
-                    </button>
-                  </div>
+                  Tài khoản
+                </Link>
+                
+                {user?.role === 'Admin' && (
+                  <Link
+                    to="/admin"
+                    className="text-white hover:text-vietnam-gold transition-colors"
+                  >
+                    Quản trị
+                  </Link>
                 )}
+                {user?.role === 'Staff' && (
+                  <Link
+                    to="/staff"
+                    className="text-white hover:text-vietnam-gold transition-colors"
+                  >
+                    Quản lý cửa hàng
+                  </Link>
+                )}
+                {user?.role === 'Shipper' && (
+                  <Link
+                    to="/shipper"
+                    className="text-white hover:text-vietnam-gold transition-colors"
+                  >
+                    Giao hàng
+                  </Link>
+                )}
+                
+                <button
+                  onClick={handleLogout}
+                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
+                >
+                  Đăng xuất
+                </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -173,7 +179,7 @@ const Navbar = () => {
               className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Giỏ hàng ({getTotalItems()})
+              Giỏ hàng ({getCartItemCount()})
             </Link>
             {isAuthenticated ? (
               <>
