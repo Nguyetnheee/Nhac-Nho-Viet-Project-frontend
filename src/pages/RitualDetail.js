@@ -93,7 +93,14 @@ const RitualDetail = () => {
   const fetchRitual = async () => {
     try {
       const response = await ritualService.getRitualById(id);
-      setRitual(response.data);
+      const data = response.data;
+      setRitual({
+        id: data.id,
+        active: data.active,
+        description: data.description,
+        region: data.region,
+        ritual_name: data.ritual_name,
+      });
     } catch (error) {
       console.error('Error fetching ritual:', error);
       setError('Không thể tải thông tin lễ hội');
@@ -114,7 +121,12 @@ const RitualDetail = () => {
   };
 
   const handleAddToCart = (tray) => {
-    addToCart(tray);
+    addToCart(tray.id, 1, {
+      productName: tray.name,
+      price: tray.price,
+      imageUrl: tray.imageUrl,
+      description: tray.description
+    });
     // Show success message
     showSuccess(`Đã thêm "${tray.name}" vào giỏ hàng!`);
   };
@@ -164,16 +176,16 @@ const RitualDetail = () => {
             <span>/</span>
             <Link to="/rituals" className="hover:text-vietnam-gold transition-colors">Lễ hội</Link>
             <span>/</span>
-            <span className="text-vietnam-gold">{ritual.name}</span>
+            <span className="text-vietnam-gold">{ritual.ritual_name}</span>
           </nav>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl lg:text-5xl font-serif font-bold mb-6 leading-tight">
-                {ritual.name}
+                {ritual.ritual_name}
               </h1>
               <p className="text-xl text-gray-200 mb-8 leading-relaxed">
-                {ritual.description || ritual.meaning}
+                {ritual.description}
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
