@@ -1,19 +1,19 @@
 import api from './api';
 
 export const ritualService = {
-  getAllRituals: () => api.get('/api/rituals'),
+  getAllRituals: () => api.get('/api/region'),
   
-  getRitualById: (id) => api.get(`/api/rituals/${id}`),
+  // getRitualById: (id) => api.get(`/api/ritual/${id}`),
   
-  searchRituals: (name) => api.get(`/api/rituals/search?name=${name}`),
+  searchRituals: (name) => api.get(`/api/region?search=${name}`),
   
-  getRitualsByLunarDate: (dateLunar) => api.get(`/api/rituals/lunar/${dateLunar}`),
+  // getRitualsByLunarDate: (dateLunar) => api.get(`/api/rituals/lunar/${dateLunar}`),
   
-  getRitualsBySolarDate: (dateSolar) => api.get(`/api/rituals/solar/${dateSolar}`),
+  // getRitualsBySolarDate: (dateSolar) => api.get(`/api/rituals/solar/${dateSolar}`),
   
-  createRitual: (ritual) => api.post('/api/rituals', ritual),
+  // createRitual: (ritual) => api.post('/api/rituals', ritual),
   
-  updateRitual: (id, ritual) => api.put(`/api/rituals/${id}`, ritual),
+  // updateRitual: (id, ritual) => api.put(`/api/rituals/${id}`, ritual),
   
-  deleteRitual: (id) => api.delete(`/api/rituals/${id}`)
+  // deleteRitual: (id) => api.delete(`/api/rituals/${id}`)
 };
