@@ -4,10 +4,37 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 
 const Cart = () => {
-  const { cartItems, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const { cart, loading, error, removeFromCart, addToCart, checkout, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
 
-  if (cartItems.length === 0) {
+  // Hiển thị loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-vietnam-cream py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <p className="text-gray-600">Đang tải giỏ hàng...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Hiển thị error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-vietnam-cream py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <p className="text-red-600">Có lỗi xảy ra: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Hiển thị giỏ hàng trống
+  if (!cart?.items || cart.items.length === 0) {
     return (
       <div className="min-h-screen bg-vietnam-cream py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,7 +69,7 @@ const Cart = () => {
             <div className="card">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-vietnam-red">
-                  Sản phẩm ({cartItems.length})
+                  Sản phẩm ({cart?.items?.length || 0})
                 </h2>
                 <button
                   onClick={clearCart}
@@ -53,44 +80,53 @@ const Cart = () => {
               </div>
 
               <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                {cart.items.map((item) => (
+                  <div key={item.productId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                     <img
                       src={item.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=100'}
-                      alt={item.name}
+                      alt={item.productName}
                       className="w-20 h-20 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                      <h3 className="font-semibold text-vietnam-red">{item.name}</h3>
+                      <h3 className="font-semibold text-vietnam-red">{item.productName}</h3>
                       <p className="text-sm text-gray-600">{item.description}</p>
                       <p className="text-lg font-bold text-vietnam-red">
-                        {item.price.toLocaleString('vi-VN')} VNĐ
+                        {item.price ? item.price.toLocaleString('vi-VN') : '0'} VNĐ
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                        onClick={() => removeFromCart(item.productId)}
+                        disabled={loading}
+                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 disabled:opacity-50"
                       >
                         -
                       </button>
                       <span className="w-8 text-center">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                        onClick={() => addToCart(item.productId, 1)}
+                        disabled={loading}
+                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 disabled:opacity-50"
                       >
                         +
                       </button>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-vietnam-red">
-                        {(item.price * item.quantity).toLocaleString('vi-VN')} VNĐ
+                        {item.price ? (item.price * item.quantity).toLocaleString('vi-VN') : '0'} VNĐ
                       </p>
                       <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-vietnam-red hover:opacity-80 text-sm mt-1"
+                        onClick={async () => {
+                          try {
+                            await removeFromCart(item.productId);
+                          } catch (err) {
+                            console.error('Error in Cart component:', err);
+                          }
+                        }}
+                        disabled={loading}
+                        className="text-vietnam-red hover:opacity-80 text-sm mt-1 disabled:opacity-50"
                       >
-                        Xóa
+                        {loading ? 'Đang xóa...' : 'Xóa'}
                       </button>
                     </div>
                   </div>
@@ -107,7 +143,7 @@ const Cart = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span>Tạm tính:</span>
-                  <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
+                  <span>{cart.totalPrice ? cart.totalPrice.toLocaleString('vi-VN') : '0'} VNĐ</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Phí giao hàng:</span>
@@ -116,15 +152,19 @@ const Cart = () => {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold text-vietnam-red">
                     <span>Tổng cộng:</span>
-                    <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
+                    <span>{cart.totalPrice ? cart.totalPrice.toLocaleString('vi-VN') : '0'} VNĐ</span>
                   </div>
                 </div>
               </div>
 
               {isAuthenticated ? (
-                <Link to="/checkout" className="btn-primary w-full text-center block">
-                  Thanh toán
-                </Link>
+                <button 
+                  onClick={checkout}
+                  disabled={loading}
+                  className="btn-primary w-full text-center block disabled:opacity-50"
+                >
+                  {loading ? 'Đang xử lý...' : 'Thanh toán'}
+                </button>
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600 text-center">
