@@ -19,52 +19,91 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(tokenFromStorage || null);
 
   useEffect(() => {
-    if (tokenFromStorage) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
-      // Chỉ fetch profile nếu không ở trang login
-      if (window.location.pathname !== '/login') {
-        fetchUserProfile();
+    const initializeAuth = async () => {
+      if (tokenFromStorage) {
+        try {
+          api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
+          
+          // Chỉ fetch profile nếu không ở trang login
+          if (window.location.pathname !== '/login') {
+            await fetchUserProfile();
+          }
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+          handleLogout();
+        } finally {
+          setLoading(false);
+        }
       } else {
         setLoading(false);
       }
-    } else {
-      setLoading(false);
-    }
+    };
+
+    initializeAuth();
   }, [tokenFromStorage]);
 
-  // Sử dụng API mới lấy profile
+  // Fetch user profile based on role
   const fetchUserProfile = async () => {
     try {
-      const data = await fetchCustomerProfile();
-      setUser(data);
+      const isStaff = localStorage.getItem('isStaff') === 'true';
+      const endpoint = isStaff ? '/api/staff/profile' : '/api/customer/profile';
+      const response = await api.get(endpoint);
+      
+      if (response.data) {
+        setUser({ ...response.data, isStaff });
+        return true;
+      } else {
+        throw new Error('No profile data received');
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      if (window.location.pathname !== '/login') {
-        logout();
-      } else {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('token');
-      }
-    } finally {
-      setLoading(false);
+      handleLogout();
+      return false;
     }
   };
 
-  // Đăng nhập dùng username và password, endpoint mới
-  const login = async (username, password) => {
+  // Đăng nhập dùng username và password
+  const login = async (username, password, isStaff = false) => {
     try {
-      const response = await api.post('/api/customer/login', { username, password });
-      const { token: tokenFromStorage, ...userData } = response.data;
-      setToken(tokenFromStorage);
-      setUser(userData);
-      localStorage.setItem('token', tokenFromStorage);
-      api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
+      setLoading(true);
+      const endpoint = isStaff ? '/api/staff/login' : '/api/customer/login';
+      
+      // Thử login
+      const response = await api.post(endpoint, { username, password });
+      
+      if (!response.data?.token) {
+        throw new Error('Token không hợp lệ');
+      }
+
+      // Lưu token và thông tin user
+      const newToken = response.data.token;
+      setToken(newToken);
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('isStaff', isStaff.toString());
+      
+      // Cập nhật header cho các request tiếp theo
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // Fetch profile sau khi login thành công
+      const profileSuccess = await fetchUserProfile();
+      
+      if (!profileSuccess) {
+        throw new Error('Không thể lấy thông tin người dùng');
+      }
+
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
+      // Cleanup nếu có lỗi
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('isStaff');
+      delete api.defaults.headers.common['Authorization'];
+      
       return {
         success: false,
-        error: error.response?.data?.message || 'Đăng nhập thất bại'
+        error: error.response?.data?.message || error.message || 'Đăng nhập thất bại'
       };
     }
   };
@@ -72,7 +111,7 @@ export const AuthProvider = ({ children }) => {
   // Đăng ký dùng endpoint mới
   const register = async (userData) => {
     try {
-      await api.post('/api/auth/register', userData);
+      await api.post('/api/customer/register', userData);
       return { success: true };
     } catch (error) {
       console.error('Register error:', error);
@@ -88,10 +127,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  // Xác thực OTP
+  const verifyOTP = async (email, otp) => {
+    try {
+      await api.post('/api/customer/verify-email', { email, otp });
+      return { success: true };
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Xác thực OTP thất bại'
+      };
+    }
+  };
+
+  // Gửi lại OTP
+  const resendOTP = async (email) => {
+    try {
+      await api.post('/api/customer/resend-otp', { email });
+      return { success: true };
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Gửi lại OTP thất bại'
+      };
+    }
+  };
+
+  const handleLogout = () => {
     setUser(null);
-    // setToken(null);
+    setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('isStaff');
     delete api.defaults.headers.common['Authorization'];
   };
 
@@ -111,15 +179,18 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    tokenFromStorage,
     loading,
     login,
     register,
-    logout,
+    verifyOTP,
+    resendOTP,
+    logout: handleLogout,
     updateProfile,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'Admin',
-    isShipper: user?.role === 'Shipper'
+    isShipper: user?.role === 'Shipper',
+    isStaff: user?.isStaff || user?.role === 'Staff',
+    token
   };
 
   return (
