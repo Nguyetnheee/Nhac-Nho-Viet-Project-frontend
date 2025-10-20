@@ -74,4 +74,25 @@ export const loginCustomer = async (username, password) => {
   }
 };
 
+// STAFF API (mới thêm)
+export const fetchStaffProfile = async () => {
+  try {
+    const response = await apiAuth.get('/api/staff/profile');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching staff profile:', error);
+    throw error;
+  }
+};
+
+export const loginStaff = async (username, password) => {
+  try {
+    const response = await apiAuth.post('/api/staff/login', { username, password });
+    return response.data;
+  } catch (error) {
+    console.error('Error during staff login:', error);
+    throw error;
+  }
+};
+
 export default apiAuth;
