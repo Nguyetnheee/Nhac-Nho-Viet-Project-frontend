@@ -20,7 +20,8 @@ import VerifyOTP from './pages/VerifyOTP';
 import Profile from './pages/Profile';
 import AdminPanel from './pages/AdminPanel';
 import ShipperPanel from './pages/ShipperPanel';
-import StaffPanel from './pages/StaffPanel';
+import StaffLogin from './pages/StaffLogin';
+import StaffDashboard from './pages/StaffDashboard';
 import Checklist from './pages/Checklist';
 import TestLogin from './pages/TestLogin';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -62,9 +63,10 @@ function App() {
                     <ShipperPanel />
                   </ProtectedRoute>
                 } />
-                <Route path="/staff" element={
+                <Route path="/staff/login" element={<StaffLogin />} />
+                <Route path="/staff/dashboard" element={
                   <ProtectedRoute roles={['Staff', 'Admin']}>
-                    <StaffPanel />
+                    <StaffDashboard />
                   </ProtectedRoute>
                 } />
                 <Route path="/checklist" element={
