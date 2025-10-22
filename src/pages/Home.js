@@ -1,33 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ritualService } from '../services/ritualService';
+import { publicApi } from '../services/ritualService';
 import { formatSolarDate } from '../utils/dateUtils';
 import { scrollToTop } from '../utils/scrollUtils';
 
 const Home = () => {
-  const [upcomingRituals, setUpcomingRituals] = useState([]);
+  const [rituals, setRituals] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedRegion, setSelectedRegion] = useState('all');
 
   useEffect(() => {
-    fetchUpcomingRituals();
+    fetchRituals();
     // Scroll to top when component mounts
     scrollToTop(true);
-  }, []);
+  }, [selectedRegion]);
 
-  const fetchUpcomingRituals = async () => {
+  const fetchRituals = async () => {
     try {
-      const response = await ritualService.getAllRituals();
-      // Sort by date and take first 3, filter out invalid dates
-      const validRituals = response.data.filter(ritual => 
-        ritual.dateSolar && 
-        ritual.dateSolar !== 'Tùy theo ngày khởi công' && 
-        ritual.dateSolar !== 'Tùy theo ngày sinh'
-      );
-      const sorted = validRituals.sort((a, b) => new Date(a.dateSolar) - new Date(b.dateSolar));
-      setUpcomingRituals(sorted.slice(0, 3));
+      let response;
+      if (selectedRegion === 'all') {
+        response = await ritualService.getAllRituals();
+      } else {
+        response = await ritualService.getRitualsByRegion(selectedRegion);
+      }
+      console.log('API Response:', response); // Log toàn bộ response
+      setRituals(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching rituals:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        config: error.config,
+        response: error.response,
+      }); // Log chi tiết lỗi
     } finally {
       setLoading(false);
     }
@@ -73,16 +80,28 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Upcoming Rituals */}
+      {/* Rituals Section */}
       <section className="py-16 bg-vietnam-cream">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-vietnam-red mb-4">
-              Sắp tới có lễ gì?
+              Các nghi lễ truyền thống
             </h2>
             <p className="text-lg text-gray-600">
-              Khám phá các lễ hội sắp diễn ra và chuẩn bị mâm cúng phù hợp
+              Khám phá các nghi lễ truyền thống của Việt Nam
             </p>
+            <div className="mt-6">
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-vietnam-gold"
+              >
+                <option value="all">Tất cả vùng miền</option>
+                <option value="north">Miền Bắc</option>
+                <option value="central">Miền Trung</option>
+                <option value="south">Miền Nam</option>
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -91,31 +110,30 @@ const Home = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {upcomingRituals.map((ritual) => (
+              {rituals.map((ritual) => (
                 <div key={ritual.id} className="card hover:shadow-xl transition-shadow duration-300">
                   <div className="card-content">
                     <div className="aspect-w-16 aspect-h-9 mb-4">
                       <img
                         src={ritual.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
-                        alt={ritual.name}
+                        alt={ritual.ritualName}
                         className="w-full h-48 object-cover rounded-lg"
                       />
                     </div>
                     <div className="card-body">
                       <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
-                        {ritual.name}
+                        {ritual.ritualName}
                       </h3>
                       <div className="text-sm text-gray-600 mb-3">
-                        <p>Âm lịch: {ritual.dateLunar}</p>
-                        <p>Dương lịch: {formatSolarDate(ritual.dateSolar)}</p>
+                        <p>Vùng miền: {ritual.region}</p>
                       </div>
                       <p className="text-gray-700 mb-4 line-clamp-3">
-                        {ritual.description || ritual.meaning.substring(0, 150)}...
+                        {ritual.description}
                       </p>
                     </div>
                     <div className="card-footer">
                       <Link
-                        to={`/rituals/${ritual.id}`}
+                        to={`/ritual/${ritual.id}`}
                         className="btn-primary w-full text-center block"
                       >
                         Xem chi tiết
@@ -127,11 +145,11 @@ const Home = () => {
             </div>
           )}
 
-          <div className="text-center mt-12">
-            <Link to="/rituals" className="btn-outline">
-              Xem tất cả lễ hội
-            </Link>
-          </div>
+          {rituals.length === 0 && !loading && (
+            <div className="text-center text-gray-600">
+              Không tìm thấy nghi lễ nào cho vùng miền này
+            </div>
+          )}
         </div>
       </section>
 

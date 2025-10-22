@@ -95,4 +95,34 @@ export const loginStaff = async (username, password) => {
   }
 };
 
+export const updateStaffProfile = async (profileData) => {
+  try {
+    const response = await apiAuth.put('/api/staff/profile', profileData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating staff profile:', error);
+    throw error;
+  }
+};
+
+export const increaseCartItem = async (productId) => {
+  try {
+    const response = await apiAuth.post(`/api/cart/items/increase`, { productId });
+    return response.data;
+  } catch (error) {
+    console.error('Error increasing cart item:', error);
+    throw error;
+  }
+};
+
+export const decreaseCartItem = async (productId) => {
+  try {
+    const response = await apiAuth.post(`/api/cart/items/decrease`, { productId });
+    return response.data;
+  } catch (error) {
+    console.error('Error decreasing cart item:', error);
+    throw error;
+  }
+};
+
 export default apiAuth;
