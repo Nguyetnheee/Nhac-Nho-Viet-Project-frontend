@@ -6,7 +6,7 @@ const apiAuth = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
   },
   withCredentials: true
 });
@@ -70,6 +70,76 @@ export const loginCustomer = async (username, password) => {
     } else {
       console.error(`Error during login: ${error.message}`);
     }
+    throw error;
+  }
+};
+
+// STAFF API (mới thêm)
+export const fetchStaffProfile = async () => {
+  try {
+    const response = await apiAuth.get('/api/staff/profile');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching staff profile:', error);
+    throw error;
+  }
+};
+
+export const loginStaff = async (username, password) => {
+  try {
+    const response = await apiAuth.post('/api/staff/login', { username, password });
+    return response.data;
+  } catch (error) {
+    console.error('Error during staff login:', error);
+    throw error;
+  }
+};
+
+export const updateStaffProfile = async (profileData) => {
+  try {
+    const response = await apiAuth.put('/api/staff/profile', profileData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating staff profile:', error);
+    throw error;
+  }
+};
+
+export const increaseCartItem = async (productId) => {
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await apiAuth.post(
+      `/api/cart/items/increase?productId=${productId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error increasing cart item:', error);
+    throw error;
+  }
+};
+
+export const decreaseCartItem = async (productId) => {
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await apiAuth.post(
+      `/api/cart/items/decrease?productId=${productId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error decreasing cart item:', error);
     throw error;
   }
 };

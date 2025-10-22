@@ -6,10 +6,12 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
   },
-  withCredentials: false
+  withCredentials: true
 });
+
+// Enable CORS credentials
+axios.defaults.withCredentials = true;
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
@@ -39,5 +41,17 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// checkout function
+export const checkout = async (checkoutData) => {
+  try {
+    const response = await api.post('/api/checkout', checkoutData);
+    return response.data;
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message || 'Đã xảy ra lỗi không xác định.';
+    console.error('Checkout API error:', errorMessage);
+    throw new Error(errorMessage);
+  }
+};
 
 export default api;

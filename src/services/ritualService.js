@@ -1,19 +1,26 @@
-import api from './api';
+import axios from "axios";
+
+const API_BASE_URL = "https://isp-7jpp.onrender.com";
+
+export const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+});
 
 export const ritualService = {
-  getAllRituals: () => api.get('/api/rituals'),
-  
-  getRitualById: (id) => api.get(`/api/rituals/${id}`),
-  
-  searchRituals: (name) => api.get(`/api/rituals/search?name=${name}`),
-  
-  getRitualsByLunarDate: (dateLunar) => api.get(`/api/rituals/lunar/${dateLunar}`),
-  
-  getRitualsBySolarDate: (dateSolar) => api.get(`/api/rituals/solar/${dateSolar}`),
-  
-  createRitual: (ritual) => api.post('/api/rituals', ritual),
-  
-  updateRitual: (id, ritual) => api.put(`/api/rituals/${id}`, ritual),
-  
-  deleteRitual: (id) => api.delete(`/api/rituals/${id}`)
+  getAllRituals: async () => {
+    try {
+      const res = await publicApi.get("/api/rituals");
+      console.log("✅ API success:", res.data);
+      return res.data;
+    } catch (err) {
+      console.error("❌ API error:", err);
+      throw err;
+    }
+  },
+
+    getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
 };

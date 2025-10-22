@@ -1,22 +1,51 @@
 import api from './api';
 
 export const trayService = {
-  getAllTrays: () => api.get('/api/trays'),
+  // Get all products
+  getAllTrays: () => api.get('/api/products'),
   
-  getTrayById: (id) => api.get(`/api/trays/${id}`),
+  // Get product by ID
+  getTrayById: (id) => api.get(`/api/products/${id}`),
   
-  getTraysByRitualId: (ritualId) => api.get(`/api/trays/ritual/${ritualId}`),
+  // Search products
+  searchTrays: (searchQuery) => api.get('/api/products/search', { 
+    params: { q: searchQuery } 
+  }),
   
-  getTraysByRegion: (region) => api.get(`/api/trays/region/${region}`),
+  // Filter products
+  filterTrays: (params) => api.get('/api/products/filter', { 
+    params: {
+      regionId: params.regionId || '',
+      categoryId: params.categoryId || '',
+      minPrice: params.minPrice || '',
+      maxPrice: params.maxPrice || ''
+    }
+  }),
   
-  getTraysByCategory: (category) => api.get(`/api/trays/category/${category}`),
+  // Get regions
+  getRegions: () => api.get('/api/regions'),
   
-  getTraysByPriceRange: (minPrice, maxPrice) => 
-    api.get(`/api/trays/price?minPrice=${minPrice}&maxPrice=${maxPrice}`),
+  // Get categories 
+  getCategories: () => api.get('/api/categories'),
   
-  createTray: (tray) => api.post('/api/trays', tray),
+  // Get product details by product ID
+  getTrayDetails: (productId) => api.get(`/api/product-details/by-product/${productId}`),
   
-  updateTray: (id, tray) => api.put(`/api/trays/${id}`, tray),
+  // Create new product
+  createTray: (tray) => api.post('/api/products', tray),
   
-  deleteTray: (id) => api.delete(`/api/trays/${id}`)
+  // Update product
+  updateTray: (id, tray) => api.put(`/api/products/${id}`, tray),
+  
+  // Delete product
+  deleteTray: (id) => api.delete(`/api/products/${id}`),
+  
+  // Create product detail
+  createTrayDetail: (detail) => api.post('/api/product-details', detail),
+  
+  // Update product detail
+  updateTrayDetail: (id, detail) => api.put(`/api/product-details/${id}`, detail),
+  
+  // Delete product detail
+  deleteTrayDetail: (id) => api.delete(`/api/product-details/${id}`)
 };

@@ -7,90 +7,223 @@ const TrayCatalog = () => {
   const [trays, setTrays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    region: 'Tất cả',
-    type: 'Tất cả',
-    minPrice: '0',
-    maxPrice: '10000000',
+    regionId: '',
+    categoryId: '',
+    minPrice: '',
+    maxPrice: '',
     searchQuery: ''
   });
-  const [regions] = useState(['Tất cả', 'Miền Bắc', 'Miền Trung', 'Miền Nam']);
-  const [types] = useState(['Tất cả', 'Mâm cơm', 'Mâm cúng', 'Mâm quả']);
+  // State để lưu danh sách regions và categories từ API
+  const [regions, setRegions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const { addToCart } = useCart();
 
   useEffect(() => {
-    fetchTrays();
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching initial data...');
+        
+        // Fetch tất cả dữ liệu cần thiết
+        const [regionsRes, categoriesRes, traysRes] = await Promise.all([
+          trayService.getRegions(),
+          trayService.getCategories(),
+          trayService.getAllTrays()
+        ]);
+        
+        console.log('Raw responses:', {
+          regions: regionsRes?.data,
+          categories: categoriesRes?.data,
+          trays: traysRes?.data
+        });
+
+        // Xử lý regions
+        if (regionsRes?.data && Array.isArray(regionsRes.data)) {
+          setRegions(regionsRes.data);
+          console.log('Regions set:', regionsRes.data);
+        } else {
+          setRegions([]);
+          console.error('Invalid regions data');
+        }
+
+        // Xử lý categories
+        if (categoriesRes?.data && Array.isArray(categoriesRes.data)) {
+          setCategories(categoriesRes.data);
+          console.log('Categories set:', categoriesRes.data);
+        } else {
+          setCategories([]);
+          console.error('Invalid categories data');
+        }
+
+        // Xử lý trays
+        if (traysRes?.data?.content) {
+          setTrays(traysRes.data.content);
+          console.log('Trays set from content:', traysRes.data.content);
+        } else if (Array.isArray(traysRes?.data)) {
+          setTrays(traysRes.data);
+          console.log('Trays set from array:', traysRes.data);
+        } else {
+          setTrays([]);
+          console.error('Invalid trays data');
+        }
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        toast.error('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        setRegions([]);
+        setCategories([]);
+        setTrays([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
   }, []);
 
   const fetchTrays = async () => {
     try {
       setLoading(true);
       const response = await trayService.getAllTrays();
-      setTrays(response.data);
+      console.log('Fetch all trays response:', response.data);
+      
+      // Kiểm tra nếu có dữ liệu trong content
+      if (response.data?.content) {
+        setTrays(response.data.content);
+      } else if (Array.isArray(response.data)) {
+        setTrays(response.data);
+      } else {
+        setTrays([]);
+      }
     } catch (error) {
       console.error('Error fetching trays:', error);
+      toast.error('Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    console.log(`Changing filter ${key} to:`, value);
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [key]: value
+      };
+      console.log('New filters state:', newFilters);
+      return newFilters;
+    });
   };
 
   const applyFilters = async () => {
     try {
       setLoading(true);
-      let searchParams = new URLSearchParams();
+      
+      // Nếu có search query, ưu tiên tìm kiếm trước
+      const searchQuery = filters.searchQuery?.trim();
+      if (searchQuery) {
+        console.log('Searching with query:', searchQuery);
+        try {
+          const response = await trayService.searchTrays(searchQuery);
+          console.log('Search API response:', response);
+          
+          if (Array.isArray(response.data)) {
+            console.log('Setting search results from array:', response.data);
+            setTrays(response.data);
+          } else if (response.data?.content) {
+            console.log('Setting search results from content:', response.data.content);
+            setTrays(response.data.content);
+          } else {
+            console.log('No results found');
+            setTrays([]);
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          toast.error('Không thể tìm kiếm sản phẩm');
+          setTrays([]);
+        }
+        return;
+      }
 
-      if (filters.region !== 'Tất cả') {
-        searchParams.append('region', filters.region);
-      }
-      if (filters.type !== 'Tất cả') {
-        searchParams.append('type', filters.type);
-      }
-      if (filters.minPrice) {
-        searchParams.append('minPrice', filters.minPrice);
-      }
-      if (filters.maxPrice) {
-        searchParams.append('maxPrice', filters.maxPrice);
+      // Nếu không có search query, áp dụng các filter khác
+      const filterParams = {};
+      
+      // Xử lý regionId - gửi đúng tên vùng miền
+      if (filters.regionId && filters.regionId !== '') {
+        filterParams.regionId = filters.regionId; // Đã là regionName từ select
+        console.log('Adding regionId to filter:', filterParams.regionId);
       }
       
-      if (filters.searchQuery) {
-        searchParams.append('q', filters.searchQuery);
-      }
-      if (filters.minPrice) {
-        searchParams.append('minPrice', parseFloat(filters.minPrice).toString());
-      }
-      if (filters.maxPrice) {
-        searchParams.append('maxPrice', parseFloat(filters.maxPrice).toString());
+      // Xử lý categoryId
+      if (filters.categoryId && filters.categoryId !== '') {
+        filterParams.categoryId = filters.categoryId;
+        console.log('Adding categoryId to filter:', filterParams.categoryId);
       }
       
-      const response = await trayService.searchTrays(searchParams.toString());
-      setTrays(response.data);
+      // Xử lý price range
+      if (filters.minPrice && filters.minPrice !== '') {
+        filterParams.minPrice = filters.minPrice.toString();
+      }
+      if (filters.maxPrice && filters.maxPrice !== '') {
+        filterParams.maxPrice = filters.maxPrice.toString();
+      }
+      
+      console.log('Final filter params:', filterParams);
+      
+      // Kiểm tra xem có filter nào được áp dụng không
+      const hasFilters = Object.keys(filterParams).length > 0;
+      
+      // Nếu không có filter, lấy tất cả sản phẩm
+      if (!hasFilters) {
+        const response = await trayService.getAllTrays();
+        console.log('Get all trays response:', response);
+        if (response.data?.content) {
+          setTrays(response.data.content);
+        } else {
+          setTrays([]);
+        }
+        return;
+      }
+      
+      // Gọi API filter với params
+      console.log('Calling filter API with params:', filterParams);
+      const response = await trayService.filterTrays(filterParams);
+      console.log('Filter response:', response);
+      
+      // Set trays từ response
+      if (response.data?.content) {
+        setTrays(response.data.content);
+      } else {
+        console.log('No content in response data:', response.data);
+        setTrays([]);
+      }
     } catch (error) {
-      console.error('Error filtering trays:', error);
+      console.error('Error filtering/searching trays:', error);
+      toast.error('Không thể tìm kiếm sản phẩm. Vui lòng thử lại sau.');
+      setTrays([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
     setFilters({
-      region: 'Tất cả',
-      type: 'Tất cả',
-      minPrice: '0',
-      maxPrice: '10000000',
+      regionId: '',
+      categoryId: '',
+      minPrice: '',
+      maxPrice: '',
       searchQuery: ''
     });
-    fetchTrays();
+    await fetchTrays(); // Đợi fetch hoàn tất
   };
 
   const handleAddToCart = (tray) => {
     addToCart(tray);
     toast.success('Đã thêm vào giỏ hàng!');
+  };
+
+  const handleClose = () => {
+    console.log('Handle close logic executed');
+    // Add your logic here for closing modals or cleaning up resources
   };
 
   return (
@@ -113,9 +246,23 @@ const TrayCatalog = () => {
               <input
                 type="text"
                 value={filters.searchQuery}
-                onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-                onKeyPress={(e) => {
+                onChange={(e) => {
+                  handleFilterChange('searchQuery', e.target.value);
+                  // Clear other filters when searching
+                  if (e.target.value.trim()) {
+                    setFilters(prev => ({
+                      ...prev,
+                      regionId: '',
+                      categoryId: '',
+                      minPrice: '',
+                      maxPrice: '',
+                      searchQuery: e.target.value
+                    }));
+                  }
+                }}
+                onKeyDown={(e) => {
                   if (e.key === 'Enter') {
+                    e.preventDefault();
                     applyFilters();
                   }
                 }}
@@ -140,51 +287,77 @@ const TrayCatalog = () => {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-vietnam-red mb-6">Bộ lọc</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">Vùng miền</label>
               <select
-                value={filters.region}
-                onChange={(e) => handleFilterChange('region', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                value={filters.regionId}
+                onChange={(e) => {
+                  console.log('Selected region:', e.target.value);
+                  handleFilterChange('regionId', e.target.value);
+                }}
+                className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-vietnam-red focus:border-vietnam-red"
               >
-                {regions.map(region => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
+                <option value="">Tất cả</option>
+                {regions && regions.length > 0 ? (
+                  regions.map(region => (
+                    <option 
+                      key={region.regionId || region.id} 
+                      value={region.regionName || region.name}
+                    >
+                      {region.regionName || region.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Không có dữ liệu</option>
+                )}
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Loại</label>
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loại mâm</label>
               <select
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                value={filters.categoryId}
+                onChange={(e) => {
+                  console.log('Selected category:', e.target.value);
+                  handleFilterChange('categoryId', e.target.value);
+                }}
+                className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-vietnam-red focus:border-vietnam-red"
               >
-                {types.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
+                <option value="">Tất cả</option>
+                {categories && categories.length > 0 ? (
+                  categories.map(category => (
+                    <option 
+                      key={category.categoryId || category.id} 
+                      value={category.categoryName || category.name}
+                    >
+                      {category.categoryName || category.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Không có dữ liệu</option>
+                )}
               </select>
             </div>
 
-            <div>
+            <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">Giá từ</label>
               <input
                 type="number"
                 value={filters.minPrice}
                 onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                className="input-field"
+                className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-vietnam-red focus:border-vietnam-red"
                 placeholder="0"
               />
             </div>
 
-            <div>
+            <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">Giá đến</label>
               <input
                 type="number"
                 value={filters.maxPrice}
                 onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                className="input-field"
+                className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-vietnam-red focus:border-vietnam-red"
                 placeholder="10000000"
               />
             </div>
@@ -212,7 +385,7 @@ const TrayCatalog = () => {
                 <div className="card-content">
                   <div className="aspect-w-16 aspect-h-9 mb-4">
                     <img
-                      src={tray.productImage || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
+                      src={tray.productImage || ''}
                       alt={tray.productName}
                       className="w-full h-48 object-cover rounded-lg"
                     />
