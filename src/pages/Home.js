@@ -112,23 +112,23 @@ const Home = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {rituals.map((ritual) => (
                 <div
-                  key={ritual.ritualId} 
+                  key={ritual.ritualId}
                   className="card hover:shadow-xl transition-shadow duration-300"
                 >
                   <div className="card-content">
                     <div className="aspect-w-16 aspect-h-9 mb-4">
                       <img
-  src={
-    ritual.imageUrl
-      ? // Nếu đường dẫn trả về là full URL (đã có https)
-        ritual.imageUrl.startsWith("http")
-        ? ritual.imageUrl
-        : `https://isp-7jpp.onrender.com${ritual.imageUrl}`
-      : "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500"
-  }
-  alt={ritual.ritualName}
-  className="w-full h-48 object-cover rounded-lg"
-/>
+                        src={
+                          ritual.imageUrl
+                            ? // Nếu đường dẫn trả về là full URL (đã có https)
+                            ritual.imageUrl.startsWith("http")
+                              ? ritual.imageUrl
+                              : `https://isp-7jpp.onrender.com${ritual.imageUrl}`
+                            : "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500"
+                        }
+                        alt={ritual.ritualName}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
                     </div>
                     <div className="card-body">
                       <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
@@ -149,11 +149,7 @@ const Home = () => {
                       </p>
                     </div>
                     <div className="card-footer">
-                      {/* nếu route của em là /rituals/:id thì sửa lại path bên dưới cho khớp */}
-                      <Link
-                        to={`/ritual/${ritual.ritualId}`}
-                        className="btn-primary w-full text-center block"
-                      >
+                      <Link to={`/rituals/${ritual.ritualId}`} className="btn-primary w-full text-center block">
                         Xem chi tiết
                       </Link>
                     </div>
