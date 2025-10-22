@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api'; // Import api instance
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -8,9 +9,10 @@ const VerifyOTP = () => {
   const [error, setError] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [message, setMessage] = useState('');
   const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   
-  const { verifyOTP, resendOTP } = useAuth();
+  const { resendOTP } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
@@ -72,18 +74,19 @@ const VerifyOTP = () => {
     setLoading(true);
     setError('');
 
-    const result = await verifyOTP(email, otpCode);
-    
-    if (result.success) {
-      // Chuyển đến trang đăng nhập sau khi xác thực thành công
-      navigate('/login', { 
-        state: { message: 'Xác thực thành công! Vui lòng đăng nhập.' }
-      });
-    } else {
-      setError(result.error || 'Mã OTP không chính xác');
+    try {
+      const response = await api.post('/api/customer/verify-otp', { email, otp: otpCode });
+      if (response.data.status === 'success') {
+        setMessage(response.data.message);
+        setTimeout(() => navigate('/reset-password', { state: { email } }), 2000);
+      } else {
+        setError(response.data.message);
+      }
+    } catch (err) {
+      setError('Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const handleResend = async () => {
@@ -187,7 +190,7 @@ const VerifyOTP = () => {
           {/* Error Message */}
           {error && (
             <div className="mb-4 bg-red-600 border border-red-700 text-white font-bold px-4 py-3 rounded-lg text-sm text-center shadow-lg">
-              {error}
+              {error?.message || String(error)}
             </div>
           )}
 

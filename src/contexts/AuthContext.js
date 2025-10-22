@@ -20,16 +20,26 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(tokenFromStorage || null);
 
   useEffect(() => {
-    if (tokenFromStorage) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
-      if (window.location.pathname !== '/login') {
-        fetchUserProfile(roleFromStorage);
+    const initializeAuth = async () => {
+      if (tokenFromStorage) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          try {
+            await fetchUserProfile(roleFromStorage);
+          } catch (error) {
+            console.error('Error during auth initialization:', error);
+            // Only logout if it's a true auth error
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              logout();
+            }
+          }
+        }
       } else {
         setLoading(false);
       }
-    } else {
-      setLoading(false);
-    }
+    };
+
+    initializeAuth();
   }, [tokenFromStorage]);
 
   // Fetch profile theo role
@@ -94,10 +104,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Cập nhật profile (customer)
+  // Cập nhật profile dựa vào role
   const updateProfile = async (profileData) => {
     try {
-      const response = await api.put('/api/customer/profile', profileData);
+      const role = localStorage.getItem('role');
+      const endpoint = role === 'STAFF' ? '/api/staff/profile' : '/api/customer/profile';
+      const response = await api.put(endpoint, profileData);
       setUser(response.data);
       return { success: true };
     } catch (error) {

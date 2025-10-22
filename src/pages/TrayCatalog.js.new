@@ -1,0 +1,253 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { trayService } from '../services/trayService';
+import { useCart } from '../contexts/CartContext';
+
+const TrayCatalog = () => {
+  const [trays, setTrays] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    region: 'Tất cả',
+    type: 'Tất cả',
+    minPrice: '0',
+    maxPrice: '10000000'
+  });
+  const [regions] = useState(['Tất cả', 'Miền Bắc', 'Miền Trung', 'Miền Nam']);
+  const [types] = useState(['Tất cả', 'Mâm cơm', 'Mâm cúng', 'Mâm quả']);
+  const { addToCart } = useCart();
+
+  useEffect(() => {
+    fetchTrays();
+  }, []);
+
+  const fetchTrays = async () => {
+    try {
+      setLoading(true);
+      const response = await trayService.getAllTrays();
+      setTrays(response.data);
+    } catch (error) {
+      console.error('Error fetching trays:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const applyFilters = async () => {
+    try {
+      setLoading(true);
+      let searchParams = new URLSearchParams();
+
+      if (filters.region !== 'Tất cả') {
+        searchParams.append('region', filters.region);
+      }
+      if (filters.type !== 'Tất cả') {
+        searchParams.append('type', filters.type);
+      }
+      if (filters.minPrice) {
+        searchParams.append('minPrice', filters.minPrice);
+      }
+      if (filters.maxPrice) {
+        searchParams.append('maxPrice', filters.maxPrice);
+      }
+
+      const response = await trayService.searchTrays(searchParams.toString());
+      setTrays(response.data);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = (tray) => {
+    addToCart(tray);
+    alert('Đã thêm vào giỏ hàng!');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-vietnam-cream py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vietnam-red"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-vietnam-cream py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-vietnam-red mb-4">
+            Catalog mâm cúng
+          </h1>
+          <p className="text-lg text-gray-600">
+            Chọn mâm cúng phù hợp cho lễ hội của bạn
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold text-vietnam-red mb-6">Bộ lọc</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Vùng miền</label>
+              <select
+                value={filters.region}
+                onChange={(e) => handleFilterChange('region', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+              >
+                {regions.map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loại</label>
+              <select
+                value={filters.type}
+                onChange={(e) => handleFilterChange('type', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+              >
+                {types.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Giá từ</label>
+              <input
+                type="number"
+                value={filters.minPrice}
+                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                min="0"
+                placeholder="VNĐ"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Giá đến</label>
+              <input
+                type="number"
+                value={filters.maxPrice}
+                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                min="0"
+                placeholder="VNĐ"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <button
+              onClick={() => {
+                setFilters({
+                  region: 'Tất cả',
+                  type: 'Tất cả',
+                  minPrice: '0',
+                  maxPrice: '10000000'
+                });
+                fetchTrays();
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-vietnam-red"
+            >
+              Xóa bộ lọc
+            </button>
+            <button
+              onClick={applyFilters}
+              className="px-4 py-2 bg-vietnam-red text-white rounded-md hover:bg-vietnam-red/90 focus:outline-none focus:ring-2 focus:ring-vietnam-red"
+            >
+              Áp dụng bộ lọc
+            </button>
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        {trays.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {trays.map((tray) => (
+              <div key={tray.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <img
+                  src={tray.imageUrl || 'https://via.placeholder.com/300x200'}
+                  alt={tray.name}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-vietnam-red mb-2">
+                    {tray.name}
+                  </h3>
+                  <p className="text-gray-600 mb-4 line-clamp-2">
+                    {tray.description}
+                  </p>
+                  <div className="mb-4">
+                    <span className="text-sm text-gray-500">Vùng miền:</span>
+                    <span className="ml-2 text-gray-700">{tray.region}</span>
+                  </div>
+                  <div className="mb-4">
+                    <span className="text-sm text-gray-500">Loại:</span>
+                    <span className="ml-2 text-gray-700">{tray.type}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-vietnam-red">
+                      {Number(tray.price).toLocaleString('vi-VN')} VNĐ
+                    </span>
+                    <button
+                      onClick={() => handleAddToCart(tray)}
+                      className="px-4 py-2 bg-vietnam-red text-white rounded-md hover:bg-vietnam-red/90 focus:outline-none focus:ring-2 focus:ring-vietnam-red flex items-center space-x-2"
+                    >
+                      <span>🛒</span>
+                      <span>Thêm vào giỏ</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12zm0-9a1 1 0 011 1v3a1 1 0 11-2 0V8a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              Không tìm thấy mâm cúng nào
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Vui lòng thử lại với bộ lọc khác
+            </p>
+            <button
+              onClick={() => {
+                setFilters({
+                  region: 'Tất cả',
+                  type: 'Tất cả',
+                  minPrice: '0',
+                  maxPrice: '10000000'
+                });
+                fetchTrays();
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-vietnam-red"
+            >
+              Xem tất cả mâm cúng
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default TrayCatalog;

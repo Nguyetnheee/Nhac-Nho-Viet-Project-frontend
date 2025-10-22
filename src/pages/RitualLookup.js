@@ -111,40 +111,32 @@ const RitualLookup = () => {
             {rituals.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {rituals.map((ritual) => (
-                  <div key={ritual.id} className="card hover:shadow-xl transition-shadow duration-300">
+                  <div key={ritual.ritualId} className="card hover:shadow-xl transition-shadow duration-300">
                     <div className="card-content">
                       <div className="aspect-w-16 aspect-h-9 mb-4">
                         <img
                           src={ritual.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
-                          alt={ritual.name}
+                          alt={ritual.ritualName}
                           className="w-full h-48 object-cover rounded-lg"
                         />
                       </div>
                       <div className="card-body">
                         <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
-                          {ritual.name}
+                          {ritual.ritualName}
                         </h3>
                         <div className="text-sm text-gray-600 mb-3">
                           <p>Âm lịch: {ritual.dateLunar}</p>
                           <p>Dương lịch: {formatSolarDate(ritual.dateSolar)}</p>
+                          <p>Khu vực: {ritual.regionName}</p>
                         </div>
                         <p className="text-gray-700 mb-4 line-clamp-3">
-                          {ritual.description || ritual.meaning.substring(0, 150)}...
+                          {ritual.description || (ritual.meaning ? ritual.meaning.substring(0, 150) : '')}...
                         </p>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {ritual.relatedRituals?.slice(0, 2).map((related, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-vietnam-gold text-vietnam-red text-xs rounded-full"
-                            >
-                              {related}
-                            </span>
-                          ))}
-                        </div>
+                        {/* Nếu có trường liên quan, có thể thêm ở đây */}
                       </div>
                       <div className="card-footer">
                         <Link
-                          to={`/rituals/${ritual.id}`}
+                          to={`/rituals/${ritual.ritualId}`}
                           className="btn-primary w-full text-center block"
                         >
                           Xem chi tiết

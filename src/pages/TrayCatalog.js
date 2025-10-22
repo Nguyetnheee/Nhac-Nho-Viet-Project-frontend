@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { trayService } from '../services/trayService';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'react-toastify';
 
 const TrayCatalog = () => {
-  const navigate = useNavigate();
   const [trays, setTrays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -32,8 +30,6 @@ const TrayCatalog = () => {
           trayService.getCategories(),
           trayService.getAllTrays()
         ]);
-        
-        console.log('Trays response:', traysRes);
         
         console.log('Raw responses:', {
           regions: regionsRes?.data,
@@ -149,40 +145,55 @@ const TrayCatalog = () => {
       }
 
       // Nếu không có search query, áp dụng các filter khác
-      const filterParams = {
-        regionId: filters.regionId || '',
-        categoryId: filters.categoryId || '',
-        minPrice: filters.minPrice || '',
-        maxPrice: filters.maxPrice || ''
-      };
+      const filterParams = {};
+      
+      // Xử lý regionId - gửi đúng tên vùng miền
+      if (filters.regionId && filters.regionId !== '') {
+        filterParams.regionId = filters.regionId; // Đã là regionName từ select
+        console.log('Adding regionId to filter:', filterParams.regionId);
+      }
+      
+      // Xử lý categoryId
+      if (filters.categoryId && filters.categoryId !== '') {
+        filterParams.categoryId = filters.categoryId;
+        console.log('Adding categoryId to filter:', filterParams.categoryId);
+      }
+      
+      // Xử lý price range
+      if (filters.minPrice && filters.minPrice !== '') {
+        filterParams.minPrice = filters.minPrice.toString();
+      }
+      if (filters.maxPrice && filters.maxPrice !== '') {
+        filterParams.maxPrice = filters.maxPrice.toString();
+      }
       
       console.log('Final filter params:', filterParams);
+      
+      // Kiểm tra xem có filter nào được áp dụng không
+      const hasFilters = Object.keys(filterParams).length > 0;
+      
+      // Nếu không có filter, lấy tất cả sản phẩm
+      if (!hasFilters) {
+        const response = await trayService.getAllTrays();
+        console.log('Get all trays response:', response);
+        if (response.data?.content) {
+          setTrays(response.data.content);
+        } else {
+          setTrays([]);
+        }
+        return;
+      }
       
       // Gọi API filter với params
       console.log('Calling filter API with params:', filterParams);
       const response = await trayService.filterTrays(filterParams);
       console.log('Filter response:', response);
       
-      if (response?.data) {
-        // Luôn lấy từ content vì API filter luôn trả về trong format này
-        const productList = response.data.content;
-        if (Array.isArray(productList)) {
-          console.log('Setting filtered products:', productList);
-          setTrays(productList.map(product => ({
-            productId: product.productId,
-            productName: product.productName,
-            productDescription: product.productDescription,
-            productImage: product.productImage,
-            price: product.price,
-            category: product.categoryName,
-            region: product.regionName
-          })));
-        } else {
-          console.log('No valid content in response:', response.data);
-          setTrays([]);
-        }
+      // Set trays từ response
+      if (response.data?.content) {
+        setTrays(response.data.content);
       } else {
-        console.log('No data in response:', response);
+        console.log('No content in response data:', response.data);
         setTrays([]);
       }
     } catch (error) {
@@ -206,14 +217,13 @@ const TrayCatalog = () => {
   };
 
   const handleAddToCart = (tray) => {
-    console.log('Adding tray to cart:', tray);
-    addToCart(tray.id, 1, {
-      productName: tray.name,
-      price: tray.price,
-      imageUrl: tray.imageUrl,
-      description: tray.description
-    });
+    addToCart(tray);
     toast.success('Đã thêm vào giỏ hàng!');
+  };
+
+  const handleClose = () => {
+    console.log('Handle close logic executed');
+    // Add your logic here for closing modals or cleaning up resources
   };
 
   return (
@@ -292,10 +302,10 @@ const TrayCatalog = () => {
                 {regions && regions.length > 0 ? (
                   regions.map(region => (
                     <option 
-                      key={region.regionId} 
-                      value={region.regionId}
+                      key={region.regionId || region.id} 
+                      value={region.regionName || region.name}
                     >
-                      {region.regionName}
+                      {region.regionName || region.name}
                     </option>
                   ))
                 ) : (
@@ -318,10 +328,10 @@ const TrayCatalog = () => {
                 {categories && categories.length > 0 ? (
                   categories.map(category => (
                     <option 
-                      key={category.categoryId} 
-                      value={category.categoryId}
+                      key={category.categoryId || category.id} 
+                      value={category.categoryName || category.name}
                     >
-                      {category.categoryName}
+                      {category.categoryName || category.name}
                     </option>
                   ))
                 ) : (
@@ -375,17 +385,13 @@ const TrayCatalog = () => {
                 <div className="card-content">
                   <div className="aspect-w-16 aspect-h-9 mb-4">
                     <img
-                      src={tray.productImage || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
+                      src={tray.productImage || ''}
                       alt={tray.productName}
-                      className="w-full h-48 object-cover rounded-lg cursor-pointer"
-                      onClick={() => navigate(`/products/${tray.productId}`)}
+                      className="w-full h-48 object-cover rounded-lg"
                     />
                   </div>
                   <div className="card-body">
-                    <h3 
-                      className="text-xl font-serif font-semibold text-vietnam-red mb-2 cursor-pointer hover:text-vietnam-gold transition-colors"
-                      onClick={() => navigate(`/products/${tray.productId}`)}
-                    >
+                    <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
                       {tray.productName}
                     </h3>
                     <p className="text-gray-700 mb-4 line-clamp-3">
@@ -430,16 +436,10 @@ const TrayCatalog = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="card-footer flex gap-2">
-                    <button
-                      onClick={() => navigate(`/products/${tray.productId}`)}
-                      className="btn-outline flex-1"
-                    >
-                      Xem chi tiết
-                    </button>
+                  <div className="card-footer">
                     <button
                       onClick={() => handleAddToCart(tray)}
-                      className="btn-primary flex-1"
+                      className="btn-primary w-full"
                     >
                       Thêm vào giỏ
                     </button>
