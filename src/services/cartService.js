@@ -103,7 +103,7 @@ export const clearCart = async () => {
   }
 };
 
-/** (Tuỳ dự án có dùng) Thanh toán */
+// Checkout thanh toan
 export const checkout = async () => {
   try {
     const res = await api.post("/api/cart/checkout");

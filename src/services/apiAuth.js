@@ -6,7 +6,7 @@ const apiAuth = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
   },
   withCredentials: true
 });
@@ -107,7 +107,17 @@ export const updateStaffProfile = async (profileData) => {
 
 export const increaseCartItem = async (productId) => {
   try {
-    const response = await apiAuth.post(`/api/cart/items/increase`, { productId });
+    const token = localStorage.getItem('token');
+
+    const response = await apiAuth.post(
+      `/api/cart/items/increase?productId=${productId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
     return response.data;
   } catch (error) {
     console.error('Error increasing cart item:', error);
@@ -117,7 +127,16 @@ export const increaseCartItem = async (productId) => {
 
 export const decreaseCartItem = async (productId) => {
   try {
-    const response = await apiAuth.post(`/api/cart/items/decrease`, { productId });
+    const token = localStorage.getItem('token');
+
+    const response = await apiAuth.post(
+      `/api/cart/items/decrease?productId=${productId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error decreasing cart item:', error);

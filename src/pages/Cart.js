@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
+import { decreaseCartItem, increaseCartItem } from "../services/apiAuth";
 
 // Làm sạch baseURL tương tự api.js
 const resolveApiBase = () => {
@@ -27,7 +28,8 @@ const Cart = () => {
     updateQuantity,
     clearCart,
     getTotalPrice,
-    totals, // { totalItems, subTotal, currency }
+    totals,
+    fetchCart
   } = useCart();
   const { isAuthenticated } = useAuth();
 
@@ -126,11 +128,8 @@ const Cart = () => {
                             onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              if (quantity > 1) {
-                                await updateQuantity(productId, quantity - 1);
-                              } else {
-                                await removeFromCart(productId);
-                              }
+                              await decreaseCartItem(productId);
+                              await fetchCart()
                             }}
                             className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                           >
@@ -141,7 +140,8 @@ const Cart = () => {
                             onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              await updateQuantity(productId, quantity);
+                              await increaseCartItem(productId);
+                              await fetchCart()
                             }}
                             className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                           >

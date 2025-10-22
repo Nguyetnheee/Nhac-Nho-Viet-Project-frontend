@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ritualService } from '../services/ritualService';
-import { publicApi } from '../services/ritualService';
+
+// import { publicApi } from '../services/ritualService';
 import { formatSolarDate } from '../utils/dateUtils';
 import { scrollToTop } from '../utils/scrollUtils';
 
@@ -13,28 +14,27 @@ const Home = () => {
 
   useEffect(() => {
     fetchRituals();
-    // Scroll to top when component mounts
+    // Scroll to top when component mounts / region changes
     scrollToTop(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRegion]);
 
   const fetchRituals = async () => {
+    setLoading(true);
     try {
-      let response;
-      if (selectedRegion === 'all') {
-        response = await ritualService.getAllRituals();
-      } else {
-        response = await ritualService.getRitualsByRegion(selectedRegion);
-      }
-      console.log('API Response:', response); // Log toàn bộ response
-      setRituals(Array.isArray(response.data) ? response.data : []);
+      // Bước này chỉ gọi API lấy toàn bộ lễ hội
+      const data = await ritualService.getAllRituals();
+      console.log('API /api/rituals data:', data);
+      setRituals(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching rituals:', error);
       console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        config: error.config,
-        response: error.response,
-      }); // Log chi tiết lỗi
+        message: error?.message,
+        code: error?.code,
+        config: error?.config,
+        response: error?.response,
+      });
+      setRituals([]);
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ const Home = () => {
           <p className="text-xl md:text-2xl mb-8 text-gray-200">
             Tra cứu lễ hội truyền thống và đặt mâm cúng Việt Nam
           </p>
-          
+
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -111,29 +111,47 @@ const Home = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {rituals.map((ritual) => (
-                <div key={ritual.id} className="card hover:shadow-xl transition-shadow duration-300">
+                <div
+                  key={ritual.ritualId} 
+                  className="card hover:shadow-xl transition-shadow duration-300"
+                >
                   <div className="card-content">
                     <div className="aspect-w-16 aspect-h-9 mb-4">
                       <img
-                        src={ritual.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
-                        alt={ritual.ritualName}
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
+  src={
+    ritual.imageUrl
+      ? // Nếu đường dẫn trả về là full URL (đã có https)
+        ritual.imageUrl.startsWith("http")
+        ? ritual.imageUrl
+        : `https://isp-7jpp.onrender.com${ritual.imageUrl}`
+      : "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500"
+  }
+  alt={ritual.ritualName}
+  className="w-full h-48 object-cover rounded-lg"
+/>
                     </div>
                     <div className="card-body">
                       <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
                         {ritual.ritualName}
                       </h3>
                       <div className="text-sm text-gray-600 mb-3">
-                        <p>Vùng miền: {ritual.region}</p>
+                        {/* dùng regionName từ BE */}
+                        <p>Vùng miền: {ritual.regionName}</p>
                       </div>
+                      <p className="text-sm text-gray-600">
+                        Âm lịch: {ritual.dateLunar}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Dương lịch: {formatSolarDate(ritual.dateSolar)}
+                      </p>
                       <p className="text-gray-700 mb-4 line-clamp-3">
-                        {ritual.description}
+                        {ritual.description || ritual.meaning}
                       </p>
                     </div>
                     <div className="card-footer">
+                      {/* nếu route của em là /rituals/:id thì sửa lại path bên dưới cho khớp */}
                       <Link
-                        to={`/ritual/${ritual.id}`}
+                        to={`/ritual/${ritual.ritualId}`}
                         className="btn-primary w-full text-center block"
                       >
                         Xem chi tiết

@@ -1,108 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ritualService } from '../services/ritualService';
-import { scrollToTop } from '../utils/scrollUtils';
+import React, { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { ritualService } from "../services/ritualService";
+import { formatSolarDate } from "../utils/dateUtils";
+import { scrollToTop } from "../utils/scrollUtils";
 
 const RitualDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // Lấy ID từ URL
   const [ritual, setRitual] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchRitual();
     scrollToTop(true);
+    fetchRitualDetail();
+    // eslint-disable-next-line
   }, [id]);
 
-  const fetchRitual = async () => {
+  // Hàm gọi API chi tiết lễ hội
+  const fetchRitualDetail = async () => {
+    setLoading(true);
     try {
-      const response = await ritualService.getRitualById(id);
-      setRitual(response);
+      const res = await ritualService.getRitualById(id);
+      const data = res.data || res; // phòng trường hợp BE trả khác
+      console.log("🎯 Chi tiết lễ hội:", data);
+      setRitual(data);
     } catch (error) {
-      console.error('Error fetching ritual:', error);
-      setError('Không thể tải thông tin nghi lễ');
+      console.error("❌ Lỗi khi tải chi tiết lễ hội:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Nếu đang loading thì hiển thị vòng xoay
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-vietnam-cream to-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vietnam-red"></div>
-          </div>
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vietnam-red"></div>
       </div>
     );
   }
 
-  if (error || !ritual) {
+  // Nếu không tìm thấy dữ liệu
+  if (!ritual) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-vietnam-cream to-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-vietnam-red mb-4">
-              {error || 'Không tìm thấy nghi lễ'}
-            </h1>
-            <Link to="/" className="btn-primary">
-              Quay lại trang chủ
-            </Link>
-          </div>
-        </div>
+      <div className="text-center py-20 text-gray-600">
+        Không tìm thấy thông tin lễ hội.
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-vietnam-cream to-white">
-      <div className="relative bg-gradient-to-r from-vietnam-red to-red-800 text-white py-16">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <nav className="flex items-center space-x-2 text-sm mb-8">
-            <Link to="/" className="hover:text-vietnam-gold transition-colors">
-              Trang chủ
-            </Link>
-            <span>/</span>
-            <Link to="/" className="hover:text-vietnam-gold transition-colors">
-              Nghi lễ
-            </Link>
-            <span>/</span>
-            <span className="text-vietnam-gold">{ritual.ritualName}</span>
-          </nav>
+  // Hàm xử lý hiển thị hình ảnh
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl)
+      return "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500";
+    return imageUrl.startsWith("http")
+      ? imageUrl
+      : `https://isp-7jpp.onrender.com${imageUrl}`;
+  };
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl lg:text-5xl font-serif font-bold mb-6 leading-tight">
-                {ritual.ritualName}
-              </h1>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                  <h3 className="font-semibold text-vietnam-gold mb-2">Vùng miền</h3>
-                  <p className="text-lg">{ritual.region}</p>
-                </div>
-                <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                  <h3 className="font-semibold text-vietnam-gold mb-2">Trạng thái</h3>
-                  <p className="text-lg">
-                    {ritual.active ? 'Đang hoạt động' : 'Không hoạt động'}
-                  </p>
-                </div>
-              </div>
+  // Giao diện hiển thị chi tiết lễ hội
+  return (
+    <div className="min-h-screen bg-vietnam-cream py-10 px-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* Ảnh lễ hội */}
+        <img
+          src={getImageUrl(ritual.imageUrl)}
+          alt={ritual.ritualName}
+          className="w-full h-96 object-cover"
+        />
+
+        <div className="p-8">
+          {/* Tên lễ hội */}
+          <h1 className="text-4xl font-serif font-bold text-vietnam-red mb-4">
+            {ritual.ritualName}
+          </h1>
+
+          {/* Thông tin nhanh */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-vietnam-cream p-4 rounded-lg shadow-inner">
+              <h3 className="text-vietnam-red font-semibold">Vùng miền</h3>
+              <p>{ritual.regionName}</p>
+            </div>
+            <div className="bg-vietnam-cream p-4 rounded-lg shadow-inner">
+              <h3 className="text-vietnam-red font-semibold">Âm lịch</h3>
+              <p>{ritual.dateLunar}</p>
+            </div>
+            <div className="bg-vietnam-cream p-4 rounded-lg shadow-inner">
+              <h3 className="text-vietnam-red font-semibold">Dương lịch</h3>
+              <p>{formatSolarDate(ritual.dateSolar)}</p>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h2 className="text-2xl font-serif font-bold text-vietnam-red mb-6">
-            Mô tả chi tiết
+          {/* Mô tả */}
+          <h2 className="text-2xl font-serif font-semibold text-vietnam-gold mb-3">
+            Mô tả
           </h2>
-          <div className="prose max-w-none">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {ritual.description}
-            </p>
+          <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-line">
+            {ritual.description || "Không có mô tả."}
+          </p>
+
+          {/* Ý nghĩa (nếu có) */}
+          {ritual.meaning && (
+            <>
+              <h2 className="text-2xl font-serif font-semibold text-vietnam-gold mb-3">
+                Ý nghĩa
+              </h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {ritual.meaning}
+              </p>
+            </>
+          )}
+
+          {/* Nút quay lại */}
+          <div className="mt-8 text-center">
+            <Link
+              to="/"
+              className="bg-vietnam-red text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              ← Quay lại trang chủ
+            </Link>
           </div>
         </div>
       </div>
