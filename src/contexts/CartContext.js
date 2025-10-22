@@ -223,6 +223,7 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     removeFromCart,
     clearCart,
+    fetchCart,
     getTotalItems,
     getTotalPrice,
     getDistinctProductCount, // Thêm selector

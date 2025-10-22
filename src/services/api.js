@@ -42,4 +42,16 @@ api.interceptors.response.use(
   }
 );
 
+// checkout function
+export const checkout = async (checkoutData) => {
+  try {
+    const response = await api.post('/api/checkout', checkoutData);
+    return response.data;
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message || 'Đã xảy ra lỗi không xác định.';
+    console.error('Checkout API error:', errorMessage);
+    throw new Error(errorMessage);
+  }
+};
+
 export default api;

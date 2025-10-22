@@ -1,19 +1,26 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+const API_BASE_URL = "https://isp-7jpp.onrender.com";
 
-// Create a separate axios instance for public endpoints
 export const publicApi = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
 export const ritualService = {
-  getAllRituals: () => publicApi.get('/api/rituals'),
-  getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
-  getRitualsByRegion: (region) => publicApi.get(`/api/rituals/filter`), // Sửa endpoint filter
-  searchRituals: (name) => publicApi.get(`/api/rituals/search`, { params: { name } }) // Sửa cách truyền params
+  getAllRituals: async () => {
+    try {
+      const res = await publicApi.get("/api/rituals");
+      console.log("✅ API success:", res.data);
+      return res.data;
+    } catch (err) {
+      console.error("❌ API error:", err);
+      throw err;
+    }
+  },
+
+    getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
 };

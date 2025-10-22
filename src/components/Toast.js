@@ -32,38 +32,38 @@ const Toast = ({
     switch (type) {
       case 'success':
         return {
-          bg: 'bg-green-100',
-          border: 'border-green-400',
+          bg: 'bg-green-800',
+          border: 'border-green-600',
           icon: '✅',
-          text: 'text-green-800',
+          text: 'text-white',
         };
       case 'error':
         return {
-          bg: 'bg-red-100',
-          border: 'border-red-400',
+          bg: 'bg-red-800',
+          border: 'border-red-600',
           icon: '❌',
-          text: 'text-red-800',
+          text: 'text-white',
         };
       case 'warning':
         return {
-          bg: 'bg-yellow-100',
-          border: 'border-yellow-400',
+          bg: 'bg-yellow-800',
+          border: 'border-yellow-600',
           icon: '⚠️',
-          text: 'text-yellow-800',
+          text: 'text-white',
         };
       case 'info':
         return {
-          bg: 'bg-blue-100',
-          border: 'border-blue-400',
+          bg: 'bg-blue-800',
+          border: 'border-blue-600',
           icon: 'ℹ️',
-          text: 'text-blue-800',
+          text: 'text-white',
         };
       default:
         return {
-          bg: 'bg-gray-100',
-          border: 'border-gray-400',
+          bg: 'bg-gray-800',
+          border: 'border-gray-600',
           icon: '💬',
-          text: 'text-gray-800',
+          text: 'text-white',
         };
     }
   };

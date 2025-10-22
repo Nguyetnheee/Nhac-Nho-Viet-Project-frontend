@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
-import { orderService } from '../services/orderService';
+import { checkout } from '../services/api';
 
 const Checkout = () => {
   const { cartItems, getTotalPrice, clearCart } = useCart();
@@ -21,31 +21,27 @@ const Checkout = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const orderData = {
-        trayIds: cartItems.map(item => item.id),
-        totalPrice: getTotalPrice(),
-        ...formData
+      const checkoutData = {
+        fullName: formData.customerName,
+        email: formData.customerEmail,
+        phone: formData.customerPhone,
+        address: formData.customerAddress,
+        paymentMethod: formData.paymentMethod,
+        note: formData.notes,
       };
 
-      await orderService.createOrder(orderData);
+      const response = await checkout(checkoutData);
       clearCart();
-      showSuccess('Đặt hàng thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.');
+      showSuccess(`Đặt hàng thành công! Mã đơn hàng: ${response.orderId}`);
       navigate('/');
     } catch (error) {
-      console.error('Error creating order:', error);
-      showError('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
+      console.error('Checkout error:', error);
+      showError('Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +88,7 @@ const Checkout = () => {
                   type="text"
                   required
                   value={formData.customerName}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                   className="input-field"
                 />
               </div>
@@ -107,7 +103,7 @@ const Checkout = () => {
                   type="email"
                   required
                   value={formData.customerEmail}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
                   className="input-field"
                 />
               </div>
@@ -122,7 +118,7 @@ const Checkout = () => {
                   type="tel"
                   required
                   value={formData.customerPhone}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
                   className="input-field"
                 />
               </div>
@@ -137,7 +133,7 @@ const Checkout = () => {
                   rows={3}
                   required
                   value={formData.customerAddress}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
                   className="input-field"
                 />
               </div>
@@ -150,7 +146,7 @@ const Checkout = () => {
                   id="paymentMethod"
                   name="paymentMethod"
                   value={formData.paymentMethod}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                   className="input-field"
                 >
                   <option value="COD">Thanh toán khi nhận hàng (COD)</option>
@@ -168,7 +164,7 @@ const Checkout = () => {
                   name="notes"
                   rows={3}
                   value={formData.notes}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="input-field"
                   placeholder="Ghi chú thêm cho đơn hàng..."
                 />

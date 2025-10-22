@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }) => {
   // Đăng ký (customer)
   const register = async (userData) => {
     try {
-      await api.post('/api/auth/register', userData);
+      await api.post('/api/customer/register', userData);
       return { success: true };
     } catch (error) {
       return {
