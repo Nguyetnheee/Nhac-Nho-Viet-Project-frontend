@@ -4,6 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { ritualService } from '../services/ritualService';
 import { scrollToTop } from '../utils/scrollUtils';
 
+const BACKEND_BASE = 'https://isp-7jpp.onrender.com';
+
 const RitualDetail = () => {
   const { id } = useParams();
   const [ritual, setRitual] = useState(null);
@@ -15,7 +17,6 @@ const RitualDetail = () => {
       setLoading(true);
       try {
         const response = await ritualService.getRitualById(id);
-        // response có thể là axios response { data: {...} } hoặc đã là data
         const data = response?.data || response;
         setRitual(data);
       } catch (err) {
@@ -29,6 +30,13 @@ const RitualDetail = () => {
     fetchRitual();
     scrollToTop(true);
   }, [id]);
+
+  const getImageUrl = (url) => {
+    if (!url) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200';
+    }
+    return url.startsWith('http') ? url : `${BACKEND_BASE}${url}`;
+  };
 
   if (loading) {
     return (
@@ -61,9 +69,11 @@ const RitualDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-vietnam-cream to-white">
+      {/* Hero */}
       <div className="relative bg-gradient-to-r from-vietnam-red to-red-800 text-white py-16">
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="container mx-auto px-4 relative z-10">
+          {/* Breadcrumb */}
           <nav className="flex items-center space-x-2 text-sm mb-8">
             <Link to="/" className="hover:text-vietnam-gold transition-colors">
               Trang chủ
@@ -77,6 +87,7 @@ const RitualDetail = () => {
           </nav>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left: text info */}
             <div>
               <h1 className="text-4xl lg:text-5xl font-serif font-bold mb-6 leading-tight">
                 {ritual.ritualName}
@@ -87,32 +98,36 @@ const RitualDetail = () => {
                   <h3 className="font-semibold text-vietnam-gold mb-2">Vùng miền</h3>
                   <p className="text-lg">{ritual.regionName || '—'}</p>
                 </div>
-
-                {/* Đổi “Trạng thái” thành ngày âm (vì API không có field active) */}
                 <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
                   <h3 className="font-semibold text-vietnam-gold mb-2">Âm lịch</h3>
                   <p className="text-lg">{ritual.dateLunar || '—'}</p>
                 </div>
+                <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 sm:col-span-2">
+                  <h3 className="font-semibold text-vietnam-gold mb-2">Dương lịch</h3>
+                  <p className="text-lg">
+                    {/* hiển thị yyyy-mm-dd dạng Việt đơn giản */}
+                    {ritual.dateSolar
+                      ? new Date(ritual.dateSolar).toLocaleDateString('vi-VN')
+                      : '—'}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Nếu muốn kèm ảnh, bật khối này:
+            {/* Right: image (✅ đã bật) */}
             <div className="rounded-xl overflow-hidden shadow-lg">
               <img
-                src={ritual.imageUrl?.startsWith('http')
-                  ? ritual.imageUrl
-                  : ritual.imageUrl
-                  ? `https://isp-7jpp.onrender.com${ritual.imageUrl}`
-                  : 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200'}
+                src={getImageUrl(ritual.imageUrl)}
                 alt={ritual.ritualName}
                 className="w-full h-80 object-cover"
+                loading="lazy"
               />
             </div>
-            */}
           </div>
         </div>
       </div>
 
+      {/* Body */}
       <div className="container mx-auto px-4 py-16">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-2xl font-serif font-bold text-vietnam-red mb-6">
@@ -123,6 +138,17 @@ const RitualDetail = () => {
               {ritual.description || '—'}
             </p>
           </div>
+
+          {ritual.meaning && (
+            <>
+              <h2 className="text-2xl font-serif font-bold text-vietnam-red mt-10 mb-4">
+                Ý nghĩa
+              </h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {ritual.meaning}
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
