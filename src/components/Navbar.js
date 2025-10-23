@@ -20,6 +20,7 @@ const Navbar = () => {
     return cart.items.length;
   };
 
+
   return (
     <nav className="bg-vietnam-red shadow-lg relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,7 +54,7 @@ const Navbar = () => {
             {isAuthenticated && (
               <Link
                 to="/checklist"
-                className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium"
+                className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Checklist
               </Link>
@@ -64,7 +65,7 @@ const Navbar = () => {
             >
               Mâm cúng
             </Link>
-            <Link
+              <Link
               to="/cart"
               className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium relative"
             >
@@ -81,39 +82,39 @@ const Navbar = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/profile"
-                  className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Tài khoản
                 </Link>
-
-                {user?.role === "Admin" && (
+                
+                {user?.role === 'Admin' && (
                   <Link
                     to="/admin"
-                    className="text-white hover:text-vietnam-gold"
+                    className="text-white hover:text-vietnam-gold transition-colors"
                   >
                     Quản trị
                   </Link>
                 )}
-                {user?.role === "Staff" && (
+                {user?.role === 'Staff' && (
                   <Link
                     to="/staff"
-                    className="text-white hover:text-vietnam-gold"
+                    className="text-white hover:text-vietnam-gold transition-colors"
                   >
                     Quản lý cửa hàng
                   </Link>
                 )}
-                {user?.role === "Shipper" && (
+                {user?.role === 'Shipper' && (
                   <Link
                     to="/shipper"
-                    className="text-white hover:text-vietnam-gold"
+                    className="text-white hover:text-vietnam-gold transition-colors"
                   >
                     Giao hàng
                   </Link>
                 )}
-
+                
                 <button
                   onClick={handleLogout}
-                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-600 transition-colors"
+                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
                 >
                   Đăng xuất
                 </button>
@@ -162,70 +163,89 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-vietnam-red px-4 pb-4 space-y-2">
-          <Link
-            to="/"
-            onClick={() => setIsMenuOpen(false)}
-            className="block text-white hover:text-vietnam-gold"
-          >
-            Trang chủ
-          </Link>
-          <Link
-            to="/rituals"
-            onClick={() => setIsMenuOpen(false)}
-            className="block text-white hover:text-vietnam-gold"
-          >
-            Tra cứu lễ
-          </Link>
-          <Link
-            to="/trays"
-            onClick={() => setIsMenuOpen(false)}
-            className="block text-white hover:text-vietnam-gold"
-          >
-            Mâm cúng
-          </Link>
-          <Link
-            to="/cart"
-            onClick={() => setIsMenuOpen(false)}
-            className="block text-white hover:text-vietnam-gold"
-          >
-            Giỏ hàng ({getCartItemCount()})
-          </Link>
-
-          {isAuthenticated ? (
-            <>
-              <Link
-                to="/profile"
-                onClick={() => setIsMenuOpen(false)}
-                className="block text-white hover:text-vietnam-gold"
-              >
-                Tài khoản
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left text-white hover:text-vietnam-gold"
-              >
-                Đăng xuất
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
-                className="block text-white hover:text-vietnam-gold"
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setIsMenuOpen(false)}
-                className="block text-white hover:text-vietnam-gold"
-              >
-                Đăng ký
-              </Link>
-            </>
-          )}
+        <div className="md:hidden relative z-50">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-vietnam-red">
+            <Link
+              to="/"
+              className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Trang chủ
+            </Link>
+            <Link
+              to="/rituals"
+              className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Tra cứu lễ
+            </Link>
+            <Link
+              to="/trays"
+              className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Mâm cúng
+            </Link>
+            <Link
+              to="/cart"
+              className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Giỏ hàng ({getCartItemCount()})
+            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Thông tin cá nhân
+                </Link>
+                {user?.role === 'Admin' && (
+                  <Link
+                    to="/admin"
+                    className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Quản trị
+                  </Link>
+                )}
+                {user?.role === 'Shipper' && (
+                  <Link
+                    to="/shipper"
+                    className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Giao hàng
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="text-white hover:text-vietnam-gold block w-full text-left px-3 py-2 rounded-md text-base font-medium"
+                >
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng ký
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       )}
     </nav>

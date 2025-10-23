@@ -31,7 +31,6 @@ const Home = () => {
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
-  const [lastQuery, setLastQuery] = useState(""); // để hiển thị badge kết quả & nút xóa
 
   /* Lần đầu vào: lấy tất cả */
   useEffect(() => {
@@ -44,7 +43,6 @@ const Home = () => {
     try {
       const data = await ritualService.getAllRituals();
       setRituals(Array.isArray(data) ? data : []);
-      setLastQuery(""); // clear query marker
     } catch (e) {
       console.error("Error fetching all rituals:", e);
       setRituals([]);
@@ -79,10 +77,12 @@ const Home = () => {
 
     setLoading(true);
     try {
+      // Lấy danh sách tên vùng miền đúng yêu cầu BE
       const regionNames = REGION_OPTIONS
         .filter((opt) => opt.api && selectedKeys.has(opt.key))
         .map((opt) => opt.api);
 
+      // Gọi BE (trả về page, đọc content)
       const { content } = await ritualService.filterRitualsByRegions(
         regionNames,
         0,
@@ -96,7 +96,6 @@ const Home = () => {
         : [];
 
       setRituals(filtered);
-      setLastQuery(""); // khi lọc vùng, bỏ marker tìm kiếm
     } catch (e) {
       console.error("Error filtering rituals:", e);
       setRituals([]);
@@ -105,35 +104,14 @@ const Home = () => {
     }
   };
 
-  /* Search gọi API /api/rituals/search?q=... */
-  const handleSearch = async (e) => {
+  /* Search chuyển trang như cũ */
+  const handleSearch = (e) => {
     e.preventDefault();
-    const q = searchTerm.trim();
-    if (!q) {
-      // không nhập gì → quay về danh sách đầy đủ
-      initialFetch();
-      return;
+    if (searchTerm.trim()) {
+      window.location.href = `/rituals?search=${encodeURIComponent(
+        searchTerm
+      )}`;
     }
-    setLoading(true);
-    try {
-      const results = await ritualService.searchRituals(q);
-      setRituals(Array.isArray(results) ? results : []);
-      setLastQuery(q);
-      // Khi search, nên tạm reset chọn vùng về "all" để UX rõ ràng
-      setSelectedKeys(new Set(["all"]));
-    } catch (err) {
-      console.error("Search rituals error:", err);
-      setRituals([]);
-      setLastQuery(q);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearSearch = () => {
-    setSearchTerm("");
-    setLastQuery("");
-    initialFetch();
   };
 
   const isActive = (key) => selectedKeys.has(key);
@@ -233,7 +211,7 @@ const Home = () => {
                     : "bg-vietnam-gold text-vietnam-red hover:bg-yellow-600",
                 ].join(" ")}
               >
-                {loading ? "Đang xử lý..." : "Áp dụng bộ lọc"}
+                {loading ? "Đang lọc..." : "Áp dụng bộ lọc"}
               </button>
             </div>
           </div>
@@ -248,7 +226,7 @@ const Home = () => {
               Các nghi lễ truyền thống
             </h2>
             <p className="text-lg text-gray-600">
-              Chọn vùng miền hoặc tìm kiếm theo tên lễ để xem kết quả phù hợp
+              Chọn vùng miền rồi bấm “Áp dụng bộ lọc” để xem kết quả phù hợp
             </p>
           </div>
 
@@ -296,9 +274,7 @@ const Home = () => {
             </div>
           ) : (
             <div className="text-center text-gray-600">
-              {lastQuery
-                ? "Không có nghi lễ nào khớp từ khóa."
-                : "Không có nghi lễ nào phù hợp bộ lọc."}
+              Không có nghi lễ nào phù hợp bộ lọc.
             </div>
           )}
         </div>
