@@ -11,6 +11,7 @@ export const publicApi = axios.create({
 });
 
 export const ritualService = {
+  // get all rituals
   getAllRituals: async () => {
     try {
       const res = await publicApi.get("/api/rituals");
@@ -21,9 +22,10 @@ export const ritualService = {
       throw err;
     }
   },
-
+// get rituals details
     getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
 
+// filter rituals
     filterRitualsByRegions: async (regionNames = [], page = 0, size = 100) => {
     const res = await publicApi.get("/api/rituals/filter", {
       params: { regionNames, page, size },
@@ -37,5 +39,10 @@ export const ritualService = {
       content: Array.isArray(data.content) ? data.content : [],
       raw: data,
     };
+  },
+// search
+  searchRituals: async (q) => {
+    const res = await publicApi.get("/api/rituals/search", { params: { q } });
+    return Array.isArray(res.data) ? res.data : [];
   },
 };

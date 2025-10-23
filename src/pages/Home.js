@@ -31,6 +31,7 @@ const Home = () => {
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
+  const [lastQuery, setLastQuery] = useState(""); // để hiển thị badge kết quả & nút xóa
 
   /* Lần đầu vào: lấy tất cả */
   useEffect(() => {
@@ -43,6 +44,7 @@ const Home = () => {
     try {
       const data = await ritualService.getAllRituals();
       setRituals(Array.isArray(data) ? data : []);
+      setLastQuery(""); // clear query marker
     } catch (e) {
       console.error("Error fetching all rituals:", e);
       setRituals([]);
@@ -77,12 +79,10 @@ const Home = () => {
 
     setLoading(true);
     try {
-      // Lấy danh sách tên vùng miền đúng yêu cầu BE
       const regionNames = REGION_OPTIONS
         .filter((opt) => opt.api && selectedKeys.has(opt.key))
         .map((opt) => opt.api);
 
-      // Gọi BE (trả về page, đọc content)
       const { content } = await ritualService.filterRitualsByRegions(
         regionNames,
         0,
@@ -96,6 +96,7 @@ const Home = () => {
         : [];
 
       setRituals(filtered);
+      setLastQuery(""); // khi lọc vùng, bỏ marker tìm kiếm
     } catch (e) {
       console.error("Error filtering rituals:", e);
       setRituals([]);
@@ -104,14 +105,35 @@ const Home = () => {
     }
   };
 
-  /* Search chuyển trang như cũ */
-  const handleSearch = (e) => {
+  /* Search gọi API /api/rituals/search?q=... */
+  const handleSearch = async (e) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      window.location.href = `/rituals?search=${encodeURIComponent(
-        searchTerm
-      )}`;
+    const q = searchTerm.trim();
+    if (!q) {
+      // không nhập gì → quay về danh sách đầy đủ
+      initialFetch();
+      return;
     }
+    setLoading(true);
+    try {
+      const results = await ritualService.searchRituals(q);
+      setRituals(Array.isArray(results) ? results : []);
+      setLastQuery(q);
+      // Khi search, nên tạm reset chọn vùng về "all" để UX rõ ràng
+      setSelectedKeys(new Set(["all"]));
+    } catch (err) {
+      console.error("Search rituals error:", err);
+      setRituals([]);
+      setLastQuery(q);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setLastQuery("");
+    initialFetch();
   };
 
   const isActive = (key) => selectedKeys.has(key);
@@ -133,18 +155,39 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
-                placeholder="Tìm kiếm lễ hội theo tên hoặc ngày..."
+                placeholder="Nhập tên lễ để tìm kiếm..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-6 py-4 rounded-lg text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-vietnam-gold"
               />
-              <button
-                type="submit"
-                className="bg-vietnam-gold text-vietnam-red px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition-colors"
-              >
-                Tìm kiếm
-              </button>
+              <div className="flex gap-2 justify-center">
+                <button
+                  type="submit"
+                  className="bg-vietnam-gold text-vietnam-red px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition-colors"
+                >
+                  Tìm kiếm
+                </button>
+                {lastQuery && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className=" bg-vietnam-green text-white 
+                                  px-8 py-4 rounded-lg 
+                                  font-semibold text-lg 
+                                  hover:bg-green-800 
+                                  hover:shadow-md 
+                                  transition-colors"
+                  >
+                    Xóa tìm kiếm
+                  </button>
+                )}
+              </div>
             </div>
+            {lastQuery && (
+              <p className="mt-3 text-sm text-gray-200">
+                Kết quả cho: <span className="font-semibold">“{lastQuery}”</span>
+              </p>
+            )}
           </form>
         </div>
       </section>
@@ -190,7 +233,7 @@ const Home = () => {
                     : "bg-vietnam-gold text-vietnam-red hover:bg-yellow-600",
                 ].join(" ")}
               >
-                {loading ? "Đang lọc..." : "Áp dụng bộ lọc"}
+                {loading ? "Đang xử lý..." : "Áp dụng bộ lọc"}
               </button>
             </div>
           </div>
@@ -205,7 +248,7 @@ const Home = () => {
               Các nghi lễ truyền thống
             </h2>
             <p className="text-lg text-gray-600">
-              Chọn vùng miền rồi bấm “Áp dụng bộ lọc” để xem kết quả phù hợp
+              Chọn vùng miền hoặc tìm kiếm theo tên lễ để xem kết quả phù hợp
             </p>
           </div>
 
@@ -253,7 +296,9 @@ const Home = () => {
             </div>
           ) : (
             <div className="text-center text-gray-600">
-              Không có nghi lễ nào phù hợp bộ lọc.
+              {lastQuery
+                ? "Không có nghi lễ nào khớp từ khóa."
+                : "Không có nghi lễ nào phù hợp bộ lọc."}
             </div>
           )}
         </div>
