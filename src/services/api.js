@@ -42,6 +42,13 @@ api.interceptors.response.use(
   }
 );
 
+//verify new account 
+
+export const verifyRegisterOTP = async (email, otp) => {
+  const { data } = await api.post('/api/customer/verify-email', { email, otp });
+  return data; 
+};
+
 // checkout function
 export const checkout = async (checkoutData) => {
   try {
@@ -53,5 +60,26 @@ export const checkout = async (checkoutData) => {
     throw new Error(errorMessage);
   }
 };
+
+
+//forgot password 
+
+//send reset otp
+export const forgotPassword = async (email) => {
+  const {data} = await api.post('/api/customer/forgot-password', {email});
+  return data;
+}
+
+// verify otp
+export const verifyResetOTP = async (email, otp) => {
+  const {data} = await api.post('/api/customer/verify-reset-otp', {email,otp});
+  return data;
+} 
+
+// reset password
+export const resetPassword = async(email, password) => {
+  const {data} = await api.post('/api/customer/reset-password', {email, password});
+  return data;
+}
 
 export default api;
