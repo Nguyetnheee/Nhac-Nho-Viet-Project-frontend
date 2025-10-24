@@ -1,175 +1,277 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ritualService } from '../services/ritualService';
-import { formatSolarDate } from '../utils/dateUtils';
-import { scrollToTop } from '../utils/scrollUtils';
+// src/pages/RitualLookup.js
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ritualService } from "../services/ritualService";
+import { scrollToTop } from "../utils/scrollUtils";
+
+/* Cấu hình vùng miền */
+const REGION_OPTIONS = [
+  { key: "all", label: "Toàn Quốc" },
+  { key: "north", label: "Miền Bắc", api: "Miền Bắc" },
+  { key: "central", label: "Miền Trung", api: "Miền Trung" },
+  { key: "south", label: "Miền Nam", api: "Miền Nam" },
+];
+
+/* Ảnh fallback + build absolute URL nếu BE trả đường tương đối */
+const BACKEND_BASE = "https://isp-7jpp.onrender.com";
+const getImageUrl = (url) =>
+  url
+    ? url.startsWith("http")
+      ? url
+      : `${BACKEND_BASE}${url}`
+    : "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500";
 
 const RitualLookup = () => {
   const [rituals, setRituals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [selectedKeys, setSelectedKeys] = useState(new Set(["all"]));
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lastQuery, setLastQuery] = useState("");
 
   useEffect(() => {
-    const search = searchParams.get('search');
-    if (search) {
-      setSearchTerm(search);
-      searchRituals(search);
-    } else {
-      fetchAllRituals();
-    }
-    // Scroll to top when component mounts or search changes
+    initialFetch();
     scrollToTop(true);
-  }, [searchParams]);
+  }, []);
 
-  const fetchAllRituals = async () => {
+  const initialFetch = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await ritualService.getAllRituals();
-      setRituals(response.data);
-    } catch (error) {
-      console.error('Error fetching rituals:', error);
+      const data = await ritualService.getAllRituals();
+      setRituals(Array.isArray(data) ? data : []);
+      setLastQuery("");
+    } catch (e) {
+      console.error("Error fetching all rituals:", e);
+      setRituals([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const searchRituals = async (term) => {
+  const toggleRegion = (key) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (key === "all") return new Set(["all"]);
+      if (next.has("all")) next.delete("all");
+      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.size === 0) return new Set(["all"]);
+      return next;
+    });
+  };
+
+  const applyFilter = async () => {
+    if (selectedKeys.has("all")) {
+      initialFetch();
+      return;
+    }
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await ritualService.searchRituals(term);
-      setRituals(response.data);
-    } catch (error) {
-      console.error('Error searching rituals:', error);
+      const regionNames = REGION_OPTIONS
+        .filter((opt) => opt.api && selectedKeys.has(opt.key))
+        .map((opt) => opt.api);
+
+      const { content } = await ritualService.filterRitualsByRegions(
+        regionNames,
+        0,
+        100
+      );
+
+      const selectedSet = new Set(regionNames);
+      const filtered = Array.isArray(content)
+        ? content.filter((item) => selectedSet.has(item.regionName))
+        : [];
+
+      setRituals(filtered);
+      setLastQuery("");
+    } catch (e) {
+      console.error("Error filtering rituals:", e);
+      setRituals([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      setSearchParams({ search: searchTerm });
-    } else {
-      setSearchParams({});
+    const q = searchTerm.trim();
+    if (!q) {
+      initialFetch();
+      return;
+    }
+    setLoading(true);
+    try {
+      const results = await ritualService.searchRituals(q);
+      setRituals(Array.isArray(results) ? results : []);
+      setLastQuery(q);
+      setSelectedKeys(new Set(["all"]));
+    } catch (err) {
+      console.error("Search rituals error:", err);
+      setRituals([]);
+      setLastQuery(q);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    setSearchParams({});
+  const clearSearch = () => {
+    setSearchTerm("");
+    setLastQuery("");
+    initialFetch();
   };
+
+  const isActive = (key) => selectedKeys.has(key);
 
   return (
-    <div className="min-h-screen bg-vietnam-cream py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-vietnam-red mb-4">
-            Tra cứu lễ hội
+    <div className="min-h-screen">
+      {/* Hero */}
+      <section className="bg-gradient-to-r from-vietnam-red to-red-800 text-white py-20 ritual-pattern">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6">
+            Nhắc Nhớ Việt
           </h1>
-          <p className="text-lg text-gray-600">
-            Tìm kiếm và khám phá các lễ hội truyền thống Việt Nam
+          <p className="text-xl md:text-2xl mb-8 text-gray-200">
+            Tra cứu lễ hội truyền thống và đặt mâm cúng Việt Nam
           </p>
-        </div>
 
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Tìm kiếm lễ hội theo tên..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 input-field"
-            />
-            <button
-              type="submit"
-              className="btn-primary"
-            >
-              Tìm kiếm
-            </button>
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="btn-outline"
-              >
-                Xóa
-              </button>
+          {/* Search */}
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <input
+                type="text"
+                placeholder="Nhập tên lễ để tìm kiếm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-6 py-4 rounded-lg text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-vietnam-gold"
+              />
+              <div className="flex gap-2 justify-center">
+                <button
+                  type="submit"
+                  className="bg-vietnam-gold text-vietnam-red px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition-colors"
+                >
+                  Tìm kiếm
+                </button>
+                {lastQuery && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="bg-vietnam-green text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-800 hover:shadow-md transition-colors"
+                  >
+                    Xóa tìm kiếm
+                  </button>
+                )}
+              </div>
+            </div>
+            {lastQuery && (
+              <p className="mt-3 text-sm text-gray-200">
+                Kết quả cho: <span className="font-semibold">“{lastQuery}”</span>
+              </p>
             )}
           </form>
         </div>
+      </section>
 
-        {/* Results */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vietnam-red"></div>
+      {/* Filter Bar (sticky) */}
+      <section className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+            <div className="flex flex-1 flex-wrap gap-2">
+              {REGION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => toggleRegion(opt.key)}
+                  className={[
+                    "px-4 py-2 rounded-lg border transition",
+                    isActive(opt.key)
+                      ? "bg-vietnam-green text-white border-vietnam-green"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50",
+                  ].join(" ")}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="md:ml-auto">
+              <button
+                onClick={applyFilter}
+                disabled={loading}
+                className={[
+                  "px-5 py-2 rounded-lg font-semibold transition",
+                  loading
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-vietnam-gold text-vietnam-red hover:bg-yellow-600",
+                ].join(" ")}
+              >
+                {loading ? "Đang xử lý..." : "Áp dụng bộ lọc"}
+              </button>
+            </div>
           </div>
-        ) : (
-          <>
-            {rituals.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {rituals.map((ritual) => (
-                  <div key={ritual.ritualId} className="card hover:shadow-xl transition-shadow duration-300">
-                    <div className="card-content">
-                      <div className="aspect-w-16 aspect-h-9 mb-4">
-                        <img
-                          src={ritual.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500'}
-                          alt={ritual.ritualName}
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
+        </div>
+      </section>
+
+      {/* Grid */}
+      <section className="py-16 bg-vietnam-cream">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-vietnam-red mb-2">
+              Các nghi lễ truyền thống
+            </h2>
+            <p className="text-lg text-gray-600">
+              Chọn vùng miền hoặc tìm kiếm theo tên lễ để xem kết quả phù hợp
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vietnam-red"></div>
+            </div>
+          ) : rituals.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {rituals.map((ritual) => (
+                <div
+                  key={ritual.ritualId}
+                  className="card hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="card-content">
+                    <div className="aspect-w-16 aspect-h-9 mb-4">
+                      <img
+                        src={getImageUrl(ritual.imageUrl)}
+                        alt={ritual.ritualName}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="card-body">
+                      <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
+                        {ritual.ritualName}
+                      </h3>
+                      <div className="text-sm text-gray-600 mb-3">
+                        <p>Vùng miền: {ritual.regionName}</p>
                       </div>
-                      <div className="card-body">
-                        <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-2">
-                          {ritual.ritualName}
-                        </h3>
-                        <div className="text-sm text-gray-600 mb-3">
-                          <p>Âm lịch: {ritual.dateLunar}</p>
-                          <p>Dương lịch: {formatSolarDate(ritual.dateSolar)}</p>
-                          <p>Khu vực: {ritual.regionName}</p>
-                        </div>
-                        <p className="text-gray-700 mb-4 line-clamp-3">
-                          {ritual.description || (ritual.meaning ? ritual.meaning.substring(0, 150) : '')}...
-                        </p>
-                        {/* Nếu có trường liên quan, có thể thêm ở đây */}
-                      </div>
-                      <div className="card-footer">
-                        <Link
-                          to={`/rituals/${ritual.ritualId}`}
-                          className="btn-primary w-full text-center block"
-                        >
-                          Xem chi tiết
-                        </Link>
-                      </div>
+                      <p className="text-gray-700 mb-4 line-clamp-3">
+                        {ritual.description || ritual.meaning}
+                      </p>
+                    </div>
+                    <div className="card-footer">
+                      <Link
+                        to={`/rituals/${ritual.ritualId}`}
+                        className="btn-primary w-full text-center block"
+                      >
+                        Xem chi tiết
+                      </Link>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                  </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                  Không tìm thấy lễ hội nào
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Hãy thử tìm kiếm với từ khóa khác hoặc xem tất cả lễ hội
-                </p>
-                <button
-                  onClick={handleClearSearch}
-                  className="btn-outline"
-                >
-                  Xem tất cả lễ hội
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-600">
+              {lastQuery
+                ? "Không có nghi lễ nào khớp từ khóa."
+                : "Không có nghi lễ nào phù hợp bộ lọc."}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };
