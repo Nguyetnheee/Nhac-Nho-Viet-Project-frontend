@@ -207,10 +207,10 @@ const TrayCatalog = () => {
 
   const clearFilters = async () => {
     setFilters({
-      region: 'Tất cả',
-      type: 'Tất cả',
-      minPrice: '0',
-      maxPrice: '10000000',
+      regionId: '',
+      categoryId: '',
+      minPrice: '',
+      maxPrice: '',
       searchQuery: ''
     });
     await fetchTrays(); // Đợi fetch hoàn tất
@@ -246,9 +246,23 @@ const TrayCatalog = () => {
               <input
                 type="text"
                 value={filters.searchQuery}
-                onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-                onKeyPress={(e) => {
+                onChange={(e) => {
+                  handleFilterChange('searchQuery', e.target.value);
+                  // Clear other filters when searching
+                  if (e.target.value.trim()) {
+                    setFilters(prev => ({
+                      ...prev,
+                      regionId: '',
+                      categoryId: '',
+                      minPrice: '',
+                      maxPrice: '',
+                      searchQuery: e.target.value
+                    }));
+                  }
+                }}
+                onKeyDown={(e) => {
                   if (e.key === 'Enter') {
+                    e.preventDefault();
                     applyFilters();
                   }
                 }}
@@ -277,26 +291,52 @@ const TrayCatalog = () => {
             <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">Vùng miền</label>
               <select
-                value={filters.region}
-                onChange={(e) => handleFilterChange('region', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                value={filters.regionId}
+                onChange={(e) => {
+                  console.log('Selected region:', e.target.value);
+                  handleFilterChange('regionId', e.target.value);
+                }}
+                className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-vietnam-red focus:border-vietnam-red"
               >
-                {regions.map(region => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
+                <option value="">Tất cả</option>
+                {regions && regions.length > 0 ? (
+                  regions.map(region => (
+                    <option 
+                      key={region.regionId || region.id} 
+                      value={region.regionName || region.name}
+                    >
+                      {region.regionName || region.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Không có dữ liệu</option>
+                )}
               </select>
             </div>
 
             <div className="flex flex-col">
               <label className="block text-sm font-medium text-gray-700 mb-2">Loại mâm</label>
               <select
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                value={filters.categoryId}
+                onChange={(e) => {
+                  console.log('Selected category:', e.target.value);
+                  handleFilterChange('categoryId', e.target.value);
+                }}
+                className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-vietnam-red focus:border-vietnam-red"
               >
-                {types.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
+                <option value="">Tất cả</option>
+                {categories && categories.length > 0 ? (
+                  categories.map(category => (
+                    <option 
+                      key={category.categoryId || category.id} 
+                      value={category.categoryName || category.name}
+                    >
+                      {category.categoryName || category.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Không có dữ liệu</option>
+                )}
               </select>
             </div>
 
