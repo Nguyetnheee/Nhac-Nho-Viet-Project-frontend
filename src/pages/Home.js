@@ -32,6 +32,9 @@ const Home = () => {
   // Search
   const [searchTerm, setSearchTerm] = useState("");
 
+  // State to store the last search query
+  const [lastQuery, setLastQuery] = useState("");
+
   /* Lần đầu vào: lấy tất cả */
   useEffect(() => {
     initialFetch();
@@ -112,6 +115,12 @@ const Home = () => {
         searchTerm
       )}`;
     }
+  };
+
+  // Function to clear the search
+  const clearSearch = () => {
+    setSearchTerm("");
+    setLastQuery("");
   };
 
   const isActive = (key) => selectedKeys.has(key);

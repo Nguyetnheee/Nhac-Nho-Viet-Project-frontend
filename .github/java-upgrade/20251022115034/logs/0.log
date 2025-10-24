@@ -1,0 +1,22 @@
+2025-10-22T11:50:34.436Z [INFO] ----------------------invoke run_tests_for_java----------------------
+2025-10-22T11:50:34.437Z [INFO] [Tool.invoke]({name: run_tests_for_java, input: {
+  "projectPath": "d:\\UNIVERSITY\\FALL 25\\ISP392\\FINAL PROJECT\\frontend_new\\frontend"
+}}).
+2025-10-22T11:50:34.438Z [INFO] [Task.start](): Starting task toolCall
+2025-10-22T11:50:34.438Z [INFO] [Task.start](): Started task toolCall
+2025-10-22T11:50:34.439Z [INFO] [Tool.invoke] validate GitHub Copilot license.
+2025-10-22T11:50:34.966Z [INFO] Copilot user info:{
+  "access_type_sku": "no_access",
+  "analytics_tracking_id": "0bba9c3b365dcb358d50527cd77fb09c",
+  "assigned_date": null,
+  "can_signup_for_limited": true,
+  "chat_enabled": false,
+  "copilot_plan": "individual",
+  "organization_login_list": [],
+  "organization_list": []
+}
+2025-10-22T11:50:34.968Z [WARN] "GitHub Copilot app modernization - upgrade for Java" and its tools are only available for GitHub Copilot "Pro", "Pro+", "Business" and "Enterprise" plans.
+2025-10-22T11:50:34.968Z [ERROR] [Tool.invoke] error occurs when invoking tool run_tests_for_java: UnsupportedCopilotPlanError: "GitHub Copilot app modernization - upgrade for Java" and its tools are only available for GitHub Copilot "Pro", "Pro+", "Business" and "Enterprise" plans.. Please upgrade your GitHub Copilot plan to use this feature or upgrading this project using other tools you prefer..
+2025-10-22T11:50:34.969Z [INFO] [Task.complete](): Completing task toolCall
+2025-10-22T11:50:34.970Z [INFO] ----------------------invoked run_tests_for_java----------------------
+2025-10-22T11:50:34.974Z [INFO] [Task.complete](): Completed task toolCall

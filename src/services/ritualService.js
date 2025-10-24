@@ -11,10 +11,6 @@ export const publicApi = axios.create({
 });
 
 export const ritualService = {
-<<<<<<< HEAD
-  // get all rituals
-=======
->>>>>>> 28cc8c9ee96decc961a12eb6ec86fd829dd3a27c
   getAllRituals: async () => {
     try {
       const res = await publicApi.get("/api/rituals");
@@ -25,16 +21,9 @@ export const ritualService = {
       throw err;
     }
   },
-<<<<<<< HEAD
-// get rituals details
-    getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
-
-// filter rituals
-=======
 
     getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
 
->>>>>>> 28cc8c9ee96decc961a12eb6ec86fd829dd3a27c
     filterRitualsByRegions: async (regionNames = [], page = 0, size = 100) => {
     const res = await publicApi.get("/api/rituals/filter", {
       params: { regionNames, page, size },
@@ -49,12 +38,4 @@ export const ritualService = {
       raw: data,
     };
   },
-<<<<<<< HEAD
-// search
-  searchRituals: async (q) => {
-    const res = await publicApi.get("/api/rituals/search", { params: { q } });
-    return Array.isArray(res.data) ? res.data : [];
-  },
-=======
->>>>>>> 28cc8c9ee96decc961a12eb6ec86fd829dd3a27c
 };

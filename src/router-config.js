@@ -23,12 +23,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />, 
+    element: <App />,
     children: [
       // Public pages
       { index: true, element: <Home /> },
       { path: "rituals", element: <RitualLookup /> },
       { path: "rituals/:id", element: <RitualDetail /> },
+      { path: "ritual/:id", element: <RitualDetail /> },
       { path: "trays", element: <TrayCatalog /> },
       { path: "cart", element: <Cart /> },
       { path: "checkout", element: <Checkout /> },
