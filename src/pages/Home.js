@@ -32,6 +32,9 @@ const Home = () => {
   // Search
   const [searchTerm, setSearchTerm] = useState("");
 
+  // State to store the last search query
+  const [lastQuery, setLastQuery] = useState("");
+
   /* Lần đầu vào: lấy tất cả */
   useEffect(() => {
     initialFetch();
@@ -114,6 +117,12 @@ const Home = () => {
     }
   };
 
+  // Function to clear the search
+  const clearSearch = () => {
+    setSearchTerm("");
+    setLastQuery("");
+  };
+
   const isActive = (key) => selectedKeys.has(key);
 
   return (
@@ -133,18 +142,39 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
-                placeholder="Tìm kiếm lễ hội theo tên hoặc ngày..."
+                placeholder="Nhập tên lễ để tìm kiếm..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-6 py-4 rounded-lg text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-vietnam-gold"
               />
-              <button
-                type="submit"
-                className="bg-vietnam-gold text-vietnam-red px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition-colors"
-              >
-                Tìm kiếm
-              </button>
+              <div className="flex gap-2 justify-center">
+                <button
+                  type="submit"
+                  className="bg-vietnam-gold text-vietnam-red px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition-colors"
+                >
+                  Tìm kiếm
+                </button>
+                {lastQuery && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className=" bg-vietnam-green text-white 
+                                  px-8 py-4 rounded-lg 
+                                  font-semibold text-lg 
+                                  hover:bg-green-800 
+                                  hover:shadow-md 
+                                  transition-colors"
+                  >
+                    Xóa tìm kiếm
+                  </button>
+                )}
+              </div>
             </div>
+            {lastQuery && (
+              <p className="mt-3 text-sm text-gray-200">
+                Kết quả cho: <span className="font-semibold">“{lastQuery}”</span>
+              </p>
+            )}
           </form>
         </div>
       </section>
