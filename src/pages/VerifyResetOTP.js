@@ -68,7 +68,6 @@ const VerifyResetOTP = () => {
     setResendMessage('');
 
     try {
-      // ✅ Verify OTP cho QUÊN MẬT KHẨU
       const res = await verifyResetOTP(email, code);
 
       const ok =
@@ -77,7 +76,7 @@ const VerifyResetOTP = () => {
         String(res?.status || '').toLowerCase() === 'success';
 
       if (ok) {
-        // Thành công -> sang trang đặt lại mật khẩu
+        // thành công thì chuyển sang trang đặt lại mật khẩu
         navigate('/reset-password', { replace: true, state: { email } });
       } else {
         setError(res?.message || 'Mã OTP không đúng hoặc đã hết hạn.');
