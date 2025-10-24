@@ -1,13 +1,51 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
+// src/pages/Cart.js
+import React from "react";
+import { Link } from "react-router-dom";
+import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { decreaseCartItem, increaseCartItem } from "../services/apiAuth";
+
+// Làm sạch baseURL tương tự api.js
+const resolveApiBase = () => {
+  let rawBase = (process.env.REACT_APP_API_URL || "").trim();
+  if (rawBase.includes("swagger-ui")) {
+    try {
+      const url = new URL(rawBase);
+      rawBase = `${url.origin}`;
+    } catch {
+      rawBase = rawBase.split("/swagger-ui")[0];
+    }
+  }
+  return rawBase.replace(/\/+$/, "");
+};
+
+const API_BASE = resolveApiBase();
 
 const Cart = () => {
-  const { cartItems, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const {
+    cartItems,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    getTotalPrice,
+    totals,
+    fetchCart
+  } = useCart();
   const { isAuthenticated } = useAuth();
 
-  if (cartItems.length === 0) {
+  const currency = totals?.currency || "VNĐ";
+
+  const formatMoney = (n) =>
+    (Number(n) || 0).toLocaleString("vi-VN") + " " + currency;
+
+  const buildImageSrc = (img) => {
+    if (!img) return "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=100";
+    if (/^https?:\/\//i.test(img) || /^data:/i.test(img)) return img;
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return img;
+  };
+
+  if (!Array.isArray(cartItems) || cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-vietnam-cream py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,57 +82,87 @@ const Cart = () => {
                 <h2 className="text-xl font-semibold text-vietnam-red">
                   Sản phẩm ({cartItems.length})
                 </h2>
-                <button
-                  onClick={clearCart}
-                  className="text-vietnam-red hover:opacity-80 text-sm"
-                >
+                <button onClick={clearCart} className="text-vietnam-red hover:opacity-80 text-sm">
                   Xóa tất cả
                 </button>
               </div>
 
               <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <img
-                      src={item.imageUrl || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=100'}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-vietnam-red">{item.name}</h3>
-                      <p className="text-sm text-gray-600">{item.description}</p>
-                      <p className="text-lg font-bold text-vietnam-red">
-                        {item.price.toLocaleString('vi-VN')} VNĐ
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                {cartItems
+                  .filter((item) => item && typeof item === "object" && (item.id || item.productId))
+                  .map((item) => {
+                    const keyId = item.id || item.productId; // key hiển thị
+                    const productId = item.productId;        // dùng cho API
+                    const name =
+                      typeof item.name === "object"
+                        ? item.name?.message || JSON.stringify(item.name)
+                        : item.name || "Sản phẩm";
+                    const description =
+                      typeof item.description === "object"
+                        ? item.description?.message || JSON.stringify(item.description)
+                        : item.description || "";
+                    const price = Number(item.price) || 0;
+                    const quantity = Number(item.quantity) || 1;
+                    const imageSrc = buildImageSrc(item.imageUrl);
+
+                    return (
+                      <div
+                        key={keyId}
+                        className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
                       >
-                        -
-                      </button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-vietnam-red">
-                        {(item.price * item.quantity).toLocaleString('vi-VN')} VNĐ
-                      </p>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-vietnam-red hover:opacity-80 text-sm mt-1"
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        <img
+                          src={imageSrc}
+                          alt={typeof name === "string" ? name : "product"}
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-vietnam-red">{name}</h3>
+                          <p className="text-sm text-gray-600">{description}</p>
+                          <p className="text-lg font-bold text-vietnam-red">
+                            {formatMoney(price)}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              await decreaseCartItem(productId);
+                              await fetchCart()
+                            }}
+                            className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center">{quantity}</span>
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              await increaseCartItem(productId);
+                              await fetchCart()
+                            }}
+                            className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="font-bold text-vietnam-red">
+                            {formatMoney(price * quantity)}
+                          </p>
+                          <button
+                            onClick={() => removeFromCart(productId)}
+                            className="text-vietnam-red hover:opacity-80 text-sm mt-1"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -103,11 +171,11 @@ const Cart = () => {
           <div className="lg:col-span-1">
             <div className="card sticky top-8">
               <h2 className="text-xl font-semibold text-vietnam-red mb-6">Tóm tắt đơn hàng</h2>
-              
+
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span>Tạm tính:</span>
-                  <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
+                  <span>{formatMoney(getTotalPrice())}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Phí giao hàng:</span>
@@ -116,7 +184,7 @@ const Cart = () => {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold text-vietnam-red">
                     <span>Tổng cộng:</span>
-                    <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
+                    <span>{formatMoney(getTotalPrice())}</span>
                   </div>
                 </div>
               </div>

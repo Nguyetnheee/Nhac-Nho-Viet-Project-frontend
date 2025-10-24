@@ -17,8 +17,15 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (roles.length > 0 && !roles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
+  // Kiểm tra role, nếu user là staff thì coi như có role 'Staff'
+  if (roles.length > 0) {
+    const userRoles = [user?.role];
+    if (user?.isStaff) {
+      userRoles.push('Staff');
+    }
+    if (!roles.some(role => userRoles.includes(role))) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return children;

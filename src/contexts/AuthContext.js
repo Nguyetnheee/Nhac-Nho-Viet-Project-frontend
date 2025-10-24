@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
-import { fetchCustomerProfile } from '../services/apiAuth';
+import { fetchCustomerProfile, fetchStaffProfile } from '../services/apiAuth';
 
 const AuthContext = createContext();
 
@@ -16,115 +16,130 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const tokenFromStorage = localStorage.getItem('token');
+  const roleFromStorage = localStorage.getItem('role');
   const [token, setToken] = useState(tokenFromStorage || null);
 
   useEffect(() => {
-    if (tokenFromStorage) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
-      // Chỉ fetch profile nếu không ở trang login
-      if (window.location.pathname !== '/login') {
-        fetchUserProfile();
+    const initializeAuth = async () => {
+      if (tokenFromStorage) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          try {
+            await fetchUserProfile(roleFromStorage);
+          } catch (error) {
+            console.error('Error during auth initialization:', error);
+            // Only logout if it's a true auth error
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              logout();
+            }
+          }
+        }
       } else {
         setLoading(false);
       }
-    } else {
-      setLoading(false);
-    }
+    };
+
+    initializeAuth();
   }, [tokenFromStorage]);
 
-  // Sử dụng API mới lấy profile
-  const fetchUserProfile = async () => {
+  // Fetch profile theo role
+  const fetchUserProfile = async (role) => {
     try {
-      const data = await fetchCustomerProfile();
+      const data =
+        role === 'STAFF'
+          ? await fetchStaffProfile()
+          : await fetchCustomerProfile();
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      if (window.location.pathname !== '/login') {
-        logout();
-      } else {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('token');
-      }
+      logout();
     } finally {
       setLoading(false);
     }
   };
 
-  // Đăng nhập dùng username và password, endpoint mới
+  // Gộp login (tự phân biệt STAFF / CUSTOMER)
   const login = async (username, password) => {
     try {
-      const response = await api.post('/api/customer/login', { username, password });
-      const { token: tokenFromStorage, ...userData } = response.data;
-      setToken(tokenFromStorage);
-      setUser(userData);
-      localStorage.setItem('token', tokenFromStorage);
-      api.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
-      return { success: true };
+      // Thử login Customer trước
+      let response;
+      try {
+        response = await api.post('/api/customer/login', { username, password });
+      } catch (err) {
+        // Nếu thất bại, thử login Staff
+        response = await api.post('/api/staff/login', { username, password });
+      }
+
+      const { token: jwtToken, role, username: name, email } = response.data;
+
+      // Lưu thông tin vào localStorage
+      setToken(jwtToken);
+      localStorage.setItem('token', jwtToken);
+      localStorage.setItem('role', role);
+      api.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
+
+      // Fetch profile tương ứng
+      await fetchUserProfile(role);
+
+      return { success: true, role };
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Đăng nhập thất bại'
+        error: error.response?.data?.message || 'Đăng nhập thất bại',
       };
     }
   };
 
-  // Đăng ký dùng endpoint mới
+  // Đăng ký (customer)
   const register = async (userData) => {
     try {
-      await api.post('/api/auth/register', userData);
+      await api.post('/api/customer/register', userData);
       return { success: true };
     } catch (error) {
-      console.error('Register error:', error);
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-      }
       return {
         success: false,
-        error: error.response?.data?.message || 'Đăng ký thất bại'
+        error: error.response?.data?.message || 'Đăng ký thất bại',
       };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    // setToken(null);
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
-  };
-
-  // Cập nhật profile dùng endpoint mới
+  // Cập nhật profile dựa vào role
   const updateProfile = async (profileData) => {
     try {
-      const response = await api.put('/api/customer/profile', profileData);
+      const role = localStorage.getItem('role');
+      const endpoint = role === 'STAFF' ? '/api/staff/profile' : '/api/customer/profile';
+      const response = await api.put(endpoint, profileData);
       setUser(response.data);
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || 'Cập nhật thông tin thất bại'
+        error: error.response?.data?.message || 'Cập nhật thất bại',
       };
     }
   };
 
+  // Đăng xuất
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    delete api.defaults.headers.common['Authorization'];
+  };
+
   const value = {
     user,
-    tokenFromStorage,
+    token,
     loading,
-    login,
+    login, // chỉ 1 hàm login duy nhất
     register,
     logout,
     updateProfile,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'Admin',
-    isShipper: user?.role === 'Shipper'
+    role: roleFromStorage,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
