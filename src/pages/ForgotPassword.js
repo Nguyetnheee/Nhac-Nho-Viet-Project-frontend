@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { forgotPassword } from '../services/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,12 +16,14 @@ const ForgotPassword = () => {
     setMessage('');
 
     try {
-      const response = await api.post('/api/customer/forgot-password', { email });
-      if (response.data.status === 'success') {
-        setMessage(response.data.message);
-        setTimeout(() => navigate('/verify-otp', { state: { email } }), 2000);
+      const res = await forgotPassword(email);
+      if (String(res?.status).toLowerCase() === 'success') {
+        setMessage(res.message || 'Đã gửi OTP tới email của bạn.');
+        setTimeout(() => {
+          navigate('/verify-reset', { state: { email } });
+        }, 800);
       } else {
-        setError(response.data.message);
+        setError(res.message || 'Không thể gửi OTP');
       }
     } catch (err) {
       setError('Có lỗi xảy ra. Vui lòng thử lại.');

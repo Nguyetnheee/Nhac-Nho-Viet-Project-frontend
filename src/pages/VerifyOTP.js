@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api'; // Import api instance
+import api from '../services/api';
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -9,23 +9,25 @@ const VerifyOTP = () => {
   const [error, setError] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
-  const [message, setMessage] = useState('');
   const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
-  
+
   const { resendOTP } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
 
   useEffect(() => {
-    // Nếu không có email, chuyển về trang đăng ký
+    // Không có email thì quay về đăng ký
     if (!email) {
       navigate('/register');
+      return;
     }
+    // Focus ô đầu tiên
+    setTimeout(() => inputRefs[0].current?.focus(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, navigate]);
 
   const handleChange = (index, value) => {
-    // Chỉ cho phép nhập số
     if (value && !/^\d$/.test(value)) return;
 
     const newOtp = [...otp];
@@ -33,14 +35,12 @@ const VerifyOTP = () => {
     setOtp(newOtp);
     setError('');
 
-    // Tự động chuyển sang ô tiếp theo
     if (value && index < 5) {
       inputRefs[index + 1].current.focus();
     }
   };
 
   const handleKeyDown = (index, e) => {
-    // Xử lý phím Backspace
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs[index - 1].current.focus();
     }
@@ -49,7 +49,6 @@ const VerifyOTP = () => {
   const handlePaste = (e) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text/plain').slice(0, 6);
-    
     if (!/^\d+$/.test(pastedData)) return;
 
     const newOtp = [...otp];
@@ -57,15 +56,14 @@ const VerifyOTP = () => {
       newOtp[i] = pastedData[i];
     }
     setOtp(newOtp);
-    
-    // Focus vào ô cuối cùng
+
     const lastIndex = Math.min(pastedData.length, 5);
     inputRefs[lastIndex].current.focus();
   };
 
   const handleVerify = async () => {
     const otpCode = otp.join('');
-    
+
     if (otpCode.length !== 6) {
       setError('Vui lòng nhập đủ 6 số');
       return;
@@ -75,12 +73,25 @@ const VerifyOTP = () => {
     setError('');
 
     try {
-      const response = await api.post('/api/customer/verify-otp', { email, otp: otpCode });
-      if (response.data.status === 'success') {
-        setMessage(response.data.message);
-        setTimeout(() => navigate('/reset-password', { state: { email } }), 2000);
+      // Xác thực OTP đăng ký
+      const response = await api.post('/api/customer/verify-email', { email, otp: otpCode });
+
+      const ok =
+        String(response?.data?.status || '').toLowerCase() === 'success' ||
+        response?.data?.verified === true ||
+        response?.data?.email === email;
+
+      if (ok) {
+        // ✅ Thành công → chuyển thẳng về Login
+        navigate('/login', {
+          replace: true,
+          state: {
+            emailJustVerified: email,
+            message: 'Xác thực tài khoản thành công. Vui lòng đăng nhập.',
+          },
+        });
       } else {
-        setError(response.data.message);
+        setError(response?.data?.message || 'Mã OTP không đúng hoặc đã hết hạn.');
       }
     } catch (err) {
       setError('Có lỗi xảy ra. Vui lòng thử lại.');
@@ -94,16 +105,16 @@ const VerifyOTP = () => {
     setResendMessage('');
     setError('');
 
-    const result = await resendOTP(email);
-    
-    if (result.success) {
+    const result = await resendOTP(email); // giữ nguyên hàm resend từ AuthContext
+
+    if (result?.success) {
       setResendMessage('Mã OTP mới đã được gửi đến email của bạn');
       setOtp(['', '', '', '', '', '']);
       inputRefs[0].current.focus();
     } else {
-      setError(result.error || 'Không thể gửi lại mã OTP');
+      setError(result?.error || 'Không thể gửi lại mã OTP');
     }
-    
+
     setResendLoading(false);
   };
 
@@ -118,32 +129,22 @@ const VerifyOTP = () => {
           {/* Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-[#28a745] rounded-2xl flex items-center justify-center relative">
-              <svg 
-                className="w-12 h-12 text-white" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-12 h-12 text-white"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
               <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#218838] rounded-full flex items-center justify-center">
-                <svg 
-                  className="w-5 h-5 text-white" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={3} 
-                    d="M5 13l4 4L19 7" 
-                  />
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
@@ -187,14 +188,14 @@ const VerifyOTP = () => {
             </button>
           </p>
 
-          {/* Error Message */}
+          {/* Error */}
           {error && (
             <div className="mb-4 bg-red-600 border border-red-700 text-white font-bold px-4 py-3 rounded-lg text-sm text-center shadow-lg">
-              {error?.message || String(error)}
+              {String(error)}
             </div>
           )}
 
-          {/* Success Message */}
+          {/* Success resend */}
           {resendMessage && (
             <div className="mb-4 bg-[#d4edda] border border-[#c3e6cb] text-[#155724] px-4 py-3 rounded-lg text-sm text-center">
               {resendMessage}
@@ -212,7 +213,7 @@ const VerifyOTP = () => {
             </button>
             <button
               onClick={handleVerify}
-              disabled={loading || otp.some(d => !d)}
+              disabled={loading || otp.some((d) => !d)}
               className="flex-1 px-6 py-3 bg-[#28a745] text-white rounded-lg font-medium hover:bg-[#218838] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang xác thực...' : 'Verify'}
