@@ -17,7 +17,7 @@ const Checklist = () => {
     try {
       const data = await checklistService.getChecklists();
       // lấy 3 checklist mẫu đầu tiên
-      setChecklists(data.slice(0, 3));
+      setChecklists(data.slice(0, 6));
     } catch (error) {
       console.error('Lỗi khi lấy checklist:', error);
       setChecklists([]);
