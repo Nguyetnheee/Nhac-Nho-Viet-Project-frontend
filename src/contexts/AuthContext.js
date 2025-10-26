@@ -106,19 +106,29 @@ export const AuthProvider = ({ children }) => {
 
   // Cập nhật profile dựa vào role
   const updateProfile = async (profileData) => {
-    try {
-      const role = localStorage.getItem('role');
-      const endpoint = role === 'STAFF' ? '/api/staff/profile' : '/api/customer/profile';
-      const response = await api.put(endpoint, profileData);
-      setUser(response.data);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Cập nhật thất bại',
-      };
-    }
-  };
+  try {
+    const role = localStorage.getItem('role');
+    const endpoint =
+      role === 'STAFF' ? '/api/staff/profile' : '/api/customer/profile';
+
+    // fix: map đúng key backend
+    const payload = {
+      ...profileData,
+      birthday: profileData.birthDate || profileData.birthday || null,
+    };
+
+    const response = await api.put(endpoint, payload);
+    setUser(response.data);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || 'Cập nhật thất bại',
+    };
+  }
+};
+
 
   // Đăng xuất
   const logout = () => {

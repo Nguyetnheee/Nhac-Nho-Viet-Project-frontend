@@ -6,8 +6,8 @@ import { checklistService } from "../services/checklistService";
 import { scrollToTop } from "../utils/scrollUtils";
 
 const BACKEND_BASE = "https://isp-7jpp.onrender.com";
-const storageKey = (id) => `ritualChecklist:${id}`;
 
+// helper ảnh BE
 const getImageUrl = (url) =>
   url
     ? url.startsWith("http")
@@ -15,70 +15,73 @@ const getImageUrl = (url) =>
       : `${BACKEND_BASE}${url}`
     : "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200";
 
+// ===== LocalStorage helpers =====
+const storageKey = (id) => `ritualChecklist:${id}`;
+const safeParse = (raw, fallback = null) => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+};
+
 const RitualDetail = () => {
   const { id } = useParams();
 
-  // ===== New: Scroll progress bar =====
+  // (1) Scroll progress + (2) Parallax
   const [progress, setProgress] = useState(0);
-
-  // ===== New: Hero parallax offset =====
   const [offset, setOffset] = useState(0);
 
+  // ritual
   const [ritual, setRitual] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Checklist state (không có đơn vị)
-  const [items, setItems] = useState([]); // {key,itemId,itemName,quantity,note,checked,origin}
+  // checklist (không có đơn vị)
+  // { key, itemId, itemName, quantity, note, checked, origin: 'server'|'custom' }
+  const [items, setItems] = useState([]);
   const [userNotes, setUserNotes] = useState("");
   const [newItemText, setNewItemText] = useState("");
 
-  // Progress + Parallax listeners
+  // progress + parallax listeners
   useEffect(() => {
     const onScroll = () => {
       const h = document.documentElement;
       const scrolled =
         (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
       setProgress(scrolled);
-      setOffset(window.scrollY * 0.2); // parallax 0.2
+      setOffset(window.scrollY * 0.2); // parallax: 0.2
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const persist = (nextItems, nextUserNotes) => {
+  // persist/restore localStorage
+  const persist = (nextItems = items, nextNotes = userNotes) => {
     try {
-      const data = {
-        items: nextItems ?? items,
-        userNotes: nextUserNotes ?? userNotes,
-      };
-      localStorage.setItem(storageKey(id), JSON.stringify(data));
+      localStorage.setItem(
+        storageKey(id),
+        JSON.stringify({ items: nextItems, userNotes: nextNotes })
+      );
     } catch {}
   };
-
   const restore = () => {
-    try {
-      const raw = localStorage.getItem(storageKey(id));
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
+    const raw = localStorage.getItem(storageKey(id));
+    return safeParse(raw, null); // {items, userNotes} | null
   };
 
+  // load dữ liệu
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        // Ritual detail
         const res = await ritualService.getRitualById(id);
         const ritualData = res?.data || res;
         setRitual(ritualData);
 
-        // Checklist theo ritual (public)
         const list = await checklistService.getByRitual(id);
-        const mapped = list.map((row, idx) => ({
+        const base = list.map((row, idx) => ({
           key: `${row.itemId || row.checklistId || idx}`,
           itemId: row.itemId,
           itemName: row.itemName,
@@ -88,29 +91,22 @@ const RitualDetail = () => {
           origin: "server",
         }));
 
-        // Restore trạng thái cũ
         const saved = restore();
         if (saved) {
-          const byKey = new Map(
-            saved.items?.map((it) => [
-              it.key || `${it.itemName}|${it.quantity}`,
-              it,
-            ])
+          const byKey = new Map((saved.items || []).map((it) => [it.key, it]));
+          const merged = base.map((it) =>
+            byKey.has(it.key) ? { ...it, ...byKey.get(it.key) } : it
           );
-          const merged = mapped.map((it) => {
-            const k = it.key || `${it.itemName}|${it.quantity}`;
-            return byKey.has(k) ? { ...it, ...byKey.get(k) } : it;
-          });
-          const customOld = (saved.items || []).filter(
+          const custom = (saved.items || []).filter(
             (it) => it.origin === "custom"
           );
-          setItems([...merged, ...customOld]);
+          setItems([...merged, ...custom]);
           setUserNotes(saved.userNotes || "");
         } else {
-          setItems(mapped);
+          setItems(base);
         }
       } catch (err) {
-        console.error("Error fetching ritual/checklist:", err);
+        console.error(err);
         setError("Không thể tải thông tin nghi lễ hoặc checklist");
       } finally {
         setLoading(false);
@@ -122,26 +118,24 @@ const RitualDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // auto-persist mỗi khi đổi
   useEffect(() => {
     persist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, userNotes]);
+  }, [items, userNotes, id]);
 
-  const toggleItem = (k) =>
-    setItems((prev) => {
-      const next = prev.map((it) =>
-        it.key === k ? { ...it, checked: !it.checked } : it
-      );
-      persist(next);
-      return next;
-    });
+  // handlers
+  const toggleItem = (key) =>
+    setItems((prev) =>
+      prev.map((it) =>
+        it.key === key ? { ...it, checked: !it.checked } : it
+      )
+    );
 
-  const updateItemNote = (k, val) =>
-    setItems((prev) => {
-      const next = prev.map((it) => (it.key === k ? { ...it, note: val } : it));
-      persist(next);
-      return next;
-    });
+  const updateItemNote = (key, val) =>
+    setItems((prev) =>
+      prev.map((it) => (it.key === key ? { ...it, note: val } : it))
+    );
 
   const addCustomItem = (e) => {
     e.preventDefault();
@@ -156,10 +150,13 @@ const RitualDetail = () => {
       checked: false,
       origin: "custom",
     };
-    const next = [newIt, ...items];
-    setItems(next);
+    setItems((prev) => [newIt, ...prev]);
     setNewItemText("");
-    persist(next);
+  };
+
+  const deleteCustomItem = (item) => {
+    if (item.origin !== "custom") return;
+    setItems((prev) => prev.filter((it) => it.key !== item.key));
   };
 
   const completed = useMemo(() => items.filter((i) => i.checked).length, [items]);
@@ -185,16 +182,10 @@ const RitualDetail = () => {
       </div>
     );
 
-  // Dữ liệu thẻ info để stagger
+  // data cho stagger cards
   const infoCards = [
-    {
-      title: "Vùng miền",
-      value: ritual.regionName || "—",
-    },
-    {
-      title: "Âm lịch",
-      value: ritual.dateLunar || "—",
-    },
+    { title: "Vùng miền", value: ritual.regionName || "—" },
+    { title: "Âm lịch", value: ritual.dateLunar || "—" },
     {
       title: "Dương lịch",
       value: ritual.dateSolar
@@ -206,7 +197,7 @@ const RitualDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-vietnam-cream to-white">
-      {/* ===== (1) Scroll Progress Bar ===== */}
+      {/* ===== Progress bar (1) ===== */}
       <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-transparent">
         <div
           style={{ width: `${progress}%` }}
@@ -214,13 +205,13 @@ const RitualDetail = () => {
         />
       </div>
 
-      {/* ===== HERO — (2) Parallax background ===== */}
+      {/* ===== HERO (2) Parallax ===== */}
       <section
         className="relative text-white overflow-hidden animate-fadeInSlow"
         style={{
           backgroundImage: "url('/hero-background.jpg')",
           backgroundSize: "cover",
-          backgroundPosition: `center ${-offset}px`, // parallax
+          backgroundPosition: `center ${-offset}px`,
         }}
       >
         <div className="absolute inset-0 bg-[#0d3b36]/80"></div>
@@ -246,7 +237,7 @@ const RitualDetail = () => {
                 {ritual.ritualName}
               </h1>
 
-              {/* ===== (3) Stagger reveal cho thẻ info ===== */}
+              {/* ===== Info cards (3) Stagger reveal ===== */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {infoCards.map((c, i) => (
                   <div
@@ -277,10 +268,10 @@ const RitualDetail = () => {
         </div>
       </section>
 
-      {/* ===== BODY — 2 cột ===== */}
+      {/* ===== BODY ===== */}
       <section className="container mx-auto px-4 py-14">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT — Mô tả (information-background.jpg) */}
+          {/* LEFT — mô tả (information-background.jpg) */}
           <div className="lg:col-span-2 animate-fadeInUp">
             <div
               className="relative rounded-2xl overflow-hidden shadow-xl border border-amber-200/50"
@@ -290,7 +281,6 @@ const RitualDetail = () => {
                 backgroundPosition: "center",
               }}
             >
-              {/* phủ trắng mờ để đọc rõ chữ */}
               <div className="absolute inset-0 bg-white/75"></div>
               <div className="relative p-7 text-stone-800">
                 <h2 className="text-2xl font-serif font-bold text-vietnam-red mb-5">
@@ -314,7 +304,7 @@ const RitualDetail = () => {
             </div>
           </div>
 
-          {/* RIGHT — Checklist (tone vàng–nâu, hài hòa) */}
+          {/* RIGHT — checklist (hoa sen vàng) */}
           <aside className="lg:col-span-1 animate-fadeInUp delay-150">
             <div className="lg:sticky lg:top-24">
               <div
@@ -325,35 +315,46 @@ const RitualDetail = () => {
                   backgroundPosition: "center",
                 }}
               >
-                {/* phủ trắng mờ để tăng tương phản chữ */}
                 <div className="absolute inset-0 bg-white/65 backdrop-blur-[1px]"></div>
 
                 <div className="relative z-10 p-4 md:p-5 text-stone-800 text-sm">
-                  <div className="flex items-baseline justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-amber-600 drop-shadow">
-                      Checklist: {ritual?.ritualName}
-                    </h3>
-                    <span className="text-xs text-stone-700">
-                      {completed}/{items.length} xong
-                    </span>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-amber-600 drop-shadow">
+                        Checklist: {ritual?.ritualName}
+                      </h3>
+                      <div className="text-[11px] mt-0.5 text-stone-700">
+                        {completed}/{items.length} xong
+                      </div>
+                    </div>
+
+                    {/* Xoá tất cả dữ liệu đã lưu (tuỳ chọn) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.removeItem(storageKey(id));
+                        window.location.reload();
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-stone-300 text-stone-700 hover:bg-stone-100"
+                      title="Xóa dữ liệu đã lưu trên thiết bị cho lễ này"
+                    >
+                      Xóa lưu
+                    </button>
                   </div>
 
-                  {/* Ghi chú của bạn */}
+                  {/* Ghi chú tổng */}
                   <label className="block text-xs font-medium text-stone-700 mb-1.5">
                     Ghi chú của bạn
                   </label>
                   <textarea
                     value={userNotes}
-                    onChange={(e) => {
-                      setUserNotes(e.target.value);
-                      persist(undefined, e.target.value);
-                    }}
+                    onChange={(e) => setUserNotes(e.target.value)}
                     rows={2}
                     placeholder="Thêm ghi chú..."
                     className="w-full mb-3 px-2.5 py-2 rounded bg-white/70 text-stone-800 placeholder-stone-500 border border-amber-300/50 focus:border-amber-500 focus:ring-2 focus:ring-amber-400/40 outline-none text-sm"
                   />
 
-                  {/* Thêm mục */}
+                  {/* Thêm mục custom */}
                   <form onSubmit={addCustomItem} className="flex gap-2 mb-4">
                     <input
                       value={newItemText}
@@ -370,7 +371,7 @@ const RitualDetail = () => {
                     </button>
                   </form>
 
-                  {/* Danh sách – giữ hover vàng nâu */}
+                  {/* Danh sách */}
                   <ul className="space-y-1.5">
                     {items.map((it) => (
                       <li
@@ -386,7 +387,6 @@ const RitualDetail = () => {
                             type="checkbox"
                             checked={it.checked}
                             onChange={() => toggleItem(it.key)}
-                            // ===== (7) Checkbox pop =====
                             className="mt-0.5 h-4 w-4 accent-amber-600 cursor-pointer chk-pop"
                           />
                           <div className="flex-1 min-w-0">
@@ -405,6 +405,18 @@ const RitualDetail = () => {
                                 <span className="text-[11px] px-1.5 py-[2px] rounded bg-amber-200/70 text-stone-800 border border-amber-300 whitespace-nowrap">
                                   x{it.quantity}
                                 </span>
+                              )}
+
+                              {/* Nút xoá chỉ cho item custom */}
+                              {it.origin === "custom" && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteCustomItem(it)}
+                                  className="ml-auto text-[11px] px-2 py-[2px] rounded border border-red-300/60 text-red-700 hover:bg-red-50 transition"
+                                  title="Xóa mục do bạn thêm"
+                                >
+                                  Xóa
+                                </button>
                               )}
                             </div>
 
@@ -433,7 +445,7 @@ const RitualDetail = () => {
         </div>
       </section>
 
-      {/* ===== Animations & effects ===== */}
+      {/* ===== Animations ===== */}
       <style jsx>{`
         @keyframes fadeInSlow {
           from {

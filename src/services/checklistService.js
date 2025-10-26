@@ -15,11 +15,13 @@ const publicApi = axios.create({
 });
 
 export const checklistService = {
+  // Hàm mới: Lấy checklist theo ritualId (sử dụng publicApi)
   getByRitual: async (ritualId) => {
     const res = await publicApi.get(`/api/checklists/ritual/${ritualId}`);
     return Array.isArray(res.data) ? res.data : [];
   },
 
+  // Hàm cũ: Lấy tất cả checklist (dùng apiAuth cho user's checklists)
   getChecklists: async () => {
     const response = await apiAuth.get("/api/checklists");
     return response.data;
