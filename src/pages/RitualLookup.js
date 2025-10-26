@@ -263,7 +263,7 @@ const RitualLookup = () => {
               Các nghi lễ truyền thống
             </h2>
             <p className="text-xl text-gray-600 font-light">
-              Chọn vùng miền hoặc tìm kiếm từ Trang chủ để xem kết quả phù hợp
+              Chọn vùng miền hoặc tìm kiếm tên lễ hội để xem kết quả phù hợp
             </p>
             {lastQuery && (
               <p className="mt-3 text-sm text-gray-500">

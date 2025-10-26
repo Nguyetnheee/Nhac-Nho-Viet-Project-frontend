@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+// ⚠️ Import service
+import { checklistService } from '../services/checklistService'; 
+import api from '../services/api'; // Giả sử đây là apiAuth
 
 const ChecklistContext = createContext();
 
@@ -20,8 +22,9 @@ export const ChecklistProvider = ({ children }) => {
   const fetchChecklists = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/checklists');
-      setChecklists(response.data);
+      // Sử dụng checklistService đã được cung cấp
+      const data = await checklistService.getChecklists();
+      setChecklists(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,9 +32,26 @@ export const ChecklistProvider = ({ children }) => {
     }
   };
 
+  // ⚠️ Hàm mới: Lấy checklist theo Ritual ID (sử dụng service public)
+  const getChecklistByRitualId = async (ritualId) => {
+    try {
+      setLoading(true);
+      const data = await checklistService.getByRitual(ritualId);
+      return data; // Trả về danh sách các mục của checklist
+    } catch (err) {
+      setError(err.message);
+      console.error(`Lỗi khi lấy checklist theo ritualId ${ritualId}:`, err);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   // Create new checklist
   const createChecklist = async (checklistData) => {
     try {
+      // Chú ý: Cần đảm bảo api.post là apiAuth
       const response = await api.post('/api/checklists', checklistData);
       setChecklists([...checklists, response.data]);
       return { success: true };
@@ -46,6 +66,7 @@ export const ChecklistProvider = ({ children }) => {
   // Update checklist
   const updateChecklist = async (id, checklistData) => {
     try {
+      // Chú ý: Cần đảm bảo api.put là apiAuth
       const response = await api.put(`/api/checklists/${id}`, checklistData);
       setChecklists(checklists.map(list => 
         list.id === id ? response.data : list
@@ -62,6 +83,7 @@ export const ChecklistProvider = ({ children }) => {
   // Delete checklist
   const deleteChecklist = async (id) => {
     try {
+      // Chú ý: Cần đảm bảo api.delete là apiAuth
       await api.delete(`/api/checklists/${id}`);
       setChecklists(checklists.filter(list => list.id !== id));
       return { success: true };
@@ -77,6 +99,7 @@ export const ChecklistProvider = ({ children }) => {
   const searchChecklists = async (searchTerm) => {
     try {
       setLoading(true);
+      // Chú ý: Cần đảm bảo api.get là apiAuth
       const response = await api.get(`/api/checklists/search?q=${searchTerm}`);
       return response.data;
     } catch (err) {
@@ -95,7 +118,9 @@ export const ChecklistProvider = ({ children }) => {
     createChecklist,
     updateChecklist,
     deleteChecklist,
-    searchChecklists
+    searchChecklists,
+    // ⚠️ Thêm hàm mới
+    getChecklistByRitualId
   };
 
   return (
