@@ -14,16 +14,18 @@ export const ritualService = {
   getAllRituals: async () => {
     try {
       const res = await publicApi.get("/api/rituals");
-      console.log("✅ API success:", res.data);
+      console.log("API success:", res.data);
       return res.data;
     } catch (err) {
-      console.error("❌ API error:", err);
+      console.error("API error:", err);
       throw err;
     }
   },
 
+    // Lấy tất cả các lễ
     getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
 
+    // Lọc lễ
     filterRitualsByRegions: async (regionNames = [], page = 0, size = 100) => {
     const res = await publicApi.get("/api/rituals/filter", {
       params: { regionNames, page, size },
@@ -37,5 +39,14 @@ export const ritualService = {
       content: Array.isArray(data.content) ? data.content : [],
       raw: data,
     };
+  },
+
+
+  //  Search lễ
+  searchRituals: async (q) => {
+    const res = await publicApi.get("/api/rituals/search", {
+      params: { q: String(q || "").trim() }, 
+    });
+    return Array.isArray(res.data) ? res.data : [];
   },
 };

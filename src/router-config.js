@@ -1,3 +1,4 @@
+// src/router-config.js
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 
@@ -9,37 +10,42 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import VerifyOTP from "./pages/VerifyOTP";
+import VerifyOTP from "./pages/VerifyOTP";          
+import VerifyResetOTP from "./pages/VerifyResetOTP"; 
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
 import ShipperPanel from "./pages/ShipperPanel";
 import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
 import TestLogin from "./pages/TestLogin";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <App />,          
     children: [
-      // Public pages
+      // Public
       { index: true, element: <Home /> },
       { path: "rituals", element: <RitualLookup /> },
       { path: "rituals/:id", element: <RitualDetail /> },
-      { path: "ritual/:id", element: <RitualDetail /> },
       { path: "trays", element: <TrayCatalog /> },
       { path: "cart", element: <Cart /> },
       { path: "checkout", element: <Checkout /> },
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
-      { path: "verify-otp", element: <VerifyOTP /> },
-      { path: "forgot-password", element: <ForgotPassword /> },
+
+      // 🔑 OTP routes (rất quan trọng)
+      { path: "verify-otp", element: <VerifyOTP /> },           // đăng ký
+      { path: "forgot-password", element: <ForgotPassword /> },  // nhập email để nhận OTP reset
+      { path: "verify-reset", element: <VerifyResetOTP /> },     // verify OTP reset
+      { path: "reset-password", element: <ResetPassword /> },    // đặt mật khẩu mới
+
       { path: "test-login", element: <TestLogin /> },
 
-      // Protected pages
+      // Protected
       {
         path: "profile",
         element: (
