@@ -1,28 +1,29 @@
-import apiAuth from './apiAuth';
+// src/services/checklistService.js
+import axios from "axios";
+import apiAuth from "./apiAuth"; // vẫn giữ để dùng cho các API có xác thực
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
+
+const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  withCredentials: false, // API công khai
+});
 
 export const checklistService = {
-  getChecklists: async () => {
-    const response = await apiAuth.get('/api/checklists');
-    return response.data;
+  getByRitual: async (ritualId) => {
+    const res = await publicApi.get(`/api/checklists/ritual/${ritualId}`);
+    return Array.isArray(res.data) ? res.data : [];
   },
 
-  // createChecklist: async (checklist) => {
-  //   const response = await apiAuth.post('/api/checklists', checklist);
-  //   return response.data;
-  // },
-
-  // updateChecklist: async (id, checklist) => {
-  //   const response = await apiAuth.put(`/api/checklists/${id}`, checklist);
-  //   return response.data;
-  // },
-
-  // deleteChecklist: async (id) => {
-  //   const response = await apiAuth.delete(`/api/checklists/${id}`);
-  //   return response.data;
-  // },
-
-  // toggleChecklistItem: async (checklistId, itemId) => {
-  //   const response = await apiAuth.put(`/api/checklists/${checklistId}/items/${itemId}/toggle`);
-  //   return response.data;
-  // }
+  getChecklists: async () => {
+    const response = await apiAuth.get("/api/checklists");
+    return response.data;
+  },
 };
+
+export default checklistService;
