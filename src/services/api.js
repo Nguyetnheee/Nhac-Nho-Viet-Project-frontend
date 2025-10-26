@@ -224,7 +224,7 @@ export const checkout = async (checkoutData) => {
 export const forgotPassword = async (email) => {
   // chuẩn hoá email
   const payload = { email: String(email || '').trim().toLowerCase() };
-  const { data } = await csrfApi.post('/api/customer/forgot-password', payload);
+  const { data } = await csrfApi.post(`/api/customer/forgot-password?email=${email}`, payload);
   return data;
 };
 
@@ -236,7 +236,7 @@ export const verifyResetOTP = async (email, otp) => {
 
 export const resetPassword = async (email, password) => {
   const payload = { email: String(email || '').trim().toLowerCase(), password };
-  const { data } = await csrfApi.post('/api/customer/reset-password', payload);
+  const { data } = await csrfApi.post(`/api/customer/reset-password?email=${email}&newPassword=${password}`, payload);
   return data;
 };
 

@@ -1,70 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProductDetails } from '../services/productDetailService';
+import { trayService } from '../services/trayService'; 
 import { useCart } from '../contexts/CartContext';
 import { useToast } from '../components/ToastContainer';
 
 const ProductDetail = () => {
-  const { productId } = useParams();
+  const { id } = useParams(); // Lấy ID theo tên param trong route /trays/:id
   const { addToCart } = useCart();
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState(null); 
   const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(1); // State quantity
 
   useEffect(() => {
-    fetchProductDetails();
-  }, [productId]);
+    if (id) {
+      fetchProductDetails(id);
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
 
-  const fetchProductDetails = async () => {
+  // HÀM FETCH (Sử dụng API /api/products/{id})
+  const fetchProductDetails = async (productId) => {
     try {
-      console.log('Fetching details for productId:', productId);
-      const response = await getProductDetails(productId);
-      console.log('API Response:', response);
+      setLoading(true);
+      console.log('Fetching product details for ID:', productId);
+      
+      const response = await trayService.getTrayById(productId);
+      const data = response?.data;
+      
+      console.log('API Response:', data);
 
-      if (response?.data) {
-        let productData;
-        if (response.data.content) {
-          // Nếu response là từ API filter
-          const filteredProduct = response.data.content.find(p => p.productId.toString() === productId);
-          if (filteredProduct) {
-            productData = {
-              productDetailId: filteredProduct.productId,
-              product: {
-                productId: filteredProduct.productId,
-                productName: filteredProduct.productName,
-                productDescription: filteredProduct.productDescription,
-                productImage: filteredProduct.productImage,
-                price: filteredProduct.price,
-                category: {
-                  categoryId: filteredProduct.categoryId,
-                  categoryName: filteredProduct.categoryName
-                },
-                region: {
-                  regionId: filteredProduct.regionId,
-                  regionName: filteredProduct.regionName
-                }
-              }
-            };
-          }
-        } else {
-          // Nếu response là từ API get detail
-          productData = response.data;
-        }
-
-        if (productData) {
-          console.log('Setting product state with:', productData);
-          setProduct(productData);
-        } else {
-          console.log('Product not found');
-          setProduct(null);
-          showError('Không tìm thấy thông tin sản phẩm');
-        }
+      if (data && data.productId) {
+        setProduct(data); 
       } else {
-        console.log('Invalid response data');
         setProduct(null);
-        showError('Không thể tải thông tin sản phẩm');
+        showError('Không tìm thấy thông tin sản phẩm');
       }
 
       setLoading(false);
@@ -77,19 +49,20 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (!product || !product.product) return;
+    if (!product) return;
 
     const cartItem = {
-      id: product.productDetailId,
-      name: product.product?.productName || 'Unknown Product',
-      price: product.product?.price || 0,
-      quantity: quantity,
-      image: product.product?.productImage || ''
+      id: product.productId, 
+      name: product.productName || 'Unknown Product',
+      price: product.price || 0,
+      // ⚠️ ĐÃ SỬA LỖI: Dùng state quantity thay vì giá trị cứng
+      quantity: quantity, 
+      image: product.productImage || ''
     };
 
     try {
       addToCart(cartItem);
-      showSuccess('Sản phẩm đã được thêm vào giỏ hàng');
+      showSuccess(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
     } catch (error) {
       showError('Không thể thêm sản phẩm vào giỏ hàng');
     }
@@ -107,12 +80,12 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product || !product.product) {
+  if (!product) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Không tìm thấy sản phẩm</h2>
-          <p className="text-gray-600 mb-4">Mã sản phẩm: {productId}</p>
+          <p className="text-gray-600 mb-4">Mã sản phẩm: {id}</p>
           <button
             onClick={() => navigate(-1)}
             className="text-vietnam-red hover:text-vietnam-gold transition-colors"
@@ -123,67 +96,52 @@ const ProductDetail = () => {
       </div>
     );
   }
-
-  if (!product.product) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Dữ liệu sản phẩm không hợp lệ</h2>
-          <button
-            onClick={() => navigate(-1)}
-            className="text-vietnam-red hover:text-vietnam-gold transition-colors"
-          >
-            ← Quay lại
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Image */}
-        <div className="rounded-lg overflow-hidden shadow-lg">
+        <div className="rounded-lg overflow-hidden shadow-lg border border-gray-100">
           <img
-            src={product.product?.productImage || 'https://via.placeholder.com/400x400'}
-            alt={product.product?.productName || 'Product Image'}
-            className="w-full h-auto object-cover"
+            src={product.productImage || 'https://via.placeholder.com/400x400'}
+            alt={product.productName || 'Product Image'}
+            className="w-full h-auto object-cover max-h-[500px]"
           />
         </div>
 
         {/* Product Info */}
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold text-gray-900">{product.product?.productName}</h1>
+          <h1 className="text-4xl font-serif font-bold text-vietnam-red">{product.productName}</h1>
           
-          <div className="text-xl font-semibold text-vietnam-red">
+          <div className="text-3xl font-bold text-vietnam-red border-b pb-4">
             {new Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND'
-            }).format(product.product?.price || 0)}
+            }).format(product.price || 0)}
           </div>
 
-          <div className="prose max-w-none">
-            <h3 className="text-lg font-semibold">Mô tả sản phẩm:</h3>
-            <p>{product.product?.productDescription || 'Chưa có mô tả'}</p>
+          <div className="prose max-w-none text-gray-700">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Mô tả sản phẩm:</h3>
+            <p className='text-base'>{product.productDescription || 'Chưa có mô tả'}</p>
           </div>
-
-          <div className="space-y-4">
+          
+          <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center space-x-4">
-              <label htmlFor="quantity" className="font-medium">Số lượng:</label>
+              <label htmlFor="quantity" className="font-medium text-lg text-gray-700">Số lượng:</label>
               <input
                 type="number"
                 id="quantity"
                 min="1"
                 value={quantity}
+                // Cập nhật state quantity khi người dùng thay đổi
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red"
+                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red text-center shadow-sm"
               />
             </div>
 
             <button
               onClick={handleAddToCart}
-              className="w-full bg-vietnam-red text-white py-3 px-6 rounded-md hover:bg-vietnam-gold transition-colors duration-300"
+              className="w-full bg-vietnam-red text-white py-3 px-6 rounded-md hover:bg-red-700 transition-colors duration-300 font-bold text-lg shadow-lg"
             >
               Thêm vào giỏ hàng
             </button>
@@ -191,18 +149,18 @@ const ProductDetail = () => {
 
           {/* Additional Details */}
           <div className="border-t pt-6 mt-6">
-            <h3 className="text-lg font-semibold mb-4">Chi tiết bổ sung:</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin chi tiết:</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-gray-600">Danh mục:</p>
-                <p className="font-medium">
-                  {product.product?.category?.categoryName || 'Chưa phân loại'}
+                <p className="text-gray-600 text-sm">Danh mục:</p>
+                <p className="font-medium text-gray-800">
+                  {product.categoryName || 'Chưa phân loại'}
                 </p>
               </div>
               <div>
-                <p className="text-gray-600">Khu vực:</p>
-                <p className="font-medium">
-                  {product.product?.region?.regionName || 'Chưa xác định'}
+                <p className="text-gray-600 text-sm">Khu vực:</p>
+                <p className="font-medium text-gray-800">
+                  {product.regionName || 'Chưa xác định'}
                 </p>
               </div>
             </div>

@@ -21,6 +21,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
 import TestLogin from "./pages/TestLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProductDetail from "./pages/ProductDetail";
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: "checkout", element: <Checkout /> },
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
+      { path: "trays/:id", element: <ProductDetail /> },
 
       // 🔑 OTP routes (rất quan trọng)
       { path: "verify-otp", element: <VerifyOTP /> },           // đăng ký

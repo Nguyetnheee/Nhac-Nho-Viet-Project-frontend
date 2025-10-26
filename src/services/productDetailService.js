@@ -1,38 +1,54 @@
-import api from './api';
-import { trayService } from './trayService';
+// src/services/productDetailService.js
+import api, { publicApi } from './api'; 
+import { trayService } from './trayService'; // Giữ lại
+
+// Endpoint mới: GET: /api/product-details/by-product/{productId}
+const API_PRODUCT_DETAIL_BASE_URL = '/api/product-details/by-product';
 
 export const getProductDetails = async (productId) => {
+  // ⚠️ Kiểm tra để ngăn lỗi undefined
+  if (!productId) {
+    throw new Error('Product ID is required to fetch details.');
+  }
+  
   try {
     console.log('Fetching product details for ID:', productId);
     
-    // Lấy token từ localStorage
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.log('No token found, proceeding without authentication');
+    // ⚠️ SỬ DỤNG publicApi để tránh lỗi 403 do Authorization
+    // Dùng publicApi (không gắn token)
+    const apiInstance = publicApi || api; 
+
+    const response = await apiInstance.get(`${API_PRODUCT_DETAIL_BASE_URL}/${productId}`);
+    const data = response?.data;
+    
+    console.log('Raw API response (Product Details):', data);
+
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('Product details not found or invalid format');
     }
+    
+    // Logic chuẩn hóa dữ liệu cũ
+    const firstDetail = data[0];
+    const productInfo = firstDetail.product;
+    
+    const items = data.map(detail => ({
+        itemId: detail.itemId,
+        proDetailQuantity: detail.proDetailQuantity,
+    }));
 
-    // Thử lấy thông tin sản phẩm cơ bản trước
-    const detailsResponse = await trayService.getTrayById(productId);
-    console.log('Basic product info:', detailsResponse?.data);
-
-    if (!detailsResponse?.data) {
-      throw new Error('Could not fetch basic product information');
-    }
-
-    // Kết hợp thông tin và trả về
     return {
       data: {
-        productDetailId: detailsResponse.data.productId,
+        productDetailId: firstDetail.productDetailId, 
         product: {
-          ...detailsResponse.data,
-          category: {
-            categoryId: detailsResponse.data.categoryId,
-            categoryName: detailsResponse.data.categoryName
-          },
-          region: {
-            regionId: detailsResponse.data.regionId,
-            regionName: detailsResponse.data.regionName
-          }
+          productId: productInfo.productId,
+          productName: productInfo.productName,
+          productDescription: productInfo.productDescription,
+          productImage: productInfo.productImage,
+          price: productInfo.price,
+          status: productInfo.status,
+          category: productInfo.category, 
+          region: productInfo.region, 
+          items: items 
         }
       }
     };
