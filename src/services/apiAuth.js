@@ -1,3 +1,4 @@
+// src/services/apiAuth.js
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -15,8 +16,10 @@ const apiAuth = axios.create({
 apiAuth.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    console.log('Current token in interceptor:', token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Setting Authorization header:', config.headers.Authorization);
     }
     return config;
   },
@@ -58,7 +61,7 @@ export const fetchCustomerProfile = async () => {
 
 export const loginCustomer = async (username, password) => {
   try {
-    const response = await apiAuth.post('/api/customer', { username, password });
+    const response = await apiAuth.post('/api/customer/login', { username, password });
     if (response.status === 200) {
       return response.data;
     } else {
@@ -74,7 +77,7 @@ export const loginCustomer = async (username, password) => {
   }
 };
 
-// STAFF API (mới thêm)
+// STAFF API (giữ nguyên)
 export const fetchStaffProfile = async () => {
   try {
     const response = await apiAuth.get('/api/staff/profile');
@@ -105,19 +108,24 @@ export const updateStaffProfile = async (profileData) => {
   }
 };
 
+// ⚠️ API MỚI: Login cho Shipper
+export const loginShipper = async (username, password) => {
+  try {
+    // Endpoint: POST: /api/shipper/login
+    const response = await apiAuth.post('/api/shipper/login', { username, password });
+    return response.data;
+  } catch (error) {
+    console.error('Error during shipper login:', error);
+    throw error;
+  }
+};
+
+// Loại bỏ cú pháp headers lỗi, chỉ gọi POST rỗng.
 export const increaseCartItem = async (productId) => {
   try {
-    const token = localStorage.getItem('token');
-
     const response = await apiAuth.post(
-      `/api/cart/items/increase?productId=${productId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      }
+      `/api/cart/items/increase?productId=${productId}`
     );
-
     return response.data;
   } catch (error) {
     console.error('Error increasing cart item:', error);
@@ -125,17 +133,11 @@ export const increaseCartItem = async (productId) => {
   }
 };
 
+//  Loại bỏ cú pháp headers lỗi, chỉ gọi POST rỗng.
 export const decreaseCartItem = async (productId) => {
   try {
-    const token = localStorage.getItem('token');
-
     const response = await apiAuth.post(
-      `/api/cart/items/decrease?productId=${productId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      }
+      `/api/cart/items/decrease?productId=${productId}`
     );
     return response.data;
   } catch (error) {
