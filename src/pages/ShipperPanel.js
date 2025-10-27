@@ -1,15 +1,23 @@
+// src/pages/ShipperPanel.js
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../components/ToastContainer';
 import { orderService } from '../services/orderService';
+// ⚠️ Import useAuth
+import { useAuth } from '../contexts/AuthContext'; 
 
 const ShipperPanel = () => {
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth(); // ⚠️ Lấy thông tin user
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const shipperUsername = user?.username || "Shipper"; // Lấy username để chào mừng
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // ... (Giữ nguyên các hàm fetchOrders, updateOrderStatus, getStatusColor, getStatusText)
 
   const fetchOrders = async () => {
     try {
@@ -58,11 +66,15 @@ const ShipperPanel = () => {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-vietnam-cream py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-vietnam-red mb-2">Shipper Panel</h1>
+          {/* ⚠️ Thêm header chào mừng */}
+          <h1 className="text-3xl font-serif font-bold text-vietnam-red mb-2">
+             Chào mừng, {shipperUsername}!
+          </h1>
           <p className="text-gray-600">Quản lý đơn hàng giao</p>
         </div>
 
