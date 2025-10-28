@@ -90,6 +90,9 @@ export const removeFromCart = async (productId) => {
   }
 };
 
+// Alias for consistency
+export const removeCartItem = removeFromCart;
+
 /** XOÁ TOÀN BỘ GIỎ HÀNG (nếu backend có)
  *  Tuỳ BE, có thể là POST /api/cart/clear
  *  Nếu không có endpoint -> hãy ẩn nút Clear trên UI.

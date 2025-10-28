@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { trayService } from '../services/trayService'; 
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
 
 const ProductDetail = () => {
   const { id } = useParams(); // Lấy ID theo tên param trong route /trays/:id
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null); 
@@ -50,6 +52,13 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      showError('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
+      navigate('/login');
+      return;
+    }
 
     const cartItem = {
       id: product.productId, 
@@ -143,7 +152,7 @@ const ProductDetail = () => {
               onClick={handleAddToCart}
               className="w-full bg-vietnam-red text-white py-3 px-6 rounded-md hover:bg-red-700 transition-colors duration-300 font-bold text-lg shadow-lg"
             >
-              Thêm vào giỏ hàng
+              {isAuthenticated ? 'Thêm vào giỏ hàng' : 'Đăng nhập để mua hàng'}
             </button>
           </div>
 

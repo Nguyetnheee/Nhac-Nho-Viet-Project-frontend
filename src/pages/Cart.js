@@ -25,11 +25,11 @@ const Cart = () => {
   const {
     cartItems,
     removeFromCart,
-    updateQuantity,
     clearCart,
     getTotalPrice,
     totals,
-    fetchCart
+    fetchCart,
+    loading
   } = useCart();
   const { isAuthenticated } = useAuth();
 
@@ -82,8 +82,8 @@ const Cart = () => {
                 <h2 className="text-xl font-semibold text-vietnam-red">
                   Sản phẩm ({cartItems.length})
                 </h2>
-                <button onClick={clearCart} className="text-vietnam-red hover:opacity-80 text-sm">
-                  Xóa tất cả
+                <button onClick={clearCart} className={`text-vietnam-red hover:opacity-80 text-sm ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={loading}>
+                  {loading ? 'Đang xóa...' : 'Xóa tất cả'}
                 </button>
               </div>
 
@@ -155,9 +155,10 @@ const Cart = () => {
                           </p>
                           <button
                             onClick={() => removeFromCart(productId)}
-                            className="text-vietnam-red hover:opacity-80 text-sm mt-1"
+                            className={`text-vietnam-red hover:opacity-80 text-sm mt-1 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={loading}
                           >
-                            Xóa
+                            {loading ? 'Đang xóa...' : 'Xóa'}
                           </button>
                         </div>
                       </div>

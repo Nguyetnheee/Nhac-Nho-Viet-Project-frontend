@@ -1,89 +1,147 @@
-// src/router-config.js
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 
+// Public Pages
 import Home from "./pages/Home";
 import RitualLookup from "./pages/RitualLookup";
 import RitualDetail from "./pages/RitualDetail";
 import TrayCatalog from "./pages/TrayCatalog";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
+import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import VerifyOTP from "./pages/VerifyOTP";          
-import VerifyResetOTP from "./pages/VerifyResetOTP"; 
+
+// Authentication Pages
+import VerifyOTP from "./pages/VerifyOTP";
+import VerifyResetOTP from "./pages/VerifyResetOTP";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+
+// Protected Pages
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
 import ShipperPanel from "./pages/ShipperPanel";
 import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
-import TestLogin from "./pages/TestLogin";
+
+// Components
 import ProtectedRoute from "./components/ProtectedRoute";
-import ProductDetail from "./pages/ProductDetail";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,          
+    element: <App />,
     children: [
-      // Public
-      { index: true, element: <Home /> },
-      { path: "rituals", element: <RitualLookup /> },
-      { path: "rituals/:id", element: <RitualDetail /> },
-      { path: "trays", element: <TrayCatalog /> },
-      { path: "cart", element: <Cart /> },
-      { path: "checkout", element: <Checkout /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "trays/:id", element: <ProductDetail /> },
+      // Public Routes - No authentication needed
+      { 
+        path: "login", 
+        element: <Login /> 
+      },
+      { 
+        path: "register", 
+        element: <Register /> 
+      },
+      { 
+        path: "verify-otp", 
+        element: <VerifyOTP /> 
+      },
+      { 
+        path: "forgot-password", 
+        element: <ForgotPassword /> 
+      },
+      { 
+        path: "verify-reset", 
+        element: <VerifyResetOTP /> 
+      },
+      { 
+        path: "reset-password", 
+        element: <ResetPassword /> 
+      },
 
-      // 🔑 OTP routes (rất quan trọng)
-      { path: "verify-otp", element: <VerifyOTP /> },           // đăng ký
-      { path: "forgot-password", element: <ForgotPassword /> },  // nhập email để nhận OTP reset
-      { path: "verify-reset", element: <VerifyResetOTP /> },     // verify OTP reset
-      { path: "reset-password", element: <ResetPassword /> },    // đặt mật khẩu mới
-
-      { path: "test-login", element: <TestLogin /> },
-
-      // Protected
+      // Customer & Public Access Routes
       {
-        path: "profile",
+        index: true,
+        element: <Home />,  // Home page is now public
+      },
+      {
+        path: "rituals",
+        element: <RitualLookup />,  // Make public - no authentication required
+      },
+      {
+        path: "rituals/:id",
+        element: <RitualDetail />,  // Make public - no authentication required
+      },
+      {
+        path: "trays",
+        element: <TrayCatalog />,  // Make public - browse products without login
+      },
+      {
+        path: "trays/:id",
+        element: <ProductDetail />,  // Make public - view product details without login
+      },
+
+      // Customer Only Routes
+      {
+        path: "cart",
         element: (
-          <ProtectedRoute>
-            <Profile />
+          <ProtectedRoute roles={["Customer"]}>
+            <Cart />
           </ProtectedRoute>
         ),
       },
       {
-        path: "admin",
+        path: "checkout",
+        element: (
+          <ProtectedRoute roles={["Customer"]}>
+            <Checkout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute roles={["Customer", "Staff", "Admin", "Shipper"]}>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Staff Only Route
+      {
+        path: "staff-dashboard",
+        element: (
+          <ProtectedRoute roles={["Staff"]}>
+            <StaffDashboard />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Admin Only Route
+      {
+        path: "admin-dashboard",
         element: (
           <ProtectedRoute roles={["Admin"]}>
             <AdminPanel />
           </ProtectedRoute>
         ),
       },
+
+      // Shipper Only Route
       {
-        path: "shipper",
+        path: "shipper-dashboard",
         element: (
           <ProtectedRoute roles={["Shipper"]}>
             <ShipperPanel />
           </ProtectedRoute>
         ),
       },
-      {
-        path: "staff",
-        element: (
-          <ProtectedRoute roles={["Staff", "Admin"]}>
-            <StaffDashboard />
-          </ProtectedRoute>
-        ),
-      },
+
+      // Shared Protected Routes
       {
         path: "checklist",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["Customer", "Staff", "Admin", "Shipper"]}>
             <Checklist />
           </ProtectedRoute>
         ),

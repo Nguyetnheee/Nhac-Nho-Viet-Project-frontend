@@ -10,6 +10,8 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true, // phần cần đăng nhập vẫn gửi cookie/phiên
+  // Tránh treo vô hạn khi backend chậm/đứt
+  timeout: 15000,
 });
 
 // Interceptor gắn token CHỈ cho `api`
@@ -32,9 +34,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      // Tránh reload cứng gây lag; để tầng trên (AuthContext/ProtectedRoute) xử lý điều hướng
     }
     return Promise.reject(error);
   }
@@ -53,6 +53,7 @@ const csrfApi = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true, // BẮT BUỘC để nhận/gửi cookie CSRF
+  timeout: 15000,
 });
 
 /**
@@ -103,6 +104,7 @@ export const publicApi = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: false,
+  timeout: 15000,
 });
 
 /** ─────────────────── APIS (giữ nguyên chữ ký) ─────────────────── **/

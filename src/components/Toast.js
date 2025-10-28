@@ -5,7 +5,7 @@ const Toast = ({
   type = 'info',
   duration = 4000,
   onClose,
-  position = 'top-right'
+  position = 'top-right' 
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -73,8 +73,9 @@ const Toast = ({
   return (
     <div 
       className={`
-        fixed z-50 max-w-md w-full mx-auto
-        top-24 right-4
+        // ⚠️ Đã xóa 'fixed z-50' và 'top-24 right-4'. 
+        // Vị trí được kiểm soát bởi ToastContainer.
+        max-w-md w-full mx-auto
         transition-all duration-300 ease-in-out
         ${isLeaving ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
       `}
