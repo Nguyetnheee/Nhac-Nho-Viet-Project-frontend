@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// Đảm bảo tất cả đều là DEFAULT IMPORT
 import DashboardHeader from './DashboardHeader';
 import DashboardSidebar from './DashboardSidebar';
 import Footer from './Footer';

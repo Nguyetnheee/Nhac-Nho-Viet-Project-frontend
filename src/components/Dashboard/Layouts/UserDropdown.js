@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import IconifyIcon from '../../common/IconifyIcon'; // Đường dẫn đã sửa
+import IconifyIcon from '../../common/IconifyIcon'; 
 import UserDropdown from './UserDropdown';
 
 // Giả định các hằng số này được định nghĩa ở Layout cha (DashboardLayout)
@@ -8,7 +8,6 @@ const DRAWER_CLOSE_WIDTH = 110;
 const TOOLBAR_HEIGHT = 96;
 
 const DashboardHeader = ({ open, handleDrawerToggle }) => {
-  // Mô phỏng down('sm')
   const [isMobileScreen, setIsMobileScreen] = useState(window.innerWidth < 600);
   
   useEffect(() => {

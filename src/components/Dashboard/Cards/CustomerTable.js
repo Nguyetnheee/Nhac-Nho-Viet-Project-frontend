@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { rows } from '../../../data/customer-data/rows'; 
-import { currencyFormat } from '../../../helpers/format-functions'; // Đã sửa đường dẫn
+import { currencyFormat } from '../../../helpers/format-functions';
 
-// Hàm Helper để mô phỏng tìm kiếm
 const filterRows = (data, searchText) => {
     if (!searchText) return data;
     const lowerCaseSearch = searchText.toLowerCase();
@@ -14,7 +13,6 @@ const filterRows = (data, searchText) => {
 };
 
 const CustomerTable = ({ searchText }) => {
-    // Logic lọc dữ liệu
     const visibleRows = useMemo(() => {
         return filterRows(rows, searchText);
     }, [searchText]);
@@ -41,11 +39,9 @@ const CustomerTable = ({ searchText }) => {
                                 <td style={tableCellStyle}>{row.phone}</td>
                                 <td style={tableCellStyle}>{row['billing-address']}</td>
                                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
-                                    {/* Sử dụng format VNĐ */}
                                     {currencyFormat(row['total-spent'])} 
                                 </td>
                                 <td style={tableCellStyle}>
-                                    {/* Actions (Tạm thời chỉ là text/icon placeholder) */}
                                     <button style={actionButtonStyle}>Edit</button>
                                     <button style={{ ...actionButtonStyle, color: 'red' }}>Delete</button>
                                 </td>
@@ -64,7 +60,6 @@ const CustomerTable = ({ searchText }) => {
     );
 };
 
-// Style mẫu (Thay thế MUI style)
 const tableHeaderStyle = { padding: '15px 10px', textAlign: 'left', fontSize: 14, color: '#B0B0B0' };
 const tableCellStyle = { padding: '15px 10px', fontSize: 14 };
 const actionButtonStyle = { background: 'none', border: 'none', color: '#36B37E', cursor: 'pointer', fontSize: 14, marginRight: 10 };

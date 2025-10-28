@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
       try {
         loginResponse = await loginStaff(username, password);
         
-        // SỬA LỖI: Xử lý cấu trúc response đúng cách
+        //  Xử lý cấu trúc response đúng cách
         // Kiểm tra xem role có trong data hay ở level root
         userRole = loginResponse.data?.role || loginResponse.role || 'Staff';
 
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
         
         // Lưu role đã chuẩn hóa
         userRole = normalizedRole;
-        console.log('🎯 Staff login - will redirect to:', dashboardPath);
+        console.log('Staff login - will redirect to:', dashboardPath);
 
       } catch (staffError) {
         try {
@@ -182,16 +182,16 @@ export const AuthProvider = ({ children }) => {
       
       // Navigate after profile is fetched - use setTimeout to ensure it happens after state updates
       setTimeout(() => {
-        console.log('🚀 Executing navigation to:', dashboardPath);
+        console.log('Executing navigation to:', dashboardPath);
         navigate(dashboardPath, { replace: true });
         
         // Additional fallback: force redirect if navigate doesn't work
         setTimeout(() => {
           if (window.location.pathname !== dashboardPath) {
-            console.warn('⚠️ Navigate failed, using window.location redirect');
+            console.warn('Navigate failed, using window.location redirect');
             window.location.replace(dashboardPath);
           } else {
-            console.log('✅ Navigation successful to:', window.location.pathname);
+            console.log('Navigation successful to:', window.location.pathname);
           }
         }, 500);
       }, 0);

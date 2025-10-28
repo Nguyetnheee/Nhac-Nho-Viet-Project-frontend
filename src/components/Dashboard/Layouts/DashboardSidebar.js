@@ -4,11 +4,9 @@ import NavItem from './NavItem';
 import Image from '../../common/Image'; 
 import navItems from '../../../data/nav-items'; 
 
-// Hằng số Layout được đặt SAU tất cả các import
 const DRAWER_OPEN_WIDTH = 240;
 const DRAWER_CLOSE_WIDTH = 110;
 
-// Đường dẫn ảnh và trang chủ
 const logoWithText = '/Logo-with-text.png';
 const logo = '/LOGO.png';
 const homeRoot = '/'; 

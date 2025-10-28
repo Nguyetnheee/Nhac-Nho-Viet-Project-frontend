@@ -1,12 +1,10 @@
 import React, { useMemo } from 'react';
-// SỬA ĐƯỜNG DẪN: Đã đúng 2 cấp ../
 import ReactEChart from '../../common/ReactEChart';
 import * as echarts from 'echarts/core';
 
 const LevelChart = ({ chartRef, data, style, ...rest }) => {
-  // Thay thế theme.palette và alpha bằng màu hardcode (hoặc biến CSS)
-  const primaryMain = '#36B37E'; // Màu xanh lá cây (ví dụ)
-  const grey800 = '#424242'; // Màu xám tối (ví dụ)
+  const primaryMain = '#36B37E'; 
+  const grey800 = '#424242'; 
   const whiteAlpha006 = 'rgba(255, 255, 255, 0.06)';
 
   const option = useMemo(

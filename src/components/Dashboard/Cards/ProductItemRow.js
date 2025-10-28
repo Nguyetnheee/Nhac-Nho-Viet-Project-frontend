@@ -3,10 +3,10 @@ import React from 'react';
 // Hàm mô phỏng LinearProgress (Thanh tiến trình) đơn giản
 const LinearProgress = ({ value, color }) => {
     const colorMap = {
-        info: '#36B37E', // Xanh lá
-        success: '#1976D2', // Xanh dương
-        warning: '#FFAB00', // Cam
-        error: '#F44336', // Đỏ
+        info: '#36B37E',
+        success: '#1976D2',
+        warning: '#FFAB00',
+        error: '#F44336',
     };
     const barColor = colorMap[color] || colorMap['info'];
 
@@ -14,7 +14,7 @@ const LinearProgress = ({ value, color }) => {
         <div 
             style={{ 
                 height: '8px', 
-                backgroundColor: '#1C1C2E', // grey.900
+                backgroundColor: '#1C1C2E', 
                 borderRadius: '4px',
                 overflow: 'hidden'
             }}

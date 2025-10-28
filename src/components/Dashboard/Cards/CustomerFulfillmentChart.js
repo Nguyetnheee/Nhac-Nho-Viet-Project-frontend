@@ -1,16 +1,13 @@
 import React, { useMemo } from 'react';
-// BỔ SUNG: Import thư viện ECharts gốc bị thiếu
 import * as echarts from 'echarts'; 
-// SỬA ĐƯỜNG DẪN: Chỉ còn 2 cấp ../
 import ReactEChart from '../../common/ReactEChart'; 
-// Giữ lại import này vì nó cần cho Component
 import EChartsReactCore from 'echarts-for-react/lib/core'; 
 
 const CustomerFulfillmentChart = ({ chartRef, data, style, ...rest }) => {
-  const secondaryMain = '#FFAB00'; // Màu cam (ví dụ)
-  const primaryMain = '#36B37E';  // Màu xanh lá cây (ví dụ)
+  const secondaryMain = '#FFAB00'; 
+  const primaryMain = '#36B37E'; 
   const whiteAlpha006 = 'rgba(255, 255, 255, 0.06)';
-  const greyA100 = '#F5F5F5'; // Màu xám nhạt
+  const greyA100 = '#F5F5F5'; 
 
   const option = useMemo(
     () => ({
@@ -45,7 +42,7 @@ const CustomerFulfillmentChart = ({ chartRef, data, style, ...rest }) => {
           symbolSize: 5,
           areaStyle: {
             opacity: 0.8,
-            // SỬ DỤNG echarts đã được import
+            
             color: new echarts.graphic.LinearGradient(0, 0, 0, 0.9, [
               { offset: 1, color: greyA100 },
               { offset: 0, color: secondaryMain },
@@ -65,7 +62,6 @@ const CustomerFulfillmentChart = ({ chartRef, data, style, ...rest }) => {
           symbolSize: 5,
           areaStyle: {
             opacity: 0.75,
-            // SỬ DỤNG echarts đã được import
             color: new echarts.graphic.LinearGradient(0, 0, 0, 0.95, [
               { offset: 1, color: greyA100 },
               { offset: 0, color: primaryMain },

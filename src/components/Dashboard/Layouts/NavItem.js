@@ -1,19 +1,17 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-// ĐÃ SỬA: 2 cấp ../ để đến src/components/common/
 import IconifyIcon from '../../common/IconifyIcon'; 
 
-// Hàm NavItem nhận vào navItem object và trạng thái open của sidebar
 const NavItem = ({ navItem, open }) => {
   const { pathname } = useLocation();
   const isActive = pathname === navItem.path;
   
-  // Màu sắc cơ bản
+  
   const primaryMain = '#36B37E'; 
   const backgroundDefault = '#0d0c1e'; 
   const textPrimary = '#FFFFFF'; 
 
-  // Style cho ListItem
+  
   const listItemStyle = {
     display: 'block',
     padding: 0,
@@ -24,7 +22,6 @@ const NavItem = ({ navItem, open }) => {
       : `3px solid transparent`,
   };
 
-  // Style cho Link (ListItemButton)
   const linkStyle = {
     display: 'flex',
     alignItems: 'center',

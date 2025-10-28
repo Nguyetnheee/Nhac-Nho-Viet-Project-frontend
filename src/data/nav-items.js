@@ -10,7 +10,6 @@ const navItems = [
     { id: 8, title: 'Settings', icon: 'mdi:cog', path: '/settings', active: true },
     { id: 9, title: 'Favourite', icon: 'mdi:heart-outline', path: '/favourite', active: true },
     { id: 10, title: 'History', icon: 'mdi:history', path: '/history', active: true },
-    // Dữ liệu cho Login/Sign Up (thường là link ngoài)
 ];
 
 export default navItems;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import EarningsChart from './EarningsChart';
-import { currencyFormat } from '../../../helpers/format-functions'; // Đã sửa đường dẫn
+import { currencyFormat } from '../../../helpers/format-functions'; 
 
 const Earnings = () => {
   const chartRef = useRef(null);
@@ -19,7 +19,7 @@ const Earnings = () => {
     };
   }, [chartRef]);
   
-  const primaryMain = '#36B37E'; // Màu xanh lá cây
+  const primaryMain = '#36B37E'; 
 
   return (
     <div 
@@ -35,11 +35,10 @@ const Earnings = () => {
       <h1 
         style={{ 
             margin: '0 0 15px 0', 
-            fontSize: '36px', // Thay thế h1.fontSize
+            fontSize: '36px', 
             color: primaryMain 
         }}
       >
-        {/* Đã chuyển sang VNĐ */}
         {currencyFormat(6078760, { useGrouping: false })} 
       </h1>
       <p style={{ margin: '0 0 30px 0', fontSize: 16, color: '#B0B0B0' }}>

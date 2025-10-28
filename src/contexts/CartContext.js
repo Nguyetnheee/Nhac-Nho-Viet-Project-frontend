@@ -1,7 +1,5 @@
-// src/contexts/CartContext.js
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// ⚠️ Đảm bảo useAuth được import đúng đường dẫn
 import { useAuth } from "./AuthContext"; 
 import * as cartService from "../services/cartService";
 import { useToast } from '../components/ToastContainer';
@@ -15,24 +13,18 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-  // ⚠️ Đã lấy user và token từ useAuth
   const { isAuthenticated, token, user } = useAuth(); 
   const navigate = useNavigate();
   const { showSuccess } = useToast();
 
-  // Server state only
   const [cartItems, setCartItems] = useState([]);
   const [totals, setTotals] = useState({ totalItems: 0, subTotal: 0, currency: "" });
   const [serverSynced, setServerSynced] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  // ⚠️ Helper xác định xem User có phải là Customer hay không
-  // Dùng `!user?.role` để cho phép người dùng chưa đăng nhập (guest) vẫn có thể xem các trang giỏ hàng/mua sắm nếu cần.
   const isCustomer = user?.role === 'Customer' || (!user?.role && isAuthenticated);
-  // Thêm isAuthenticated vào điều kiện để Guest không được coi là Customer nếu chưa đăng nhập
 
-  // -------- Adapter theo schema GET /api/cart --------
   const adaptCartFromApi = (apiCart) => {
     const items = Array.isArray(apiCart?.items) ? apiCart.items : [];
     const mapped = items.map((i) => ({
@@ -66,7 +58,7 @@ export const CartProvider = ({ children }) => {
 
   // -------- API calls --------
   const fetchCart = async () => {
-    // ⚠️ CHẶN 1: Nếu không phải Customer, KHÔNG tải giỏ hàng
+    //Nếu không phải Customer, KHÔNG tải giỏ hàng
     if (!isCustomer) {
       setServerSynced(false);
       setError(null);
@@ -108,7 +100,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const addToCart = async (productOrId, quantity = 1) => {
-    // ⚠️ CHẶN 2: Nếu không phải Customer, KHÔNG cho phép thêm hàng vào giỏ
+    // Nếu không phải Customer, KHÔNG cho phép thêm hàng vào giỏ
     if (!isCustomer) return; 
     
     if (!isAuthenticated) return requireAuth();
@@ -137,7 +129,7 @@ export const CartProvider = ({ children }) => {
     }
   };
   
-  // ⚠️ CHẶN 3: Thêm điều kiện isCustomer vào các hàm khác
+  //Thêm điều kiện isCustomer vào các hàm khác
   const updateQuantity = async (productId, nextQty) => {
     if (!isCustomer) return;
     if (!isAuthenticated) return requireAuth();
@@ -204,7 +196,7 @@ export const CartProvider = ({ children }) => {
 
   // -------- Effects --------
   useEffect(() => {
-    // ⚠️ CHẶN 4: Chỉ chạy fetchCart nếu là Customer
+    // Chỉ chạy fetchCart nếu là Customer
     if (isAuthenticated && isCustomer) {
       fetchCart();
     } else {
@@ -213,14 +205,12 @@ export const CartProvider = ({ children }) => {
       setServerSynced(false);
       setError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user?.role]); // Thêm user?.role vào dependency
 
-  // -------- Selectors --------
   const getTotalItems = () => totals.totalItems;
   const getTotalPrice = () => totals.subTotal;
   const getDistinctProductCount = () => {
-    return cartItems.length; // Số lượng loại sản phẩm khác nhau
+    return cartItems.length; 
   };
 
   const value = {
@@ -241,7 +231,7 @@ export const CartProvider = ({ children }) => {
 
   return (
     <CartContext.Provider value={value}>
-      {/* ⚠️ CHẶN 5: CHỈ HIỆN LỖI NỘI BỘ CỦA CartContext NẾU LÀ CUSTOMER */}
+      {/*  CHỈ HIỆN LỖI NỘI BỘ CỦA CartContext NẾU LÀ CUSTOMER */}
       {error && isCustomer && ( 
         <div
           className={`fixed top-4 right-4 p-4 rounded-lg ${

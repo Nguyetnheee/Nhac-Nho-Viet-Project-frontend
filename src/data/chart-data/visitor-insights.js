@@ -1,4 +1,3 @@
-// src/data/chart-data/visitor-insights.js
 
 // Dữ liệu mẫu cho biểu đồ khách truy cập
 // (Ví dụ: Số lượng khách truy cập mới theo tháng)

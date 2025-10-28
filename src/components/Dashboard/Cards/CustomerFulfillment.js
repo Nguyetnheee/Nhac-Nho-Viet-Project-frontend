@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import CustomerFulfillmentChart from './CustomerFulfillmentChart';
-// Đường dẫn data: Đã đúng 3 cấp
 import { customerFulfillmentData } from '../../../data/chart-data/customer-fulfillment'; 
-// SỬA ĐƯỜNG DẪN: 3 cấp ../ để thoát khỏi Cards/Dashboard/components và vào src/helpers
 import { currencyFormat } from '../../../helpers/format-functions'; 
 
 const CustomerFulfillment = () => {
@@ -22,14 +20,13 @@ const CustomerFulfillment = () => {
 
   const getTotalFulfillment = useCallback(
     (chartData) => {
-      // Dùng hàm helper mới, đã là VNĐ
       return currencyFormat(chartData.reduce((prev, current) => prev + current, 0));
     },
     [customerFulfillmentData],
   );
   
-  const secondaryMain = '#FFAB00'; // Màu cam
-  const primaryMain = '#36B37E';  // Màu xanh lá cây
+  const secondaryMain = '#FFAB00'; 
+  const primaryMain = '#36B37E';  
 
   return (
     <div 

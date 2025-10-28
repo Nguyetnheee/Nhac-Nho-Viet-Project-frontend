@@ -10,9 +10,8 @@ const Footer = ({ open }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Lấy giá trị margin-left từ MUI (ml={isMobileScreen ? 0 : open ? 60 : 27.5})
   const marginLeftValue = isMobileScreen ? 0 : open ? 60 : 27.5; 
-  const errorMain = '#F44336'; // Màu đỏ (error.main)
+  const errorMain = '#F44336'; 
   const textPrimary = '#FFFFFF';
   const primaryMain = '#36B37E';
 

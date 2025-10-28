@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// Đảm bảo đường dẫn này đúng: 2 cấp ../ để đến src/components/common/
 import IconifyIcon from '../../common/IconifyIcon'; 
-// Đường dẫn này đúng vì UserDropdown cùng cấp trong Layouts/
 import UserDropdown from './UserDropdown'; 
 
 // Hằng số Layout, đồng bộ với DashboardLayout.js
@@ -26,10 +24,9 @@ const DashboardHeader = ({ open, handleDrawerToggle }) => {
     : `calc(100% - ${DRAWER_CLOSE_WIDTH}px)`;
 
   const appBarML = isMobileScreen ? 0 : open ? DRAWER_OPEN_WIDTH : DRAWER_CLOSE_WIDTH; 
-  const toolbarBgColor = '#0d0c1e'; // Màu nền (background.default)
+  const toolbarBgColor = '#0d0c1e'; 
 
   return (
-    // Component AppBar của MUI được thay bằng <header>
     <header
       className="topbar-appbar"
       style={{
@@ -43,7 +40,6 @@ const DashboardHeader = ({ open, handleDrawerToggle }) => {
         paddingRight: '0 !important',
       }}
     >
-      {/* Component Toolbar của MUI được thay bằng <div> */}
       <div
         className="topbar-toolbar"
         style={{

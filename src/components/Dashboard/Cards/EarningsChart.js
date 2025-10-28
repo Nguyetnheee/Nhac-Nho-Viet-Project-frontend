@@ -1,7 +1,6 @@
-// src/components/Dashboard/Cards/EarningsChart.js
 
 import React, { useMemo } from 'react';
-import ReactEChart from '../../common/ReactEChart'; // Đường dẫn 2 cấp
+import ReactEChart from '../../common/ReactEChart'; 
 import * as echarts from 'echarts/core';
 
 const EarningsChart = ({ chartRef, style, ...rest }) => {

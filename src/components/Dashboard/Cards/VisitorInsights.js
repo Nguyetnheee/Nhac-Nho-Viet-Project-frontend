@@ -1,10 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import VisitorInsightsChart from './VisitorInsightsChart';
-// DÙNG ĐƯỜNG DẪN TUYỆT ĐỐI: Bắt đầu từ src/ (sau đó là data/chart-data...)
 import { visitorInsightsData } from '../../../data/chart-data/visitor-insights';
 const VisitorInsights = () => {
   const chartRef = useRef(null);
-  const warningMain = '#FFAB00'; // Màu cam
+  const warningMain = '#FFAB00'; 
 
   useEffect(() => {
     const handleResize = () => {
@@ -37,14 +36,13 @@ const VisitorInsights = () => {
           Visitor Insights
         </h3>
         
-        {/* Nút New Visitors (Thay thế Button MUI) */}
         <button
           style={{
-            background: '#1C1C2E', // background.default
+            background: '#1C1C2E', 
             border: 'none',
             borderRadius: 4,
             padding: '8px 16px',
-            color: '#B0B0B0', // text.disabled
+            color: '#B0B0B0', 
             fontSize: 14,
             display: 'flex',
             alignItems: 'center',

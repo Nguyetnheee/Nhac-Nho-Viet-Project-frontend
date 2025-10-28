@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import LevelChart from './LevelChart';
-import { levelData } from '../../../data/chart-data/level'; // Đường dẫn mới
+import { levelData } from '../../../data/chart-data/level'; 
 
 const Level = () => {
   const chartRef = useRef(null);
@@ -18,7 +18,6 @@ const Level = () => {
   }, [chartRef]);
 
   return (
-    // Thay thế Paper, Stack, Button của MUI bằng div và button HTML
     <div 
         className="dashboard-card level-card" 
         style={{ padding: 20, height: '100%', backgroundColor: '#1E1E1E', borderRadius: 8 }}
@@ -38,7 +37,6 @@ const Level = () => {
             display: 'flex', 
             justifyContent: 'space-around', 
             padding: '12px 0 0 0',
-            // Thay thế Divider bằng border hoặc flex
         }}
       >
         <button className="level-legend-item" style={{ background: 'none', border: 'none', color: '#B0B0B0', fontSize: 14, display: 'flex', alignItems: 'center', cursor: 'default' }}>

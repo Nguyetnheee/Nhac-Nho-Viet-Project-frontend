@@ -1,11 +1,9 @@
 
-// services/api.js
+
 import axios from 'axios';
 
-/** Base URL lấy từ .env */
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
-/** ─────────────────── Instance CÓ AUTH (giữ nguyên hành vi cũ) ─────────────────── **/
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -34,60 +32,49 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      // Tránh reload cứng gây lag; để tầng trên (AuthContext/ProtectedRoute) xử lý điều hướng
     }
     return Promise.reject(error);
   }
 );
 
-/** ─────────────────── CSRF helpers cho endpoint PUBLIC POST ─────────────────── **/
 
-/** Đọc cookie đơn giản */
 function getCookie(name) {
   const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&') + '=([^;]*)'));
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-/** Instance dành cho flow có CSRF: phải gửi cookie + header X-XSRF-TOKEN */
 const csrfApi = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true, // BẮT BUỘC để nhận/gửi cookie CSRF
+  withCredentials: true, 
   timeout: 15000,
 });
 
-/**
- * Gọi để chắc chắn đã có cookie CSRF (XSRF-TOKEN).
- * Thử GET /csrf (chuẩn Spring). Nếu thất bại, fallback GET /
- */
+
 async function initCsrf() {
   // Nếu đã có cookie thì bỏ qua
   if (getCookie('XSRF-TOKEN')) return;
 
   try {
-    await csrfApi.get('/csrf'); // chuẩn Spring
+    await csrfApi.get('/csrf'); 
   } catch (_) {
     try {
-      await csrfApi.get('/'); // fallback: bất kỳ endpoint public nào sinh cookie
+      await csrfApi.get('/'); 
     } catch (__ ) {
-      // im lặng; để request sau báo lỗi nếu cần
     }
   }
 }
 
-/** Interceptor tự gắn X-XSRF-TOKEN cho csrfApi */
 csrfApi.interceptors.request.use(
   async (config) => {
-    // đảm bảo đã có cookie trước khi POST
     if (config.method?.toLowerCase() !== 'get' && !getCookie('XSRF-TOKEN')) {
       await initCsrf();
     }
     const token = getCookie('XSRF-TOKEN');
     if (token) {
-      // Tên header Spring đọc mặc định: X-XSRF-TOKEN
       config.headers['X-XSRF-TOKEN'] = token;
     }
-    // Quan trọng: KHÔNG gắn Authorization ở đây
+   
     if (config.headers?.Authorization) {
       delete config.headers.Authorization;
     }
@@ -96,10 +83,7 @@ csrfApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/** ─────────────────── Các instance không CSRF (nếu cần) ─────────────────── **/
 
-// publicApi: không auth, không cookie (dùng khi backend tắt CSRF cho endpoint)
-// Vẫn giữ lại nếu sau này backend disable CSRF
 export const publicApi = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -107,15 +91,12 @@ export const publicApi = axios.create({
   timeout: 15000,
 });
 
-/** ─────────────────── APIS (giữ nguyên chữ ký) ─────────────────── **/
 
-// (GIỮ NGUYÊN) Verify OTP đăng ký tài khoản mới — yêu cầu đăng nhập? tuỳ backend
 export const verifyRegisterOTP = async (email, otp) => {
   const { data } = await api.post('/api/customer/verify-email', { email, otp });
   return data;
 };
 
-// (GIỮ NGUYÊN) Checkout – cần đăng nhập
 export const checkout = async (checkoutData) => {
   try {
     const { data } = await api.post('/api/checkout', checkoutData);
@@ -127,7 +108,6 @@ export const checkout = async (checkoutData) => {
   }
 };
 
-/* ===== Password Reset (PUBLIC) — DÙNG csrfApi để qua CSRF 403 ===== */
 
 export const forgotPassword = async (email) => {
   // chuẩn hoá email

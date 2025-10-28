@@ -1,4 +1,4 @@
-// src/data/product-data/productTableRows.js
+// Dữ liệu test
 export const productTableRows = [
     { id: '01', name: 'Home Decore Range', popularity: 78, sales: 78, color: 'info' },
     { id: '02', name: 'Disney Princess Dress', popularity: 82, sales: 82, color: 'success' },

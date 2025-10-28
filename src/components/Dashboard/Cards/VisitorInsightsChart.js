@@ -1,13 +1,12 @@
 import React, { useMemo } from 'react';
-// Đã sửa đường dẫn
 import ReactEChart from '../../common/ReactEChart'; 
 import * as echarts from 'echarts/core';
 
 const VisitorInsightsChart = ({ chartRef, data, style, ...rest }) => {
-  const primaryMain = '#36B37E'; // Màu xanh lá cây
-  const warningMain = '#FFAB00'; // Màu cam
+  const primaryMain = '#36B37E'; 
+  const warningMain = '#FFAB00'; 
   const white = '#FFFFFF';
-  const greyA100 = '#F5F5F5'; // Màu xám nhạt
+  const greyA100 = '#F5F5F5'; 
 
   const option = useMemo(
     () => ({
@@ -38,7 +37,6 @@ const VisitorInsightsChart = ({ chartRef, data, style, ...rest }) => {
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: {
-            // Loại bỏ formatter và style MUI, dùng JS/CSS cơ bản
             padding: [10, 25, 10, 15],
             fontSize: 14,
             fontWeight: 500,
