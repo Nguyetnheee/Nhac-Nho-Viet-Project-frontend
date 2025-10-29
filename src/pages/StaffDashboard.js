@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  DesktopOutlined,
   FileOutlined,
   PieChartOutlined,
   EditOutlined,
   TeamOutlined,
   GoldOutlined,
+  CarOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
@@ -16,6 +16,7 @@ import Inventory from './staff/Inventory';
 import RitualManagement from './staff/RitualManagement';
 import TrayManagement from './staff/TrayManagement';
 import ChecklistManagement from './staff/ChecklistManagement';
+import ShipperManagement from './staff/ShipperManagement';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -36,7 +37,7 @@ const items = [
     getItem('Mâm cúng', '4'),
     getItem('Checklist', '5'),
   ]),
-  getItem('Team', 'sub2', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
+  getItem('Vai trò', 'sub2', <TeamOutlined />, [getItem('Shipper', '6', <CarOutlined />), getItem('Khách hàng', '8', <UserOutlined />)]),
   getItem('Files', '9', <FileOutlined />),
 ];
 
@@ -50,42 +51,41 @@ const StaffDashboard = () => {
 
   // Function để render content dựa trên menu được chọn
   const renderContent = () => {
-    switch (selectedKey) {
-      case '1':
-        return <Overview />;
-      case '2':
-        return <Inventory />;
-      case '3':
-        return <RitualManagement />;
-      case '4':
-        return <TrayManagement />;
-      case '5':
-        return <ChecklistManagement />;
-      case '6':
-        return <div><h2>Team 1</h2><p>Nội dung Team 1...</p></div>;
-      case '8':
-        return <div><h2>Team 2</h2><p>Nội dung Team 2...</p></div>;
-      case '9':
-        return <div><h2>Files</h2><p>Quản lý file...</p></div>;
-      default:
-        return <Overview />;
-    }
-  };
-
+  switch (selectedKey) {
+    case '1':
+      return <Overview />;
+    case '2':
+      return <Inventory />;
+    case '3':
+      return <RitualManagement />;
+    case '4':
+      return <TrayManagement />;
+    case '5':
+      return <ChecklistManagement />;
+    case '6':
+      return <ShipperManagement />; 
+    case '8':
+      return <div><h2>Khách hàng</h2><p>Quản lý khách hàng...</p></div>;
+    case '9':
+      return <div><h2>Files</h2><p>Quản lý file...</p></div>;
+    default:
+      return <Overview />;
+  }
+};
   // Function để lấy breadcrumb dựa trên menu được chọn
-  const getBreadcrumb = () => {
-    const breadcrumbMap = {
-      '1': [{ title: 'Dashboard' }, { title: 'Tổng quan' }],
-      '2': [{ title: 'Dashboard' }, { title: 'Kho hàng' }],
-      '3': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Lễ hội' }],
-      '4': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Mâm cúng' }],
-      '5': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Checklist' }],
-      '6': [{ title: 'Dashboard' }, { title: 'Team' }, { title: 'Team 1' }],
-      '8': [{ title: 'Dashboard' }, { title: 'Team' }, { title: 'Team 2' }],
-      '9': [{ title: 'Dashboard' }, { title: 'Files' }],
-    };
-    return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
+const getBreadcrumb = () => {
+  const breadcrumbMap = {
+    '1': [{ title: 'Dashboard' }, { title: 'Tổng quan' }],
+    '2': [{ title: 'Dashboard' }, { title: 'Kho hàng' }],
+    '3': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Lễ hội' }],
+    '4': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Mâm cúng' }],
+    '5': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Checklist' }],
+    '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }], 
+    '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
+    '9': [{ title: 'Dashboard' }, { title: 'Files' }],
   };
+  return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
+};
 
   const handleMenuClick = (e) => {
     setSelectedKey(e.key);
