@@ -1,52 +1,113 @@
-import axios from "axios";
+import axios from 'axios';
 
-const API_BASE_URL = "https://isp-7jpp.onrender.com";
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-export const publicApi = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
+// Tạo axios instance với interceptor để tự động thêm token
+const axiosInstance = axios.create({
+  baseURL: API_URL,
 });
 
+// Interceptor để tự động thêm Authorization header
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token'); // hoặc sessionStorage
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor để xử lý response error
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token hết hạn hoặc không hợp lệ
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const ritualService = {
+  // Lấy danh sách tất cả lễ hội
   getAllRituals: async () => {
     try {
-      const res = await publicApi.get("/api/rituals");
-      console.log("API success:", res.data);
-      return res.data;
-    } catch (err) {
-      console.error("API error:", err);
-      throw err;
+      const response = await axiosInstance.get('/api/rituals');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching rituals:', error);
+      throw error;
     }
   },
 
-    // Lấy tất cả các lễ
-    getRitualById: (id) => publicApi.get(`/api/rituals/${id}`),
-
-    // Lọc lễ
-    filterRitualsByRegions: async (regionNames = [], page = 0, size = 100) => {
-    const res = await publicApi.get("/api/rituals/filter", {
-      params: { regionNames, page, size },
-    });
-    const data = res?.data || {};
-    return {
-      page: data.number ?? 0,
-      size: data.size ?? size,
-      totalPages: data.totalPages ?? 1,
-      totalElements: data.totalElements ?? (data.content?.length || 0),
-      content: Array.isArray(data.content) ? data.content : [],
-      raw: data,
-    };
+  // Lấy chi tiết một lễ hội
+  getRitualById: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/api/rituals/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching ritual details:', error);
+      throw error;
+    }
   },
 
+  // Thêm lễ hội mới (cho staff)
+  createRitual: async (ritualData) => {
+    try {
+      // Format dữ liệu theo đúng cấu trúc backend yêu cầu
+      const formattedData = {
+        ritualName: ritualData.ritualName,
+        dateLunar: ritualData.dateLunar || null,
+        regionId: ritualData.regionId,
+        dateSolar: ritualData.dateSolar || null,
+        description: ritualData.description || null,
+        meaning: ritualData.meaning || null,
+        imageUrl: ritualData.imageUrl || null
+      };
 
-  //  Search lễ
-  searchRituals: async (q) => {
-    const res = await publicApi.get("/api/rituals/search", {
-      params: { q: String(q || "").trim() }, 
-    });
-    return Array.isArray(res.data) ? res.data : [];
+      const response = await axiosInstance.post('/api/rituals', formattedData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating ritual:', error);
+      throw error;
+    }
+  },
+
+  // Cập nhật lễ hội (cho staff)
+  updateRitual: async (id, ritualData) => {
+    try {
+      const formattedData = {
+        ritualName: ritualData.ritualName,
+        dateLunar: ritualData.dateLunar || null,
+        regionId: ritualData.regionId,
+        dateSolar: ritualData.dateSolar || null,
+        description: ritualData.description || null,
+        meaning: ritualData.meaning || null,
+        imageUrl: ritualData.imageUrl || null
+      };
+
+      const response = await axiosInstance.put(`/api/rituals/${id}`, formattedData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating ritual:', error);
+      throw error;
+    }
+  },
+
+  // Xóa lễ hội (cho staff)
+  deleteRitual: async (id) => {
+    try {
+      const response = await axiosInstance.delete(`/api/rituals/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting ritual:', error);
+      throw error;
+    }
   },
 };

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, Select } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { ritualService } from '../../services/ritualService';
 
 // Import các component mới
 import ViewRitual from './ViewRitual';
@@ -12,8 +13,41 @@ const { Option } = Select;
 const RitualManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'view', 'edit'
+  const [currentView, setCurrentView] = useState('list');
   const [selectedRitualId, setSelectedRitualId] = useState(null);
+  const [rituals, setRituals] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch data khi component mount
+  useEffect(() => {
+    fetchRituals();
+  }, []);
+
+  const fetchRituals = async () => {
+    setLoading(true);
+    try {
+      const data = await ritualService.getAllRituals();
+      // Transform data để phù hợp với Table
+      const transformedData = data.map((ritual, index) => ({
+        key: ritual.ritualId.toString(),
+        id: ritual.ritualId,
+        name: ritual.ritualName,
+        region: ritual.regionName,
+        dateLunar: ritual.dateLunar,
+        dateSolar: ritual.dateSolar,
+        description: ritual.description,
+        meaning: ritual.meaning,
+        imageUrl: ritual.imageUrl,
+        status: 'active', // Mặc định, có thể thay đổi nếu backend có trường này
+      }));
+      setRituals(transformedData);
+    } catch (error) {
+      message.error('Không thể tải danh sách lễ hội!');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = [
     {
@@ -34,9 +68,15 @@ const RitualManagement = () => {
       render: (region) => <Tag color="blue">{region}</Tag>,
     },
     {
-      title: 'Ngày diễn ra',
-      dataIndex: 'date',
-      key: 'date',
+      title: 'Ngày âm lịch',
+      dataIndex: 'dateLunar',
+      key: 'dateLunar',
+    },
+    {
+      title: 'Ngày dương lịch',
+      dataIndex: 'dateSolar',
+      key: 'dateSolar',
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '-',
     },
     {
       title: 'Trạng thái',
@@ -53,26 +93,26 @@ const RitualManagement = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button 
-            type="default" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="default"
+            icon={<EyeOutlined />}
             size="small"
             onClick={() => handleView(record.id)}
           >
             Xem
           </Button>
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             size="small"
             onClick={() => handleEdit(record.id)}
           >
             Sửa
           </Button>
-          <Button 
-            type="primary" 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            type="primary"
+            danger
+            icon={<DeleteOutlined />}
             size="small"
             onClick={() => handleDelete(record.id)}
           >
@@ -81,26 +121,6 @@ const RitualManagement = () => {
         </Space>
       ),
     },
-  ];
-
-  const data = [
-    {
-      key: '1',
-      id: 1,
-      name: 'Tết Nguyên Đán',
-      region: 'Toàn quốc',
-      date: '01/01/2025',
-      status: 'active',
-    },
-    {
-      key: '2',
-      id: 2,
-      name: 'Lễ hội Chợ trâu Đồ Sơn',
-      region: 'Miền Bắc',
-      date: null,
-      status: 'active',
-    },
-    // Thêm data mẫu khác...
   ];
 
   // Navigation handlers
@@ -121,9 +141,15 @@ const RitualManagement = () => {
       okText: 'Xóa',
       okType: 'danger',
       cancelText: 'Hủy',
-      onOk() {
-        console.log('Xóa lễ hội:', ritualId);
-        // Thực hiện logic xóa ở đây
+      onOk: async () => {
+        try {
+          await ritualService.deleteRitual(ritualId);
+          message.success('Xóa lễ hội thành công!');
+          fetchRituals(); // Refresh danh sách
+        } catch (error) {
+          message.error('Xóa lễ hội thất bại!');
+          console.error(error);
+        }
       },
     });
   };
@@ -131,11 +157,11 @@ const RitualManagement = () => {
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedRitualId(null);
+    fetchRituals(); // Refresh data khi quay về
   };
 
   const handleSaveEdit = (updatedRitual) => {
-    console.log('Đã cập nhật lễ hội:', updatedRitual);
-    // Refresh data và quay về list
+    message.success('Cập nhật lễ hội thành công!');
     handleBackToList();
   };
 
@@ -149,10 +175,26 @@ const RitualManagement = () => {
   };
 
   const handleSubmit = async (values) => {
-    console.log('Thêm lễ hội:', values);
-    // Gọi API thêm lễ hội ở đây
-    setIsModalVisible(false);
-    form.resetFields();
+    try {
+      setLoading(true);
+
+      // Log để kiểm tra dữ liệu trước khi gửi
+      console.log('Form values:', values);
+
+      const result = await ritualService.createRitual(values);
+
+      console.log('Created ritual:', result);
+      message.success('Thêm lễ hội thành công!');
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchRituals(); // Refresh danh sách
+    } catch (error) {
+      console.error('Error details:', error.response?.data);
+      const errorMessage = error.response?.data?.message || 'Thêm lễ hội thất bại!';
+      message.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Render different views based on currentView state
@@ -186,14 +228,17 @@ const RitualManagement = () => {
         </Button>
       </div>
 
-      <Table 
-        columns={columns} 
-        dataSource={data}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-        }}
-      />
+      <Spin spinning={loading}>
+        <Table
+          columns={columns}
+          dataSource={rituals}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng số ${total} lễ hội`,
+          }}
+        />
+      </Spin>
 
       <Modal
         title="Thêm lễ hội mới"
@@ -208,7 +253,7 @@ const RitualManagement = () => {
           onFinish={handleSubmit}
         >
           <Form.Item
-            name="name"
+            name="ritualName"
             label="Tên lễ hội"
             rules={[{ required: true, message: 'Vui lòng nhập tên lễ hội!' }]}
           >
@@ -216,23 +261,30 @@ const RitualManagement = () => {
           </Form.Item>
 
           <Form.Item
-            name="region"
+            name="regionId"
             label="Vùng miền"
             rules={[{ required: true, message: 'Vui lòng chọn vùng miền!' }]}
           >
             <Select placeholder="Chọn vùng miền">
-              <Option value="Toàn quốc">Toàn quốc</Option>
-              <Option value="Miền Bắc">Miền Bắc</Option>
-              <Option value="Miền Trung">Miền Trung</Option>
-              <Option value="Miền Nam">Miền Nam</Option>
+              <Option value={1}>Miền Bắc</Option>
+              <Option value={2}>Miền Trung</Option>
+              <Option value={3}>Miền Nam</Option>
+              <Option value={0}>Toàn quốc</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
-            name="date"
-            label="Ngày diễn ra"
+            name="dateLunar"
+            label="Ngày âm lịch"
           >
-            <Input placeholder="VD: 01/01/2025" />
+            <Input placeholder="VD: 01/01" />
+          </Form.Item>
+
+          <Form.Item
+            name="dateSolar"
+            label="Ngày dương lịch"
+          >
+            <Input type="date" />
           </Form.Item>
 
           <Form.Item
@@ -242,9 +294,23 @@ const RitualManagement = () => {
             <TextArea rows={4} placeholder="Nhập mô tả lễ hội..." />
           </Form.Item>
 
+          <Form.Item
+            name="meaning"
+            label="Ý nghĩa"
+          >
+            <TextArea rows={4} placeholder="Nhập ý nghĩa lễ hội..." />
+          </Form.Item>
+
+          <Form.Item
+            name="imageUrl"
+            label="URL hình ảnh"
+          >
+            <Input placeholder="Nhập URL hình ảnh..." />
+          </Form.Item>
+
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={loading}>
                 Thêm lễ hội
               </Button>
               <Button onClick={handleCancel}>
