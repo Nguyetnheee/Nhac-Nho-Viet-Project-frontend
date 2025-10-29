@@ -101,7 +101,7 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         element: (
-          <ProtectedRoute roles={["Customer", "Staff", "Admin", "Shipper"]}>
+          <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
             <Profile />
           </ProtectedRoute>
         ),
@@ -111,7 +111,7 @@ export const router = createBrowserRouter([
       {
         path: "staff-dashboard",
         element: (
-          <ProtectedRoute roles={["Staff"]}>
+          <ProtectedRoute roles={["STAFF"]}>
             <StaffDashboard />
           </ProtectedRoute>
         ),
@@ -121,7 +121,7 @@ export const router = createBrowserRouter([
       {
         path: "admin-dashboard",
         element: (
-          <ProtectedRoute roles={["Admin"]}>
+          <ProtectedRoute roles={["ADMIN"]}>
             <AdminPanel />
           </ProtectedRoute>
         ),
@@ -131,7 +131,7 @@ export const router = createBrowserRouter([
       {
         path: "shipper-dashboard",
         element: (
-          <ProtectedRoute roles={["Shipper"]}>
+          <ProtectedRoute roles={["SHIPPER"]}>
             <ShipperPanel />
           </ProtectedRoute>
         ),
@@ -141,7 +141,7 @@ export const router = createBrowserRouter([
       {
         path: "checklist",
         element: (
-          <ProtectedRoute roles={["Customer", "Staff", "Admin", "Shipper"]}>
+          <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
             <Checklist />
           </ProtectedRoute>
         ),

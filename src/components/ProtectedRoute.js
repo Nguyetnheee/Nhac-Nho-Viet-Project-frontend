@@ -23,7 +23,7 @@ const ProtectedRoute = ({ children, roles = [], allowedRoles }) => {
   // Determine the required roles: prefer explicit `roles`, fall back to `allowedRoles`
   const requiredRoles = roles && roles.length > 0 ? roles : (allowedRoles || []);
 
-  // Chuẩn hóa role từ user
+  // Lấy role từ user (đã là UPPERCASE từ database)
   const userRole = user?.role;
   console.log('🔐 ProtectedRoute check:', {
     userRole,
@@ -36,10 +36,10 @@ const ProtectedRoute = ({ children, roles = [], allowedRoles }) => {
   if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(userRole)) {
     // Redirect based on role if they try to access a page they don't have permission for
     const roleRedirects = {
-      'Admin': '/admin-dashboard',
-      'Shipper': '/shipper-dashboard', 
-      'Customer': '/',
-      'Staff': '/staff-dashboard'
+      'ADMIN': '/admin-dashboard',
+      'SHIPPER': '/shipper-dashboard', 
+      'CUSTOMER': '/',
+      'STAFF': '/staff-dashboard'
     };
     
     // Chuyển hướng về dashboard tương ứng nếu truy cập route không hợp lệ

@@ -19,7 +19,7 @@ const Navbar = () => {
   };
 
   // If user is Staff, show simplified navbar
-  if (user?.role === 'Staff') {
+  if (user?.role === 'STAFF') {
     return (
       <nav className="bg-vietnam-red shadow-lg relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -115,7 +115,7 @@ const Navbar = () => {
                   Tài khoản
                 </Link>
                 
-                {user?.role === 'Admin' && (
+                {user?.role === 'ADMIN' && (
                   <Link
                     to="/admin-dashboard"
                     className="text-white hover:text-vietnam-gold transition-colors"
@@ -123,7 +123,7 @@ const Navbar = () => {
                     Quản trị
                   </Link>
                 )}
-                {user?.role === 'Shipper' && (
+                {user?.role === 'SHIPPER' && (
                   <Link
                     to="/shipper-dashboard"
                     className="text-white hover:text-vietnam-gold transition-colors"
@@ -233,7 +233,7 @@ const Navbar = () => {
                 >
                   Thông tin cá nhân
                 </Link>
-                {user?.role === 'Admin' && (
+                {user?.role === 'ADMIN' && (
                   <Link
                     to="/admin-dashboard"
                     className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
@@ -242,7 +242,7 @@ const Navbar = () => {
                     Quản trị
                   </Link>
                 )}
-                {user?.role === 'Shipper' && (
+                {user?.role === 'SHIPPER' && (
                   <Link
                     to="/shipper-dashboard"
                     className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"

@@ -25,11 +25,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
   
-  // Chuẩn hóa role từ localStorage
+  // Lấy role từ localStorage (giữ nguyên UPPERCASE như database)
   const rawRoleFromStorage = localStorage.getItem('role');
-  const roleFromStorage = rawRoleFromStorage 
-    ? rawRoleFromStorage.charAt(0).toUpperCase() + rawRoleFromStorage.slice(1).toLowerCase()
-    : null;
+  const roleFromStorage = rawRoleFromStorage; // Không normalize, giữ nguyên UPPERCASE
 
   // Helper: wrap a promise with timeout to avoid hanging UI
   const withTimeout = (promise, ms = 8000) =>
@@ -53,11 +51,11 @@ export const AuthProvider = ({ children }) => {
         data.role = role;
       }
       
-      // Chuẩn hóa role về dạng chuẩn (Staff, Admin, Customer, Shipper)
+      // Giữ role ở dạng UPPERCASE như database (STAFF, ADMIN, CUSTOMER, SHIPPER)
       if (data.role) {
         const originalRole = data.role;
-        data.role = data.role.charAt(0).toUpperCase() + data.role.slice(1).toLowerCase();
-        console.log('🔄 Role normalization in fetchUserProfile:', originalRole, '=>', data.role);
+        data.role = data.role.toUpperCase(); // Đảm bảo luôn là UPPERCASE
+        console.log('🔄 Role keeping in UPPERCASE:', originalRole, '=>', data.role);
       }
       
       setUser(data);
@@ -118,21 +116,18 @@ export const AuthProvider = ({ children }) => {
       try {
         loginResponse = await loginStaff(username, password);
         
-        //  Xử lý cấu trúc response đúng cách
-        // Kiểm tra xem role có trong data hay ở level root
-        userRole = loginResponse.data?.role || loginResponse.role || 'Staff';
-
-        // Chuẩn hóa role về dạng chuẩn
-        const normalizedRole = userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase();
+        // Lấy role từ response (giữ nguyên UPPERCASE như database)
+        userRole = loginResponse.data?.role || loginResponse.role || 'STAFF';
+        userRole = userRole.toUpperCase();
         
-        switch (normalizedRole) {
-          case 'Staff':
+        switch (userRole) {
+          case 'STAFF':
             dashboardPath = '/staff-dashboard';
             break;
-          case 'Admin':
+          case 'ADMIN':
             dashboardPath = '/admin-dashboard';
             break;
-          case 'Shipper':
+          case 'SHIPPER':
             dashboardPath = '/shipper-dashboard';
             break;
           default:
@@ -140,19 +135,17 @@ export const AuthProvider = ({ children }) => {
             break;
         }
         
-        // Lưu role đã chuẩn hóa
-        userRole = normalizedRole;
-        console.log('Staff login - will redirect to:', dashboardPath);
+        console.log('Staff login - role:', userRole, 'will redirect to:', dashboardPath);
 
       } catch (staffError) {
         try {
           loginResponse = await loginCustomer(username, password);
-          userRole = 'Customer';
+          userRole = 'CUSTOMER'; 
           dashboardPath = '/';
         } catch (customerError) {
           try {
             loginResponse = await loginShipper(username, password);
-            userRole = 'Shipper';
+            userRole = 'SHIPPER'; 
             dashboardPath = '/shipper-dashboard';
           } catch (shipperError) {
             throw new Error('Tên đăng nhập hoặc mật khẩu không hợp lệ.');
