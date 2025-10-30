@@ -117,7 +117,7 @@ const getBreadcrumb = () => {
           borderBottom: '1px solid #f0f0f0'
         }}>
           <h3 style={{ margin: 0, color: '#1890ff' }}>
-            🎋 Nhắc Nhớ Việt - Staff Dashboard
+           
           </h3>
         </Header>
         <Content style={{ margin: '0 16px' }}>

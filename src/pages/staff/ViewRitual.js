@@ -1,164 +1,182 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Descriptions, Tag, Image, Button, Space, Spin, Alert } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Descriptions, Button, Space, Spin, Tag, Typography, Image, Empty } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, CalendarOutlined, EnvironmentOutlined, InfoCircleOutlined, FileImageOutlined, EyeOutlined } from '@ant-design/icons';
+import { ritualService } from '../../services/ritualService';
+
+const { Title, Text, Paragraph } = Typography;
 
 const ViewRitual = ({ ritualId, onBack, onEdit }) => {
   const [ritual, setRitual] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call để lấy chi tiết lễ hội
-    const fetchRitualDetail = () => {
-      setLoading(true);
-      
-      // Mock data - thay thế bằng API call thực tế
-      setTimeout(() => {
-        const mockRitual = {
-          id: ritualId,
-          name: ritualId === 1 ? 'Tết Nguyên Đán' : 'Lễ hội Chợ trâu Đồ Sơn',
-          region: ritualId === 1 ? 'Toàn quốc' : 'Miền Bắc',
-          date: ritualId === 1 ? '01/01/2025' : null,
-          status: 'active',
-          description: ritualId === 1 
-            ? 'Tết Nguyên Đán là ngày lễ quan trọng nhất trong năm của người Việt Nam, đánh dấu sự khởi đầu của năm mới theo âm lịch. Đây là dịp để gia đình sum họp, thờ cúng tổ tiên và cầu chúc một năm mới an khang thịnh vượng.'
-            : 'Lễ hội Chợ trâu Đồ Sơn là một lễ hội truyền thống độc đáo của vùng đất Hải Phòng, thể hiện nét văn hóa đặc sắc của người dân miền Bắc.',
-          traditions: ritualId === 1 
-            ? ['Dọn dẹp nhà cửa', 'Cúng ông Táo', 'Cúng giao thừa', 'Lì xì', 'Chúc Tết', 'Thăm họ hàng']
-            : ['Tắm trâu', 'Diễu hành', 'Thi đấu', 'Ăn mừng'],
-          offerings: ritualId === 1
-            ? ['Bánh chưng', 'Bánh tét', 'Thịt luộc', 'Gà luộc', 'Rượu cần', 'Hoa quả', 'Bánh kẹo']
-            : ['Cơm', 'Thịt', 'Rượu', 'Hoa quả'],
-          images: [
-            'https://via.placeholder.com/300x200?text=Ritual+Image+1',
-            'https://via.placeholder.com/300x200?text=Ritual+Image+2',
-            'https://via.placeholder.com/300x200?text=Ritual+Image+3'
-          ],
-          createdAt: '2024-01-15',
-          updatedAt: '2024-10-20'
-        };
+    console.log('=== VIEW RITUAL COMPONENT ===');
+    console.log('Ritual ID:', ritualId);
+    
+    const fetchRitualDetails = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching ritual details for ID:', ritualId);
         
-        setRitual(mockRitual);
+        const data = await ritualService.getRitualById(ritualId);
+        
+        console.log('Ritual details response:', data);
+        console.log('Image URL from response:', data.imageUrl);
+        
+        setRitual(data);
+      } catch (error) {
+        console.error('Error fetching ritual details:', error);
+        console.error('Error response:', error.response?.data);
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
     if (ritualId) {
-      fetchRitualDetail();
+      fetchRitualDetails();
     }
   }, [ritualId]);
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Spin size="large" />
-        <p style={{ marginTop: 16 }}>Đang tải thông tin lễ hội...</p>
+      <div className="flex justify-center items-center h-96">
+        <Spin size="large" tip="Đang tải thông tin lễ hội..." />
       </div>
     );
   }
 
   if (!ritual) {
     return (
-      <Alert
-        message="Không tìm thấy thông tin lễ hội"
-        type="error"
-        showIcon
-        action={
-          <Button size="small" onClick={onBack}>
+      <Card>
+        <Empty description="Không tìm thấy thông tin lễ hội" />
+        <div className="text-center mt-4">
+          <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
             Quay lại
           </Button>
-        }
-      />
+        </div>
+      </Card>
     );
   }
 
   return (
-    <div>
-      {/* Header với nút quay lại */}
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
-            Quay lại danh sách
-          </Button>
-          <h2 style={{ margin: 0 }}>Chi tiết lễ hội: {ritual.name}</h2>
-        </Space>
-        
-        <Space>
-          <Button type="primary" icon={<EditOutlined />} onClick={() => onEdit(ritual.id)}>
-            Chỉnh sửa
-          </Button>
-          <Button type="primary" danger icon={<DeleteOutlined />}>
-            Xóa lễ hội
-          </Button>
-        </Space>
+    <div className="bg-vietnam-cream min-h-screen p-6 font-sans">
+      {/* Header */}
+      <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-red !mb-1">
+              <Space>
+                <InfoCircleOutlined />
+                Chi tiết Lễ hội
+              </Space>
+            </Title>
+            <Text type="secondary">Xem thông tin chi tiết về lễ hội truyền thống</Text>
+          </div>
+          <Space>
+            <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
+              Quay lại
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<EditOutlined />} 
+              onClick={() => onEdit(ritualId)}
+              className="bg-vietnam-red hover:!bg-red-800"
+            >
+              Chỉnh sửa
+            </Button>
+          </Space>
+        </div>
+      </Card>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Image */}
+        <div className="lg:col-span-1">
+          <Card 
+            title={
+              <Space>
+                <FileImageOutlined />
+                Hình ảnh lễ hội
+              </Space>
+            }
+            className="shadow-lg rounded-xl h-full"
+          >
+            {ritual.imageUrl ? (
+              <div className="text-center">
+                <Image
+                  src={ritual.imageUrl}
+                  alt={ritual.ritualName}
+                  style={{ 
+                    width: '100%', 
+                    maxHeight: '400px',
+                    objectFit: 'cover',
+                    borderRadius: '8px'
+                  }}
+                  fallback="data:image/png;base64,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"
+                  preview={{
+                    mask: <Space><EyeOutlined /> Xem ảnh</Space>
+                  }}
+                />
+                <Paragraph className="mt-4 text-gray-500 text-xs">
+                  URL: <Text copyable ellipsis>{ritual.imageUrl}</Text>
+                </Paragraph>
+              </div>
+            ) : (
+              <Empty 
+                description="Chưa có hình ảnh"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            )}
+          </Card>
+        </div>
+
+        {/* Right Column - Details */}
+        <div className="lg:col-span-2">
+          <Card className="shadow-lg rounded-xl">
+            <Title level={3} className="font-serif !text-vietnam-red mb-4">
+              {ritual.ritualName}
+            </Title>
+            
+            <Descriptions bordered column={1} size="middle">
+              <Descriptions.Item 
+                label={<Space><CalendarOutlined /> Ngày âm lịch</Space>}
+              >
+                <Tag color="blue">{ritual.dateLunar || 'Chưa cập nhật'}</Tag>
+              </Descriptions.Item>
+
+              <Descriptions.Item 
+                label={<Space><CalendarOutlined /> Ngày dương lịch</Space>}
+              >
+                {ritual.dateSolar ? (
+                  <Tag color="green">
+                    {new Date(ritual.dateSolar).toLocaleDateString('vi-VN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </Tag>
+                ) : (
+                  <Text type="secondary">Chưa cập nhật</Text>
+                )}
+              </Descriptions.Item>
+
+              <Descriptions.Item 
+                label={<Space><EnvironmentOutlined /> Vùng miền</Space>}
+              >
+                <Tag color="gold">{ritual.regionName}</Tag>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Mô tả">
+                <Paragraph>{ritual.description || 'Chưa có mô tả'}</Paragraph>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Ý nghĩa">
+                <Paragraph>{ritual.meaning || 'Chưa có ý nghĩa'}</Paragraph>
+              </Descriptions.Item>
+            </Descriptions>
+          </Card>
+        </div>
       </div>
-
-      {/* Thông tin cơ bản */}
-      <Card title="Thông tin cơ bản" style={{ marginBottom: 24 }}>
-        <Descriptions bordered column={2}>
-          <Descriptions.Item label="ID" span={1}>
-            {ritual.id}
-          </Descriptions.Item>
-          <Descriptions.Item label="Tên lễ hội" span={1}>
-            <strong>{ritual.name}</strong>
-          </Descriptions.Item>
-          <Descriptions.Item label="Vùng miền" span={1}>
-            <Tag color="blue">{ritual.region}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Ngày diễn ra" span={1}>
-            {ritual.date || 'Chưa xác định'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Trạng thái" span={1}>
-            <Tag color={ritual.status === 'active' ? 'green' : 'red'}>
-              {ritual.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Ngày tạo" span={1}>
-            {ritual.createdAt}
-          </Descriptions.Item>
-          <Descriptions.Item label="Mô tả" span={2}>
-            {ritual.description}
-          </Descriptions.Item>
-        </Descriptions>
-      </Card>
-
-      {/* Truyền thống & Phong tục */}
-      <Card title="Truyền thống & Phong tục" style={{ marginBottom: 24 }}>
-        <div style={{ marginBottom: 16 }}>
-          <strong>Các hoạt động truyền thống:</strong>
-          <div style={{ marginTop: 8 }}>
-            {ritual.traditions.map((tradition, index) => (
-              <Tag key={index} color="purple" style={{ margin: '4px 4px 4px 0' }}>
-                {tradition}
-              </Tag>
-            ))}
-          </div>
-        </div>
-        
-        <div>
-          <strong>Đồ cúng truyền thống:</strong>
-          <div style={{ marginTop: 8 }}>
-            {ritual.offerings.map((offering, index) => (
-              <Tag key={index} color="orange" style={{ margin: '4px 4px 4px 0' }}>
-                {offering}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      {/* Hình ảnh */}
-      <Card title="Hình ảnh lễ hội">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-          {ritual.images.map((image, index) => (
-            <Image
-              key={index}
-              src={image}
-              alt={`${ritual.name} - Hình ${index + 1}`}
-              style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 8 }}
-            />
-          ))}
-        </div>
-      </Card>
     </div>
   );
 };
