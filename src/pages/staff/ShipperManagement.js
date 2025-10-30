@@ -160,7 +160,7 @@ const ShipperManagement = () => {
       sorter: (a, b) => a.shipperName.localeCompare(b.shipperName),
       render: (name, record) => (
         <div>
-          <Text strong className="text-vietnam-red">{name}</Text>
+          <Text strong className="text-vietnam-green">{name}</Text>
           <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>@{record.username}</Text>
         </div>
       ),
@@ -222,14 +222,14 @@ const ShipperManagement = () => {
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div className="mb-4 md:mb-0">
-            <Title level={2} className="font-serif !text-vietnam-red !mb-1">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
               <Space><TeamOutlined /> Quản lý Shipper</Space>
             </Title>
             <Text type="secondary">Quản lý và cấp tài khoản cho người giao hàng.</Text>
           </div>
           <Space>
             <Button icon={<ReloadOutlined />} onClick={loadShippers} loading={loading}>Tải lại</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCurrentView('create')} className="bg-vietnam-red hover:!bg-red-800">
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCurrentView('create')} className="bg-vietnam-green hover:!bg-emerald-800">
               Tạo tài khoản
             </Button>
           </Space>
@@ -266,7 +266,7 @@ const ShipperManagement = () => {
           locale={{
             emptyText: (
               <Empty description="Không có shipper nào." image={Empty.PRESENTED_IMAGE_SIMPLE}>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setCurrentView('create')} className="bg-vietnam-red hover:!bg-red-800">
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setCurrentView('create')} className="bg-vietnam-green hover:!bg-emerald-800">
                   Tạo shipper đầu tiên
                 </Button>
               </Empty>

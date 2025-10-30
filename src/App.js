@@ -17,7 +17,8 @@ function App() {
   const isDashboardRoute = 
     pathname.startsWith('/admin-dashboard') ||
     pathname.startsWith('/staff-dashboard') ||
-    pathname.startsWith('/shipper-dashboard');
+    pathname.startsWith('/shipper-dashboard')||
+    pathname.startsWith('/staff-login');
 
   return (
     <AuthProvider>

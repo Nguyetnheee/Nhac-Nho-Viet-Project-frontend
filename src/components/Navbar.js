@@ -21,7 +21,7 @@ const Navbar = () => {
   // If user is Staff, show simplified navbar
   if (user?.role === 'STAFF') {
     return (
-      <nav className="bg-vietnam-red shadow-lg relative z-50">
+      <nav className="bg-vietnam-green shadow-lg relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center space-x-2">
@@ -36,7 +36,7 @@ const Navbar = () => {
             </div>
             <button
               onClick={handleLogout}
-              className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
+              className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
             >
               Đăng xuất
             </button>
@@ -48,7 +48,7 @@ const Navbar = () => {
 
   // Regular navbar for other users
   return (
-    <nav className="bg-vietnam-red shadow-lg relative z-50">
+    <nav className="bg-vietnam-green shadow-lg relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
@@ -98,7 +98,7 @@ const Navbar = () => {
               >
                 Giỏ hàng
                 {!loading && getCartItemCount() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-vietnam-gold text-vietnam-red text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-vietnam-gold text-vietnam-green text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {getCartItemCount()}
                   </span>
                 )}
@@ -134,7 +134,7 @@ const Navbar = () => {
                 
                 <button
                   onClick={handleLogout}
-                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
+                  className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
                 >
                   Đăng xuất
                 </button>
@@ -149,7 +149,7 @@ const Navbar = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-600 transition"
+                  className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-600 transition"
                 >
                   Đăng ký
                 </Link>
@@ -184,7 +184,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden relative z-50">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-vietnam-red">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-vietnam-green">
             <Link
               to="/"
               className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"

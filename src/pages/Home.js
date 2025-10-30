@@ -177,7 +177,7 @@ const Home = () => {
               />
               <button
                 type="submit"
-                className="bg-vietnam-gold text-vietnam-red px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-600 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-vietnam-gold/50"
+                className="bg-vietnam-gold text-vietnam-green px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-600 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-vietnam-gold/50"
               >
                 Tìm kiếm
               </button>
@@ -227,7 +227,7 @@ const Home = () => {
       {/* Section phụ */}
       <section className="py-16 text-center bg-vietnam-cream">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-semibold text-vietnam-red mb-4">Khám phá nhanh</h2>
+          <h2 className="text-3xl font-semibold text-vietnam-green mb-4">Khám phá nhanh</h2>
           <p className="text-gray-700">
             Sử dụng ô tìm kiếm hoặc chọn vùng miền để bắt đầu tra cứu các nghi lễ truyền thống.
           </p>

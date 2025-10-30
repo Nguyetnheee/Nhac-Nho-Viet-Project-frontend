@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import Toast from './Toast';
-// ⚠️ Import useAuth để lấy thông tin role
-import { useAuth } from '../contexts/AuthContext'; 
+import { Alert } from 'antd';
+import './ToastContainer.css';
 
 const ToastContext = createContext();
 
@@ -15,51 +14,54 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
-  const { user } = useAuth(); // ⚠️ Lấy thông tin user
-  
-  const addToast = useCallback((message, type = 'info', duration = 4000) => {
-    
-    // ⚠️ LOGIC CHẶN TOAST CỤ THỂ CHO STAFF
-    const staffSpecificError = "Không thể tải giỏ hàng từ server. Vui lòng thử lại.";
-    
-    // Nếu là STAFF và thông báo là lỗi tải giỏ hàng -> KHÔNG tạo Toast
-    if (user?.role === 'Staff' && message === staffSpecificError) {
-        console.log("Toast: Đã chặn thông báo giỏ hàng cho Staff.");
-        return; // Dừng hàm, không thêm toast
-    }
-    
-    // Nếu không bị chặn, tiếp tục thêm toast
-    const id = Date.now() + Math.random();
-    const newToast = { id, message, type, duration };
-    
-    setToasts(prev => [...prev, newToast]);
-    
-    return id;
-  }, [user]); // Thêm user vào dependency array
 
-  const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+  const addToast = useCallback((message, type, description = null, duration = 5000) => {
+    const id = Date.now() + Math.random();
+    const newToast = {
+      id,
+      message,
+      type,
+      description,
+      timestamp: Date.now()
+    };
+
+    setToasts(prev => [...prev, newToast]);
+
+    // Auto remove toast after specified duration
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, duration);
   }, []);
 
-  const showSuccess = useCallback((message, duration) => {
-    return addToast(message, 'success', duration);
+  const removeToast = useCallback((id) => {
+    // Add removing class for animation
+    setToasts(prev => prev.map(toast => 
+      toast.id === id ? { ...toast, removing: true } : toast
+    ));
+    
+    // Remove after animation completes
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 300);
+  }, []);
+
+  const showSuccess = useCallback((message, description, duration = 4000) => {
+    addToast(message, 'success', description, duration);
   }, [addToast]);
 
-  const showError = useCallback((message, duration) => {
-    return addToast(message, 'error', duration);
+  const showError = useCallback((message, description, duration = 6000) => {
+    addToast(message, 'error', description, duration);
   }, [addToast]);
 
-  const showWarning = useCallback((message, duration) => {
-    return addToast(message, 'warning', duration);
+  const showWarning = useCallback((message, description, duration = 5000) => {
+    addToast(message, 'warning', description, duration);
   }, [addToast]);
 
-  const showInfo = useCallback((message, duration) => {
-    return addToast(message, 'info', duration);
+  const showInfo = useCallback((message, description, duration = 4000) => {
+    addToast(message, 'info', description, duration);
   }, [addToast]);
 
   const value = {
-    addToast,
-    removeToast,
     showSuccess,
     showError,
     showWarning,
@@ -69,24 +71,28 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      
-      {/* Toast Container luôn hiển thị để Staff vẫn nhận các thông báo khác */}
-      <div className="fixed inset-0 pointer-events-none z-40">
+      <div className="toast-container">
         {toasts.map((toast, index) => (
-          <div
-            key={toast.id}
-            className="absolute"
+          <div 
+            key={toast.id} 
+            className={`toast-item ${toast.removing ? 'removing' : ''}`}
             style={{
-              top: `${80 + index * 80}px`, 
-              right: '20px',
-              zIndex: 1000 + index
+              animationDelay: `${index * 0.1}s`
             }}
           >
-            <Toast
+            <Alert
               message={toast.message}
+              description={toast.description}
               type={toast.type}
-              duration={toast.duration}
+              showIcon
+              closable
               onClose={() => removeToast(toast.id)}
+              style={{
+                marginBottom: '12px',
+                boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
+                borderRadius: '8px',
+                border: '1px solid'
+              }}
             />
           </div>
         ))}

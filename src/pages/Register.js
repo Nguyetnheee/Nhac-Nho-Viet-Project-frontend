@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import CustomAlert from '../components/CustomAlert';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -64,16 +65,16 @@ const Register = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-vietnam-red rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-vietnam-green rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-2xl">N</span>
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-serif font-bold text-vietnam-red">
+          <h2 className="mt-6 text-center text-3xl font-serif font-bold text-vietnam-green">
             Đăng ký tài khoản
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Hoặc{' '}
-            <Link to="/login" className="font-medium text-vietnam-red hover:opacity-80">
+            <Link to="/login" className="font-medium text-vietnam-green hover:opacity-80">
               đăng nhập nếu đã có tài khoản
             </Link>
           </p>
@@ -81,9 +82,12 @@ const Register = () => {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error?.message || String(error)}
-            </div>
+            <CustomAlert 
+              type="error"
+              message="Lỗi đăng ký!"
+              description={error?.message || String(error)}
+              onClose={() => setError('')}
+            />
           )}
           
           <div className="space-y-4">

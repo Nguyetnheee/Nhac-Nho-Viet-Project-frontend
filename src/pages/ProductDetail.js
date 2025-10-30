@@ -62,15 +62,16 @@ const ProductDetail = () => {
 
     const cartItem = {
       id: product.productId, 
+      productId: product.productId,
       name: product.productName || 'Unknown Product',
       price: product.price || 0,
-      // ⚠️ ĐÃ SỬA LỖI: Dùng state quantity thay vì giá trị cứng
       quantity: quantity, 
       image: product.productImage || ''
     };
 
     try {
-      addToCart(cartItem);
+      // Truyền cả object và quantity riêng biệt
+      addToCart(cartItem, quantity);
       showSuccess(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
     } catch (error) {
       showError('Không thể thêm sản phẩm vào giỏ hàng');
@@ -97,7 +98,7 @@ const ProductDetail = () => {
           <p className="text-gray-600 mb-4">Mã sản phẩm: {id}</p>
           <button
             onClick={() => navigate(-1)}
-            className="text-vietnam-red hover:text-vietnam-gold transition-colors"
+            className="text-vietnam-green hover:text-vietnam-gold transition-colors"
           >
             ← Quay lại
           </button>
@@ -120,9 +121,9 @@ const ProductDetail = () => {
 
         {/* Product Info */}
         <div className="space-y-6">
-          <h1 className="text-4xl font-serif font-bold text-vietnam-red">{product.productName}</h1>
+          <h1 className="text-4xl font-serif font-bold text-vietnam-green">{product.productName}</h1>
           
-          <div className="text-3xl font-bold text-vietnam-red border-b pb-4">
+          <div className="text-3xl font-bold text-vietnam-green border-b pb-4">
             {new Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND'
@@ -144,13 +145,13 @@ const ProductDetail = () => {
                 value={quantity}
                 // Cập nhật state quantity khi người dùng thay đổi
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-vietnam-red focus:border-vietnam-red text-center shadow-sm"
+                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-vietnam-green focus:border-vietnam-green text-center shadow-sm"
               />
             </div>
 
             <button
               onClick={handleAddToCart}
-              className="w-full bg-vietnam-red text-white py-3 px-6 rounded-md hover:bg-red-700 transition-colors duration-300 font-bold text-lg shadow-lg"
+              className="w-full bg-vietnam-green text-white py-3 px-6 rounded-md hover:bg-emerald-700 transition-colors duration-300 font-bold text-lg shadow-lg"
             >
               {isAuthenticated ? 'Thêm vào giỏ hàng' : 'Đăng nhập để mua hàng'}
             </button>

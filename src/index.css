@@ -15,18 +15,16 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-vietnam-red text-white px-6 py-3 rounded-lg font-medium hover:opacity-80 transition-colors duration-200;
+    @apply bg-vietnam-green text-white px-6 py-3 rounded-lg font-medium hover:opacity-80 transition-colors duration-200;
   }
   
   .btn-secondary {
     @apply bg-vietnam-gold text-white px-6 py-3 rounded-lg font-medium hover:bg-yellow-600 transition-colors duration-200;
   }
-  
+
   .btn-outline {
-    @apply border-2 border-vietnam-red text-vietnam-red px-6 py-3 rounded-lg font-medium hover:bg-vietnam-red hover:text-white transition-colors duration-200;
-  }
-  
-  .card {
+    @apply border-2 border-vietnam-green text-vietnam-green px-6 py-3 rounded-lg font-medium hover:bg-vietnam-green hover:text-white transition-colors duration-200;
+  }  .card {
     @apply bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex flex-col h-full;
   }
   
@@ -43,7 +41,7 @@
   }
   
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vietnam-red focus:border-transparent outline-none transition-all duration-200;
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vietnam-green focus:border-transparent outline-none transition-all duration-200;
   }
   
   .ritual-pattern {
@@ -93,6 +91,193 @@
   /* Enhanced shadows */
   .shadow-2xl {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Alert Styles - Solid Colors */
+  .alert {
+    @apply p-4 rounded-lg shadow-sm transition-all duration-200 border;
+  }
+
+  .alert-success {
+    @apply bg-green-50 border-green-200;
+  }
+
+  .alert-success .alert-icon {
+    @apply text-green-500;
+  }
+
+  .alert-success .alert-message {
+    @apply text-green-800 font-medium;
+  }
+
+  .alert-success .alert-description {
+    @apply text-green-700;
+  }
+
+  .alert-error {
+    @apply bg-red-50 border-red-200;
+  }
+
+  .alert-error .alert-icon {
+    @apply text-red-500;
+  }
+
+  .alert-error .alert-message {
+    @apply text-red-800 font-medium;
+  }
+
+  .alert-error .alert-description {
+    @apply text-red-700;
+  }
+
+  .alert-warning {
+    @apply bg-yellow-50 border-yellow-200;
+  }
+
+  .alert-warning .alert-icon {
+    @apply text-yellow-600;
+  }
+
+  .alert-warning .alert-message {
+    @apply text-yellow-800 font-medium;
+  }
+
+  .alert-warning .alert-description {
+    @apply text-yellow-700;
+  }
+
+  .alert-info {
+    @apply bg-blue-50 border-blue-200;
+  }
+
+  .alert-info .alert-icon {
+    @apply text-blue-500;
+  }
+
+  .alert-info .alert-message {
+    @apply text-blue-800 font-medium;
+  }
+
+  .alert-info .alert-description {
+    @apply text-blue-700;
+  }
+
+  /* Icon wrapper styles */
+  .alert-icon-wrapper {
+    @apply flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold;
+  }
+
+  .alert-success .alert-icon-wrapper {
+    @apply bg-green-100;
+  }
+
+  .alert-error .alert-icon-wrapper {
+    @apply bg-red-100;
+  }
+
+  .alert-warning .alert-icon-wrapper {
+    @apply bg-yellow-100;
+  }
+
+  .alert-info .alert-icon-wrapper {
+    @apply bg-blue-100;
+  }
+
+  /* Toast Notifications - Ant Design customization */
+  .ant-alert {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Success Toast */
+  .ant-alert-success {
+    background-color: #f6ffed;
+    border-color: #b7eb8f;
+    border-left: 4px solid #52c41a;
+  }
+
+  .ant-alert-success .ant-alert-icon {
+    color: #52c41a;
+  }
+
+  .ant-alert-success .ant-alert-message {
+    color: #135200;
+    font-weight: 600;
+  }
+
+  .ant-alert-success .ant-alert-description {
+    color: #389e0d;
+  }
+
+  /* Error Toast */
+  .ant-alert-error {
+    background-color: #fff2f0;
+    border-color: #ffadd2;
+    border-left: 4px solid #ff4d4f;
+  }
+
+  .ant-alert-error .ant-alert-icon {
+    color: #ff4d4f;
+  }
+
+  .ant-alert-error .ant-alert-message {
+    color: #a8071a;
+    font-weight: 600;
+  }
+
+  .ant-alert-error .ant-alert-description {
+    color: #cf1322;
+  }
+
+  /* Warning Toast */
+  .ant-alert-warning {
+    background-color: #fffbe6;
+    border-color: #ffe58f;
+    border-left: 4px solid #faad14;
+  }
+
+  .ant-alert-warning .ant-alert-icon {
+    color: #faad14;
+  }
+
+  .ant-alert-warning .ant-alert-message {
+    color: #ad4e00;
+    font-weight: 600;
+  }
+
+  .ant-alert-warning .ant-alert-description {
+    color: #d46b08;
+  }
+
+  /* Info Toast */
+  .ant-alert-info {
+    background-color: #e6f7ff;
+    border-color: #91d5ff;
+    border-left: 4px solid #1890ff;
+  }
+
+  .ant-alert-info .ant-alert-icon {
+    color: #1890ff;
+  }
+
+  .ant-alert-info .ant-alert-message {
+    color: #003a8c;
+    font-weight: 600;
+  }
+
+  .ant-alert-info .ant-alert-description {
+    color: #0050b3;
+  }
+
+  /* Close button styles */
+  .ant-alert-close-icon {
+    font-size: 14px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+
+  .ant-alert-close-icon:hover {
+    opacity: 1;
   }
 }
 

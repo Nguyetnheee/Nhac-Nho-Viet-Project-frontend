@@ -46,8 +46,8 @@ const Checklist = () => {
           backgroundPosition: "center",
         }}
       >
-        {/* Lớp overlay màu đỏ mờ (opacity-70) */}
-        <div className="absolute inset-0 bg-vietnam-red/70 backdrop-blur-[1px] transition-opacity duration-500"></div>
+        {/* Lớp overlay màu xanh mờ (opacity-70) */}
+        <div className="absolute inset-0 bg-vietnam-green/70 backdrop-blur-[1px] transition-opacity duration-500"></div>
 
         {/* ⚠️ CHỖ CẦN CHỈNH: Điều chỉnh giới hạn chiều rộng cho nội dung hero */}
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-white"> 
@@ -74,7 +74,7 @@ const Checklist = () => {
           />
           <button
             onClick={() => alert('Tính năng tìm kiếm đang phát triển')}
-            className="bg-vietnam-gold text-vietnam-red px-6 py-3 rounded-r-lg font-semibold hover:bg-yellow-600 transition duration-300 shadow-lg"
+            className="bg-vietnam-gold text-vietnam-green px-6 py-3 rounded-r-lg font-semibold hover:bg-yellow-600 transition duration-300 shadow-lg"
           >
             Tìm kiếm
           </button>

@@ -23,7 +23,7 @@ export const CartProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  const isCustomer = user?.role === 'Customer' || (!user?.role && isAuthenticated);
+  const isCustomer = user?.role === 'CUSTOMER' || (!user?.role && isAuthenticated);
 
   const adaptCartFromApi = (apiCart) => {
     const items = Array.isArray(apiCart?.items) ? apiCart.items : [];

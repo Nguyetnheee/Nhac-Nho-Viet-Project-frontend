@@ -68,14 +68,14 @@ const Checkout = () => {
     <div className="min-h-screen bg-vietnam-cream py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-vietnam-red mb-2">Thanh toán</h1>
+          <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">Thanh toán</h1>
           <p className="text-gray-600">Hoàn tất đơn hàng của bạn</p>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Form */}
           <div className="card">
-            <h2 className="text-xl font-semibold text-vietnam-red mb-6">Thông tin đơn hàng</h2>
+            <h2 className="text-xl font-semibold text-vietnam-green mb-6">Thông tin đơn hàng</h2>
             
             <div className="space-y-4">
               <div>
@@ -174,7 +174,7 @@ const Checkout = () => {
 
           {/* Order Summary */}
           <div className="card">
-            <h2 className="text-xl font-semibold text-vietnam-red mb-6">Tóm tắt đơn hàng</h2>
+            <h2 className="text-xl font-semibold text-vietnam-green mb-6">Tóm tắt đơn hàng</h2>
             
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => (
@@ -185,10 +185,10 @@ const Checkout = () => {
                     className="w-12 h-12 object-cover rounded"
                   />
                   <div className="flex-1">
-                    <h3 className="font-medium text-vietnam-red">{item.name}</h3>
+                    <h3 className="font-medium text-vietnam-green">{item.name}</h3>
                     <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
                   </div>
-                  <span className="font-semibold text-vietnam-red">
+                  <span className="font-semibold text-vietnam-green">
                     {(item.price * item.quantity).toLocaleString('vi-VN')} VNĐ
                   </span>
                 </div>
@@ -205,7 +205,7 @@ const Checkout = () => {
                 <span className="text-green-600">Miễn phí</span>
               </div>
               <div className="border-t pt-2">
-                <div className="flex justify-between text-lg font-bold text-vietnam-red">
+                <div className="flex justify-between text-lg font-bold text-vietnam-green">
                   <span>Tổng cộng:</span>
                   <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
                 </div>
@@ -224,7 +224,7 @@ const Checkout = () => {
               <button
                 type="button"
                 onClick={() => navigate('/cart')}
-                className="text-vietnam-red hover:opacity-80 text-sm"
+                className="text-vietnam-green hover:opacity-80 text-sm"
               >
                 Quay lại giỏ hàng
               </button>

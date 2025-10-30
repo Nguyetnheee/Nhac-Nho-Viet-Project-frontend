@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { forgotPassword } from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -35,19 +36,25 @@ const ForgotPassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-vietnam-cream to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 space-y-8">
-        <h2 className="text-center text-3xl font-serif font-bold text-vietnam-red">
+        <h2 className="text-center text-3xl font-serif font-bold text-vietnam-green">
           Quên mật khẩu
         </h2>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {message && (
-            <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-green-700">{message}</p>
-            </div>
+            <CustomAlert 
+              type="success"
+              message="Email đã được gửi!"
+              description={message}
+              onClose={() => setMessage('')}
+            />
           )}
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+            <CustomAlert 
+              type="error"
+              message="Lỗi gửi email!"
+              description={error}
+              onClose={() => setError('')}
+            />
           )}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -68,7 +75,7 @@ const ForgotPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-vietnam-red to-vietnam-gold text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-vietnam-green to-vietnam-gold text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang gửi...' : 'Gửi OTP'}
             </button>

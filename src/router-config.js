@@ -25,8 +25,16 @@ import ShipperPanel from "./pages/ShipperPanel";
 import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
 
+// Demo Pages
+import ToastDemo from "./pages/ToastDemo";
+import ToastColorDemo from "./components/ToastColorDemo";
+import CustomAlertDemo from "./components/CustomAlertDemo";
+import AlertTestPage from "./pages/AlertTestPage";
+import CSSVerificationPage from "./pages/CSSVerificationPage";
+
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
+import StaffLogin from "./pages/staff/StaffLogin";
 
 export const router = createBrowserRouter([
   {
@@ -34,29 +42,29 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       // Public Routes - No authentication needed
-      { 
-        path: "login", 
-        element: <Login /> 
+      {
+        path: "login",
+        element: <Login />
       },
-      { 
-        path: "register", 
-        element: <Register /> 
+      {
+        path: "register",
+        element: <Register />
       },
-      { 
-        path: "verify-otp", 
-        element: <VerifyOTP /> 
+      {
+        path: "verify-otp",
+        element: <VerifyOTP />
       },
-      { 
-        path: "forgot-password", 
-        element: <ForgotPassword /> 
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />
       },
-      { 
-        path: "verify-reset", 
-        element: <VerifyResetOTP /> 
+      {
+        path: "verify-reset",
+        element: <VerifyResetOTP />
       },
-      { 
-        path: "reset-password", 
-        element: <ResetPassword /> 
+      {
+        path: "reset-password",
+        element: <ResetPassword />
       },
 
       // Customer & Public Access Routes
@@ -81,19 +89,41 @@ export const router = createBrowserRouter([
         element: <ProductDetail />,  // Make public - view product details without login
       },
 
+      // Demo Routes - For testing and development
+      {
+        path: "toast-demo",
+        element: <ToastDemo />
+      },
+      {
+        path: "toast-colors",
+        element: <ToastColorDemo />
+      },
+      {
+        path: "custom-alerts",
+        element: <CustomAlertDemo />
+      },
+      {
+        path: "alert-test",
+        element: <AlertTestPage />
+      },
+      {
+        path: "css-verification",
+        element: <CSSVerificationPage />
+      },
+
       // Customer Only Routes
       {
         path: "cart",
         element: (
-          <ProtectedRoute roles={["Customer"]}>
+          <ProtectedRoute roles={["CUSTOMER"]}>
             <Cart />
           </ProtectedRoute>
-        ),
+        )
       },
       {
         path: "checkout",
         element: (
-          <ProtectedRoute roles={["Customer"]}>
+          <ProtectedRoute roles={["CUSTOMER"]}>
             <Checkout />
           </ProtectedRoute>
         ),
@@ -114,6 +144,17 @@ export const router = createBrowserRouter([
           <ProtectedRoute roles={["STAFF"]}>
             <StaffDashboard />
           </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "staff-login",
+        element: (
+          // <ProtectedRoute roles={["STAFF"]}>
+          <StaffLogin />
+
+          // </ProtectedRoute>
+
         ),
       },
 

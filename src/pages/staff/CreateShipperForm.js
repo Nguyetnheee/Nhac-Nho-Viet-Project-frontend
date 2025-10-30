@@ -69,7 +69,7 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             <div className="mb-4 md:mb-0">
-                <Title level={2} className="font-serif !text-vietnam-red !mb-1">
+                <Title level={2} className="font-serif !text-vietnam-green !mb-1">
                     <Space><TeamOutlined /> Tạo tài khoản Shipper mới</Space>
                 </Title>
                 <Text type="secondary">Cấp tài khoản cho người giao hàng mới vào hệ thống.</Text>
@@ -82,7 +82,7 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
         <Col xs={24} lg={16}>
           <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
             <Card className="shadow-lg rounded-xl mb-6">
-              <Title level={4} className="font-serif !text-vietnam-red">Thông tin cá nhân</Title>
+              <Title level={4} className="font-serif !text-vietnam-green">Thông tin cá nhân</Title>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="shipperName" label="Họ và tên shipper" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}>
@@ -113,7 +113,7 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
               </Row>
 
               <Divider />
-              <Title level={4} className="font-serif !text-vietnam-red">Thông tin đăng nhập</Title>
+              <Title level={4} className="font-serif !text-vietnam-green">Thông tin đăng nhập</Title>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="username" label="Tên đăng nhập" rules={[{ required: true, message: 'Vui lòng nhập username!' }, { pattern: /^[a-zA-Z0-9_]+$/, message: 'Username chỉ chứa chữ, số và _!' }]}>
@@ -130,7 +130,7 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
               
               <Form.Item>
                 <Space>
-                  <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large" className="bg-vietnam-red hover:!bg-red-800">
+                  <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large" className="bg-vietnam-green hover:!bg-emerald-800">
                     {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
                   </Button>
                   <Button size="large" onClick={onBack}>Hủy</Button>

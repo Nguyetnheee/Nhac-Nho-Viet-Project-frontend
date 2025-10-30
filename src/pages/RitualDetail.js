@@ -164,7 +164,7 @@ const RitualDetail = () => {
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-vietnam-cream">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-vietnam-red border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-vietnam-green border-t-transparent"></div>
       </div>
     );
 
@@ -172,7 +172,7 @@ const RitualDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-vietnam-cream text-center">
         <div>
-          <h1 className="text-2xl font-bold text-vietnam-red mb-4">
+          <h1 className="text-2xl font-bold text-vietnam-green mb-4">
             {error || "Không tìm thấy nghi lễ"}
           </h1>
           <Link to="/" className="text-vietnam-green underline">
@@ -283,7 +283,7 @@ const RitualDetail = () => {
             >
               <div className="absolute inset-0 bg-white/75"></div>
               <div className="relative p-7 text-stone-800">
-                <h2 className="text-2xl font-serif font-bold text-vietnam-red mb-5">
+                <h2 className="text-2xl font-serif font-bold text-vietnam-green mb-5">
                   Mô tả chi tiết
                 </h2>
                 <p className="leading-relaxed whitespace-pre-wrap">
@@ -292,7 +292,7 @@ const RitualDetail = () => {
 
                 {ritual.meaning && (
                   <>
-                    <h2 className="text-2xl font-serif font-bold text-vietnam-red mt-10 mb-4">
+                    <h2 className="text-2xl font-serif font-bold text-vietnam-green mt-10 mb-4">
                       Ý nghĩa
                     </h2>
                     <p className="leading-relaxed whitespace-pre-wrap">

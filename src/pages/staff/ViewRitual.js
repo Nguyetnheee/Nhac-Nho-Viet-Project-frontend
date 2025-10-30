@@ -64,7 +64,7 @@ const ViewRitual = ({ ritualId, onBack, onEdit }) => {
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div className="mb-4 md:mb-0">
-            <Title level={2} className="font-serif !text-vietnam-red !mb-1">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
               <Space>
                 <InfoCircleOutlined />
                 Chi tiết Lễ hội
@@ -80,7 +80,7 @@ const ViewRitual = ({ ritualId, onBack, onEdit }) => {
               type="primary" 
               icon={<EditOutlined />} 
               onClick={() => onEdit(ritualId)}
-              className="bg-vietnam-red hover:!bg-red-800"
+              className="bg-vietnam-green hover:!bg-emerald-800"
             >
               Chỉnh sửa
             </Button>
@@ -133,7 +133,7 @@ const ViewRitual = ({ ritualId, onBack, onEdit }) => {
         {/* Right Column - Details */}
         <div className="lg:col-span-2">
           <Card className="shadow-lg rounded-xl">
-            <Title level={3} className="font-serif !text-vietnam-red mb-4">
+            <Title level={3} className="font-serif !text-vietnam-green mb-4">
               {ritual.ritualName}
             </Title>
             

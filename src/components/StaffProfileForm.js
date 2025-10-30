@@ -57,7 +57,7 @@ const StaffProfileForm = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold text-vietnam-red mb-6">Chỉnh sửa thông tin cá nhân</h2>
+      <h2 className="text-2xl font-bold text-vietnam-green mb-6">Chỉnh sửa thông tin cá nhân</h2>
       
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
@@ -79,7 +79,7 @@ const StaffProfileForm = () => {
             name="staffName"
             value={formData.staffName}
             onChange={handleChange}
-            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-red"
+            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-green"
             required
           />
         </div>
@@ -91,7 +91,7 @@ const StaffProfileForm = () => {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-red"
+            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-green"
             required
           />
         </div>
@@ -103,7 +103,7 @@ const StaffProfileForm = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-red"
+            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-green"
             required
           />
         </div>
@@ -115,7 +115,7 @@ const StaffProfileForm = () => {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-red"
+            className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-green"
             required
           />
         </div>
@@ -124,7 +124,7 @@ const StaffProfileForm = () => {
           type="submit"
           disabled={loading}
           className={`w-full p-2 text-white rounded ${
-            loading ? 'bg-gray-400' : 'bg-vietnam-red hover:opacity-90'
+            loading ? 'bg-gray-400' : 'bg-vietnam-green hover:opacity-90'
           }`}
         >
           {loading ? 'Đang cập nhật...' : 'Cập nhật thông tin'}

@@ -70,7 +70,7 @@ const Cart = () => {
     <div className="min-h-screen bg-vietnam-cream py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-vietnam-red mb-2">Giỏ hàng</h1>
+          <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">Giỏ hàng</h1>
           <p className="text-gray-600">Kiểm tra và chỉnh sửa giỏ hàng của bạn</p>
         </div>
 
@@ -79,10 +79,10 @@ const Cart = () => {
           <div className="lg:col-span-2">
             <div className="card">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-vietnam-red">
+                <h2 className="text-xl font-semibold text-vietnam-green">
                   Sản phẩm ({cartItems.length})
                 </h2>
-                <button onClick={clearCart} className={`text-vietnam-red hover:opacity-80 text-sm ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={loading}>
+                <button onClick={clearCart} className={`text-vietnam-green hover:opacity-80 text-sm ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={loading}>
                   {loading ? 'Đang xóa...' : 'Xóa tất cả'}
                 </button>
               </div>
@@ -116,9 +116,9 @@ const Cart = () => {
                           className="w-20 h-20 object-cover rounded-lg"
                         />
                         <div className="flex-1">
-                          <h3 className="font-semibold text-vietnam-red">{name}</h3>
+                          <h3 className="font-semibold text-vietnam-green">{name}</h3>
                           <p className="text-sm text-gray-600">{description}</p>
-                          <p className="text-lg font-bold text-vietnam-red">
+                          <p className="text-lg font-bold text-vietnam-green">
                             {formatMoney(price)}
                           </p>
                         </div>
@@ -150,12 +150,12 @@ const Cart = () => {
                         </div>
 
                         <div className="text-right">
-                          <p className="font-bold text-vietnam-red">
+                          <p className="font-bold text-vietnam-green">
                             {formatMoney(price * quantity)}
                           </p>
                           <button
                             onClick={() => removeFromCart(productId)}
-                            className={`text-vietnam-red hover:opacity-80 text-sm mt-1 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`text-vietnam-green hover:opacity-80 text-sm mt-1 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             disabled={loading}
                           >
                             {loading ? 'Đang xóa...' : 'Xóa'}
@@ -171,7 +171,7 @@ const Cart = () => {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="card sticky top-8">
-              <h2 className="text-xl font-semibold text-vietnam-red mb-6">Tóm tắt đơn hàng</h2>
+              <h2 className="text-xl font-semibold text-vietnam-green mb-6">Tóm tắt đơn hàng</h2>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
@@ -183,7 +183,7 @@ const Cart = () => {
                   <span>Miễn phí</span>
                 </div>
                 <div className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold text-vietnam-red">
+                  <div className="flex justify-between text-lg font-bold text-vietnam-green">
                     <span>Tổng cộng:</span>
                     <span>{formatMoney(getTotalPrice())}</span>
                   </div>
@@ -206,7 +206,7 @@ const Cart = () => {
               )}
 
               <div className="mt-6 text-center">
-                <Link to="/trays" className="text-vietnam-red hover:opacity-80 text-sm">
+                <Link to="/trays" className="text-vietnam-green hover:opacity-80 text-sm">
                   Tiếp tục mua sắm
                 </Link>
               </div>

@@ -121,12 +121,12 @@ const RitualManagement = () => {
        <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div className="mb-4 md:mb-0">
-            <Title level={2} className="font-serif !text-vietnam-red !mb-1">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
               <Space><BookOutlined /> Quản lý Lễ hội</Space>
             </Title>
             <Text type="secondary">Thêm, xóa, sửa và quản lý các nghi lễ truyền thống.</Text>
           </div>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)} className="bg-vietnam-red hover:!bg-red-800">
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)} className="bg-vietnam-green hover:!bg-emerald-800">
             Thêm lễ hội
           </Button>
         </div>
@@ -141,7 +141,7 @@ const RitualManagement = () => {
             locale={{
               emptyText: (
                 <Empty description="Chưa có lễ hội nào." image={Empty.PRESENTED_IMAGE_SIMPLE}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)} className="bg-vietnam-red hover:!bg-red-800">
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)} className="bg-vietnam-green hover:!bg-emerald-800">
                     Thêm lễ hội đầu tiên
                   </Button>
                 </Empty>
@@ -190,7 +190,7 @@ const RitualManagement = () => {
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit" loading={isSubmitting} className="bg-vietnam-red hover:!bg-red-800">
+              <Button type="primary" htmlType="submit" loading={isSubmitting} className="bg-vietnam-green hover:!bg-emerald-800">
                 Thêm lễ hội
               </Button>
               <Button onClick={() => setIsModalVisible(false)}>Hủy</Button>

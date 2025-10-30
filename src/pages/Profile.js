@@ -80,11 +80,11 @@ const Profile = () => {
         {/* Avatar + Info */}
         <div className="text-center mt-[-60px]">
           <div className="relative inline-block">
-            <div className="w-28 h-28 rounded-full border-4 border-white shadow-lg bg-vietnam-gold flex items-center justify-center text-4xl font-bold text-vietnam-red">
+            <div className="w-28 h-28 rounded-full border-4 border-white shadow-lg bg-vietnam-gold flex items-center justify-center text-4xl font-bold text-vietnam-green">
               {user?.customerName?.charAt(0).toUpperCase() || 'U'}
             </div>
           </div>
-          <h2 className="mt-3 text-2xl font-semibold text-vietnam-red">{formData.customerName || user?.name}</h2>
+          <h2 className="mt-3 text-2xl font-semibold text-vietnam-green">{formData.customerName || user?.name}</h2>
           <p className="text-gray-600">{user?.role || 'Thành viên'}</p>
 
         </div>
@@ -93,7 +93,7 @@ const Profile = () => {
         <div className="mt-10 bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-4">
             {/* Sidebar */}
-            <div className="bg-gradient-to-b from-vietnam-red to-vietnam-gold text-white p-6 space-y-2">
+            <div className="bg-gradient-to-b from-vietnam-green to-vietnam-gold text-white p-6 space-y-2">
               <h3 className="font-semibold mb-4 text-lg">Menu</h3>
               <div className="bg-white rounded-2xl p-6 space-y-2 shadow-sm">
                 <button className="flex items-center w-full text-left px-4 py-2 rounded-lg bg-gray-100 text-[#0b3d3c] font-medium">
@@ -117,7 +117,7 @@ const Profile = () => {
 
             {/* Form */}
             <div className="lg:col-span-3 p-8">
-              <h3 className="text-xl font-semibold text-vietnam-red mb-6">Thông tin cá nhân</h3>
+              <h3 className="text-xl font-semibold text-vietnam-green mb-6">Thông tin cá nhân</h3>
               {message && (
                 <div className={`p-3 rounded-lg mb-4 text-sm ${message.includes('thành công')
                   ? 'bg-green-100 text-green-700'

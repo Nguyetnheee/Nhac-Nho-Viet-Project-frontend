@@ -88,7 +88,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div className="mb-4 md:mb-0">
-                  <Title level={2} className="font-serif !text-vietnam-red !mb-1">
+                  <Title level={2} className="font-serif !text-vietnam-green !mb-1">
                       <Space><EditOutlined /> Chỉnh sửa mâm cúng</Space>
                   </Title>
                   <Text type="secondary">Cập nhật thông tin cho sản phẩm: <span className="font-semibold">{productData.productName}</span></Text>
@@ -101,7 +101,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
         <Row gutter={24}>
           <Col xs={24} lg={16}>
             <Card className="shadow-lg rounded-xl mb-6">
-                <Title level={4} className="font-serif !text-vietnam-red">Thông tin sản phẩm</Title>
+                <Title level={4} className="font-serif !text-vietnam-green">Thông tin sản phẩm</Title>
                 <Form.Item name="productName" label="Tên mâm cúng" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
                     <Input />
                 </Form.Item>
@@ -143,7 +143,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
             </Card>
              <Form.Item>
                 <Space>
-                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large" className="bg-vietnam-red hover:!bg-red-800">
+                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large" className="bg-vietnam-green hover:!bg-emerald-800">
                     {loading ? 'Đang cập nhật...' : 'Cập nhật'}
                     </Button>
                     <Button size="large" onClick={onBack}>Hủy</Button>
