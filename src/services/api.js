@@ -99,13 +99,31 @@ export const verifyRegisterOTP = async (email, otp) => {
   return data;
 };
 
+/**
+ * API Checkout - Tạo đơn hàng mới
+ * @param {Object} checkoutData - Dữ liệu checkout
+ * @param {string} checkoutData.fullName - Tên đầy đủ
+ * @param {string} checkoutData.email - Email
+ * @param {string} checkoutData.phone - Số điện thoại
+ * @param {string} checkoutData.address - Địa chỉ giao hàng
+ * @param {string} checkoutData.paymentMethod - Phương thức thanh toán (mặc định: ONLINE)
+ * @param {string} checkoutData.note - Ghi chú đơn hàng
+ * @returns {Promise} Response chứa orderId và thông tin đơn hàng
+ */
 export const checkout = async (checkoutData) => {
   try {
-    const { data } = await api.post('/api/checkout', checkoutData);
+    const response = await api.post('/api/checkout', checkoutData);
+    console.log('✅ Checkout API raw response:', response);
+    
+    // Xử lý response từ backend
+    // Backend có thể trả về: { orderId, fullName, email, ... } hoặc { data: { orderId, ... } }
+    const data = response.data;
+    
     return data;
   } catch (error) {
     const msg = error.response?.data?.message || error.message || 'Đã xảy ra lỗi không xác định.';
-    console.error('Checkout API error:', msg);
+    console.error('❌ Checkout API error:', msg);
+    console.error('Error details:', error.response?.data);
     throw new Error(msg);
   }
 };

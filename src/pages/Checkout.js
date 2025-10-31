@@ -1,31 +1,43 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
 import { checkout } from '../services/api';
+import paymentService from '../services/paymentService';
 
 const Checkout = () => {
   const { cartItems, getTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showWarning } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [formData, setFormData] = useState({
     customerName: user?.name || '',
     customerEmail: user?.email || '',
     customerPhone: user?.phone || '',
     customerAddress: user?.address || '',
-    paymentMethod: 'COD',
+    paymentMethod: 'ONLINE', // Mặc định là thanh toán online trước
     notes: ''
   });
   const [loading, setLoading] = useState(false);
+
+  // Hiển thị thông báo khi redirect từ payment-result
+  useEffect(() => {
+    if (location.state?.message) {
+      showWarning(location.state.message);
+      // Clear state sau khi hiển thị
+      window.history.replaceState({}, document.title);
+    }
+  }, [location, showWarning]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Bước 1: Gọi API checkout để tạo đơn hàng
       const checkoutData = {
         fullName: formData.customerName,
         email: formData.customerEmail,
@@ -35,13 +47,51 @@ const Checkout = () => {
         note: formData.notes,
       };
 
-      const response = await checkout(checkoutData);
-      clearCart();
-      showSuccess(`Đặt hàng thành công! Mã đơn hàng: ${response.orderId}`);
-      navigate('/');
+      console.log('📤 Sending checkout data:', checkoutData);
+      
+      const checkoutResponse = await checkout(checkoutData);
+      console.log('✅ Checkout response:', checkoutResponse);
+      
+      // Kiểm tra response và lấy orderId
+      const orderId = checkoutResponse?.orderId || checkoutResponse?.data?.orderId;
+      
+      if (!orderId) {
+        throw new Error('Không nhận được mã đơn hàng từ server');
+      }
+
+      showSuccess(`✅ Checkout thành công! Mã đơn hàng: ${orderId}`);
+      
+      // Bước 2: Gọi API tạo payment link với orderId
+      console.log('📤 Creating payment for orderId:', orderId);
+      
+      const paymentResponse = await paymentService.createPayment(orderId);
+      console.log('✅ Payment response:', paymentResponse);
+      
+      // Lấy URL thanh toán từ response
+      const paymentUrl = paymentResponse?.paymentUrl || 
+                        paymentResponse?.data?.paymentUrl || 
+                        paymentResponse?.checkoutUrl ||
+                        paymentResponse?.url;
+      
+      if (!paymentUrl) {
+        throw new Error('Không nhận được link thanh toán từ PayOS');
+      }
+
+      console.log('🔗 Redirecting to payment URL:', paymentUrl);
+      
+      // ⚠️ KHÔNG xóa giỏ hàng ở đây! 
+      // Giỏ hàng chỉ được xóa KHI THANH TOÁN THÀNH CÔNG (trong OrderSuccess.js)
+      // Lý do: Nếu user hủy thanh toán, họ cần giỏ hàng để quay lại sửa đổi
+      
+      // Chuyển hướng đến trang thanh toán PayOS
+      window.location.href = paymentUrl;
+      
     } catch (error) {
-      console.error('Checkout error:', error);
-      showError('Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.');
+      console.error('❌ Checkout error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.';
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -138,21 +188,33 @@ const Checkout = () => {
                 />
               </div>
 
-              <div>
-                <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-2">
-                  Phương thức thanh toán *
-                </label>
-                <select
-                  id="paymentMethod"
+              {/* Phương thức thanh toán - Ẩn vì chỉ có 1 phương thức */}
+              <div className="hidden">
+                <input
+                  type="hidden"
                   name="paymentMethod"
                   value={formData.paymentMethod}
-                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                  className="input-field"
-                >
-                  <option value="COD">Thanh toán khi nhận hàng (COD)</option>
-                  <option value="BANK_TRANSFER">Chuyển khoản ngân hàng</option>
-                  <option value="E_WALLET">Ví điện tử</option>
-                </select>
+                />
+              </div>
+
+              {/* Thông báo phương thức thanh toán */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Phương thức thanh toán
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>Thanh toán online qua PayOS (Thanh toán trước)</p>
+                      <p className="text-xs mt-1 text-blue-600">Bạn sẽ được chuyển đến trang thanh toán để hoàn tất đơn hàng</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -217,7 +279,7 @@ const Checkout = () => {
               disabled={loading}
               className="btn-primary w-full mt-6"
             >
-              {loading ? 'Đang xử lý...' : 'Đặt hàng'}
+              {loading ? 'Đang xử lý...' : 'Thanh toán ngay'}
             </button>
 
             <div className="mt-4 text-center">

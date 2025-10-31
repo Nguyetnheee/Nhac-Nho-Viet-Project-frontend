@@ -279,5 +279,34 @@
   .ant-alert-close-icon:hover {
     opacity: 1;
   }
+
+  /* Order Success Page - Timeline Animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .order-timeline-step {
+    animation: fadeInUp 0.5s ease-out;
+  }
+
+  .order-timeline-active {
+    animation: pulse 2s ease-in-out infinite;
+  }
 }
 

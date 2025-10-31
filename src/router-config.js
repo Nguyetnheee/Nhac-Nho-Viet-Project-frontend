@@ -24,6 +24,8 @@ import AdminPanel from "./pages/AdminPanel";
 import ShipperPanel from "./pages/ShipperPanel";
 import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
+import PaymentResult from "./pages/PaymentResult";
+import OrderSuccess from "./pages/OrderSuccess";
 
 // Demo Pages
 import ToastDemo from "./pages/ToastDemo";
@@ -125,6 +127,46 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute roles={["CUSTOMER"]}>
             <Checkout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "payment-result",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PaymentResult />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "payment/success",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PaymentResult />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "payment/cancel",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PaymentResult />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "order-success/:orderId",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <OrderSuccess />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "order-success",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <OrderSuccess />
           </ProtectedRoute>
         ),
       },
