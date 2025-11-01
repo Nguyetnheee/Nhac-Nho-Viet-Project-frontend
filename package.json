@@ -2,6 +2,7 @@
   "name": "vietnam-ritual-frontend",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://Nguyetnheee.github.io/Nhac-Nho-Viet-Project-frontend",
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
