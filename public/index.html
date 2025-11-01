@@ -12,10 +12,10 @@
     />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="%PUBLIC_URL%/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="Nhắc Nhớ Việt – Tra cứu lễ hội & đặt mâm cúng Việt Nam" />
@@ -23,10 +23,26 @@
       property="og:description"
       content="Nền tảng tra cứu lễ hội truyền thống Việt Nam. Tìm hiểu ý nghĩa và đặt mâm cúng nhanh chóng, tiện lợi."
     />
-    <meta property="og:image" content="favicon-96x96.png" />
+    <meta property="og:image" content="%PUBLIC_URL%/favicon-96x96.png" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://nhacnhoviet.vn" />
     <meta property="og:locale" content="vi_VN" />
+    
+    <!-- GitHub Pages SPA Redirect Script -->
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />

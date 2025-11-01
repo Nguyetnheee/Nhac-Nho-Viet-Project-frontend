@@ -63,8 +63,21 @@ export const AuthProvider = ({ children }) => {
       return data;
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      if (error.response?.status === 401 || error.response?.status === 403) {
+      
+      // ⚠️ KHÔNG logout ngay nếu fetch profile fail
+      // Vì có thể là lỗi tạm thời hoặc endpoint không tồn tại
+      // Chỉ logout nếu là lỗi 401 (Unauthorized - token hết hạn/invalid)
+      if (error.response?.status === 401) {
+        console.warn('Token invalid or expired, logging out...');
         logout();
+      } else {
+        // Với lỗi khác (403, 404, 500...), tạo user object tạm thời
+        console.warn('Profile fetch failed but keeping user logged in with basic info');
+        const basicUser = {
+          username: localStorage.getItem('username') || 'User',
+          role: role?.toUpperCase() || 'CUSTOMER'
+        };
+        setUser(basicUser);
       }
     }
   };

@@ -1,5 +1,6 @@
 // src/pages/ShipperPanel.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/ToastContainer';
 import { orderService } from '../services/orderService';
 // ⚠️ Import useAuth
@@ -8,10 +9,24 @@ import { useAuth } from '../contexts/AuthContext';
 const ShipperPanel = () => {
   const { showSuccess, showError } = useToast();
   const { user } = useAuth(); // ⚠️ Lấy thông tin user
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  console.log('🚚 ShipperPanel mounted, user:', user);
+  console.log('🚚 User role:', user?.role);
+  
   const shipperUsername = user?.username || "Shipper"; // Lấy username để chào mừng
+
+  const handleLogout = () => {
+    // Xóa token và role
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    
+    // Redirect về trang shipper login
+    window.location.href = '/shipper-login';
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -70,12 +85,22 @@ const ShipperPanel = () => {
   return (
     <div className="min-h-screen bg-vietnam-cream py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          {/* ⚠️ Thêm header chào mừng */}
-          <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">
-             Chào mừng, {shipperUsername}!
-          </h1>
-          <p className="text-gray-600">Quản lý đơn hàng giao</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            {/* ⚠️ Thêm header chào mừng */}
+            <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">
+               Chào mừng, {shipperUsername}!
+            </h1>
+            <p className="text-gray-600">Quản lý đơn hàng giao</p>
+          </div>
+          
+          {/* Nút Logout */}
+          <button
+            onClick={handleLogout}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-md"
+          >
+            Đăng xuất
+          </button>
         </div>
 
         {/* Stats */}

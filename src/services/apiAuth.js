@@ -93,6 +93,8 @@ export const fetchStaffProfile = async () => {
 export const loginStaff = async (username, password) => {
   try {
     const response = await apiAuth.post('/api/staff/login', { username, password });
+    console.log('🔍 loginStaff FULL response:', response);
+    console.log('🔍 loginStaff response.data:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Error during staff login:', error);
