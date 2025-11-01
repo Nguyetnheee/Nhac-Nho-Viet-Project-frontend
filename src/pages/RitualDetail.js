@@ -5,7 +5,8 @@ import { ritualService } from "../services/ritualService";
 import { checklistService } from "../services/checklistService";
 import { scrollToTop } from "../utils/scrollUtils";
 
-const BACKEND_BASE = "https://isp-7jpp.onrender.com";
+// ✅ Sử dụng environment variable thay vì hardcode
+const BACKEND_BASE = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 
 // helper ảnh BE
 const getImageUrl = (url) =>
@@ -75,12 +76,22 @@ const RitualDetail = () => {
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
+      setError(null); // Reset error state
+      
       try {
+        console.log('🔍 Fetching ritual details for ID:', id);
+        
+        // Fetch ritual details
         const res = await ritualService.getRitualById(id);
         const ritualData = res?.data || res;
+        console.log('✅ Ritual data loaded:', ritualData);
         setRitual(ritualData);
 
+        // Fetch checklist
+        console.log('🔍 Fetching checklist for ritual ID:', id);
         const list = await checklistService.getByRitual(id);
+        console.log('✅ Checklist loaded:', list);
+        
         const base = list.map((row, idx) => ({
           key: `${row.itemId || row.checklistId || idx}`,
           itemId: row.itemId,
@@ -105,8 +116,15 @@ const RitualDetail = () => {
         } else {
           setItems(base);
         }
+        
+        console.log('✅ All data loaded successfully');
       } catch (err) {
-        console.error(err);
+        console.error('❌ Error loading ritual/checklist:', err);
+        console.error('Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
         setError("Không thể tải thông tin nghi lễ hoặc checklist");
       } finally {
         setLoading(false);

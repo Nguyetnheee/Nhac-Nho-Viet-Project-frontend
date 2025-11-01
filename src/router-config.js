@@ -35,6 +35,8 @@ import AlertTestPage from "./pages/AlertTestPage";
 import CSSVerificationPage from "./pages/CSSVerificationPage";
 import DebugOrders from "./pages/DebugOrders";
 import TestTokenDebug from "./pages/TestTokenDebug";
+import DebugRitualDetail from "./pages/DebugRitualDetail";
+import DebugChecklist from "./pages/DebugChecklist";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -121,6 +123,14 @@ export const router = createBrowserRouter([
       {
         path: "debug-token",
         element: <TestTokenDebug />
+      },
+      {
+        path: "debug-ritual/:id",
+        element: <DebugRitualDetail />
+      },
+      {
+        path: "debug-checklist",
+        element: <DebugChecklist />
       },
 
       // Customer Only Routes

@@ -19,11 +19,23 @@ const Checklist = () => {
   const fetchChecklists = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Checklist page: Fetching all checklists...');
       const data = await checklistService.getChecklists();
+      console.log('✅ Checklist page: Data received:', data);
+      console.log('📊 Total checklist items:', Array.isArray(data) ? data.length : 'Not an array');
+      
       const groupedData = groupChecklistsByRitualName(data);
+      console.log('📋 Grouped by ritual:', groupedData);
+      console.log('🎯 Displaying first 6 rituals:', groupedData.slice(0, 6));
+      
       setChecklistsByRitual(groupedData.slice(0, 6)); 
     } catch (error) {
-      console.error('Lỗi khi lấy checklist:', error);
+      console.error('❌ Checklist page: Error fetching checklists:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       setChecklistsByRitual([]);
     } finally {
       setLoading(false);
@@ -81,12 +93,39 @@ const Checklist = () => {
         </div>
       </section>
 
-      {/* CHECKLIST MẪU (Giữ nguyên) */}
+      {/* CHECKLIST MẪU */}
       <section className="py-12 max-w-6xl mx-auto px-6">
 
         {loading ? (
           <div className="flex justify-center items-center py-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-vietnam-green"></div>
+          </div>
+        ) : checklistsByRitual.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="max-w-md mx-auto">
+              <div className="text-6xl mb-4">📋</div>
+              <h3 className="text-2xl font-bold text-vietnam-green mb-4">
+                Chưa có checklist nào
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Hiện tại chưa có danh sách checklist nào trong hệ thống. 
+                Vui lòng thử lại sau hoặc liên hệ quản trị viên.
+              </p>
+              <button
+                onClick={fetchChecklists}
+                className="bg-vietnam-green text-white px-6 py-3 rounded-lg hover:bg-vietnam-green/90 transition-colors"
+              >
+                🔄 Tải lại
+              </button>
+              <div className="mt-4">
+                <a
+                  href="/debug-checklist"
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  🔍 Debug API (Kiểm tra lỗi)
+                </a>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6"> 

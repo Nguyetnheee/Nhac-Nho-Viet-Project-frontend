@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ritualService } from "../services/ritualService";
 
-const BACKEND_BASE = "https://isp-7jpp.onrender.com";
+// ✅ Sử dụng environment variable thay vì hardcode
+const BACKEND_BASE = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
+
 const getImageUrl = (url) =>
   url
     ? url.startsWith("http")
