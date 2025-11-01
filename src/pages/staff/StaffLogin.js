@@ -12,7 +12,7 @@ const StaffLogin = () => {
     const [loading, setLoading] = useState(false);
     const [showPw, setShowPw] = useState(false);
 
-    const { login } = useAuth();
+    const { login, logout } = useAuth();
     const { showSuccess, showError, showWarning, showInfo } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
@@ -36,15 +36,32 @@ const StaffLogin = () => {
         setLoading(true);
 
         try {
-            const result = await login(formData.username, formData.password, formData.isStaff);
+            console.log('👔 StaffLogin: Starting login...');
+            
+            // Gọi hàm login từ AuthContext - nó sẽ tự động phân loại role và redirect
+            const result = await login(formData.username, formData.password);
+            
+            console.log('👔 StaffLogin: Login result:', result);
+            
             if (result.success) {
-                showSuccess('Đăng nhập thành công!', 'Chào mừng bạn trở lại.');
-                navigate(formData.isStaff ? '/staff' : '/');
+                console.log('👔 StaffLogin: Login successful, role:', result.role);
+                
+                // Chỉ hiển thị message, KHÔNG can thiệp vào navigation
+                // AuthContext sẽ tự động redirect dựa vào role
+                if (result.role === 'STAFF' || result.role === 'ADMIN') {
+                    console.log('✅ StaffLogin: Role is STAFF/ADMIN, AuthContext will navigate');
+                    showSuccess('Đăng nhập thành công!', 'Chào mừng bạn trở lại.');
+                } else {
+                    console.log('⚠️ StaffLogin: Role is not STAFF/ADMIN:', result.role);
+                    showWarning('Thông báo', `Bạn đã đăng nhập với role: ${result.role}`);
+                    // Không logout, để AuthContext navigate đến dashboard phù hợp
+                }
             } else {
+                console.log('❌ StaffLogin: Login failed:', result.error);
                 showError('Đăng nhập thất bại!', result.error || 'Tên đăng nhập hoặc mật khẩu không đúng.');
             }
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('💥 StaffLogin error:', error);
             showError('Lỗi hệ thống!', 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.');
         } finally {
             setLoading(false);

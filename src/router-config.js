@@ -41,6 +41,7 @@ import DebugChecklist from "./pages/DebugChecklist";
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
 import StaffLogin from "./pages/staff/StaffLogin";
+import ShipperLogin from "./pages/staff/ShipperLogin";
 
 export const router = createBrowserRouter([
   {
@@ -218,6 +219,11 @@ export const router = createBrowserRouter([
           // </ProtectedRoute>
 
         ),
+      },
+
+      {
+        path: "shipper-login",
+        element: <ShipperLogin />
       },
 
       // Admin Only Route
