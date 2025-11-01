@@ -1,89 +1,250 @@
-// src/router-config.js
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 
+// Public Pages
 import Home from "./pages/Home";
 import RitualLookup from "./pages/RitualLookup";
 import RitualDetail from "./pages/RitualDetail";
 import TrayCatalog from "./pages/TrayCatalog";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
+import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import VerifyOTP from "./pages/VerifyOTP";          
-import VerifyResetOTP from "./pages/VerifyResetOTP"; 
+
+// Authentication Pages
+import VerifyOTP from "./pages/VerifyOTP";
+import VerifyResetOTP from "./pages/VerifyResetOTP";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+
+// Protected Pages
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
 import ShipperPanel from "./pages/ShipperPanel";
 import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
-import TestLogin from "./pages/TestLogin";
+import PaymentResult from "./pages/PaymentResult";
+import OrderSuccess from "./pages/OrderSuccess";
+
+// Demo Pages
+import ToastDemo from "./pages/ToastDemo";
+import ToastColorDemo from "./components/ToastColorDemo";
+import CustomAlertDemo from "./components/CustomAlertDemo";
+import AlertTestPage from "./pages/AlertTestPage";
+import CSSVerificationPage from "./pages/CSSVerificationPage";
+import DebugOrders from "./pages/DebugOrders";
+import TestTokenDebug from "./pages/TestTokenDebug";
+import DebugRitualDetail from "./pages/DebugRitualDetail";
+import DebugChecklist from "./pages/DebugChecklist";
+
+// Components
 import ProtectedRoute from "./components/ProtectedRoute";
-import ProductDetail from "./pages/ProductDetail";
+import StaffLogin from "./pages/staff/StaffLogin";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,          
+    element: <App />,
     children: [
-      // Public
-      { index: true, element: <Home /> },
-      { path: "rituals", element: <RitualLookup /> },
-      { path: "rituals/:id", element: <RitualDetail /> },
-      { path: "trays", element: <TrayCatalog /> },
-      { path: "cart", element: <Cart /> },
-      { path: "checkout", element: <Checkout /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "trays/:id", element: <ProductDetail /> },
+      // Public Routes - No authentication needed
+      {
+        path: "login",
+        element: <Login />
+      },
+      {
+        path: "register",
+        element: <Register />
+      },
+      {
+        path: "verify-otp",
+        element: <VerifyOTP />
+      },
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />
+      },
+      {
+        path: "verify-reset",
+        element: <VerifyResetOTP />
+      },
+      {
+        path: "reset-password",
+        element: <ResetPassword />
+      },
 
-      // 🔑 OTP routes (rất quan trọng)
-      { path: "verify-otp", element: <VerifyOTP /> },           // đăng ký
-      { path: "forgot-password", element: <ForgotPassword /> },  // nhập email để nhận OTP reset
-      { path: "verify-reset", element: <VerifyResetOTP /> },     // verify OTP reset
-      { path: "reset-password", element: <ResetPassword /> },    // đặt mật khẩu mới
+      // Customer & Public Access Routes
+      {
+        index: true,
+        element: <Home />,  // Home page is now public
+      },
+      {
+        path: "rituals",
+        element: <RitualLookup />,  // Make public - no authentication required
+      },
+      {
+        path: "rituals/:id",
+        element: <RitualDetail />,  // Make public - no authentication required
+      },
+      {
+        path: "trays",
+        element: <TrayCatalog />,  // Make public - browse products without login
+      },
+      {
+        path: "trays/:id",
+        element: <ProductDetail />,  // Make public - view product details without login
+      },
 
-      { path: "test-login", element: <TestLogin /> },
+      // Demo Routes - For testing and development
+      {
+        path: "toast-demo",
+        element: <ToastDemo />
+      },
+      {
+        path: "toast-colors",
+        element: <ToastColorDemo />
+      },
+      {
+        path: "custom-alerts",
+        element: <CustomAlertDemo />
+      },
+      {
+        path: "alert-test",
+        element: <AlertTestPage />
+      },
+      {
+        path: "css-verification",
+        element: <CSSVerificationPage />
+      },
+      {
+        path: "debug-orders",
+        element: <DebugOrders />
+      },
+      {
+        path: "debug-token",
+        element: <TestTokenDebug />
+      },
+      {
+        path: "debug-ritual/:id",
+        element: <DebugRitualDetail />
+      },
+      {
+        path: "debug-checklist",
+        element: <DebugChecklist />
+      },
 
-      // Protected
+      // Customer Only Routes
+      {
+        path: "cart",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <Cart />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "checkout",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <Checkout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "payment-result",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PaymentResult />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "payment/success",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PaymentResult />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "payment/cancel",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PaymentResult />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "order-success/:orderId",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <OrderSuccess />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "order-success",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <OrderSuccess />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "profile",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
             <Profile />
           </ProtectedRoute>
         ),
       },
+
+      // Staff Only Route
       {
-        path: "admin",
+        path: "staff-dashboard",
         element: (
-          <ProtectedRoute roles={["Admin"]}>
-            <AdminPanel />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "shipper",
-        element: (
-          <ProtectedRoute roles={["Shipper"]}>
-            <ShipperPanel />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "staff",
-        element: (
-          <ProtectedRoute roles={["Staff", "Admin"]}>
+          <ProtectedRoute roles={["STAFF"]}>
             <StaffDashboard />
           </ProtectedRoute>
         ),
       },
+
+      {
+        path: "staff-login",
+        element: (
+          // <ProtectedRoute roles={["STAFF"]}>
+          <StaffLogin />
+
+          // </ProtectedRoute>
+
+        ),
+      },
+
+      // Admin Only Route
+      {
+        path: "admin-dashboard",
+        element: (
+          <ProtectedRoute roles={["ADMIN"]}>
+            <AdminPanel />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Shipper Only Route
+      {
+        path: "shipper-dashboard",
+        element: (
+          <ProtectedRoute roles={["SHIPPER"]}>
+            <ShipperPanel />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Shared Protected Routes
       {
         path: "checklist",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
             <Checklist />
           </ProtectedRoute>
         ),

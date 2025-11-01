@@ -79,7 +79,7 @@ const ShipperDashboard = () => {
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-vietnam-red rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-vietnam-green rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">🚚</span>
             </div>
             <div>
@@ -97,7 +97,7 @@ const ShipperDashboard = () => {
               onClick={() => setActiveMenu(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg mb-2 transition-all duration-200 ${
                 activeMenu === item.id
-                  ? 'bg-vietnam-red text-white shadow-md'
+                  ? 'bg-vietnam-green text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
             >
@@ -194,9 +194,9 @@ const ShipperDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Tỷ lệ thành công</p>
-                  <p className="text-3xl font-bold text-vietnam-red">{stats.successRate}%</p>
+                  <p className="text-3xl font-bold text-vietnam-green">{stats.successRate}%</p>
                 </div>
-                <div className="w-12 h-12 bg-vietnam-red bg-opacity-10 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-vietnam-green bg-opacity-10 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">📈</span>
                 </div>
               </div>
@@ -210,7 +210,7 @@ const ShipperDashboard = () => {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Đơn hàng gần đây</h3>
-                  <button className="text-vietnam-red hover:text-red-700 text-sm font-medium">
+                  <button className="text-vietnam-green hover:text-emerald-700 text-sm font-medium">
                     Xem tất cả
                   </button>
                 </div>
@@ -231,7 +231,7 @@ const ShipperDashboard = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">{order.amount} VNĐ</p>
-                        <button className="text-vietnam-red hover:text-red-700 text-xs font-medium">
+                        <button className="text-vietnam-green hover:text-emerald-700 text-xs font-medium">
                           Chi tiết
                         </button>
                       </div>
@@ -247,7 +247,7 @@ const ShipperDashboard = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác nhanh</h3>
                 <div className="space-y-3">
-                  <button className="w-full flex items-center space-x-3 p-3 bg-vietnam-red text-white rounded-lg hover:bg-opacity-90 transition-colors">
+                  <button className="w-full flex items-center space-x-3 p-3 bg-vietnam-green text-white rounded-lg hover:bg-opacity-90 transition-colors">
                     <span>📦</span>
                     <span>Nhận đơn mới</span>
                   </button>
@@ -279,14 +279,14 @@ const ShipperDashboard = () => {
                     <span className="font-semibold text-gray-900">6h 30m</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-vietnam-red h-2 rounded-full" style={{ width: '75%' }}></div>
+                    <div className="bg-vietnam-green h-2 rounded-full" style={{ width: '75%' }}></div>
                   </div>
                   <p className="text-xs text-gray-500 text-center">75% hoàn thành</p>
                 </div>
               </div>
 
               {/* Weather/Status */}
-              <div className="bg-gradient-to-r from-vietnam-red to-red-600 rounded-xl p-6 text-white">
+              <div className="bg-gradient-to-r from-vietnam-green to-emerald-600 rounded-xl p-6 text-white">
                 <h3 className="text-lg font-semibold mb-2">Trạng thái</h3>
                 <div className="flex items-center space-x-3">
                   <span className="text-2xl">☀️</span>

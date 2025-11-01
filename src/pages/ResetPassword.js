@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { resetPassword } from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -80,20 +81,26 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-vietnam-cream to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 space-y-8">
-        <h2 className="text-center text-3xl font-serif font-bold text-vietnam-red">
+        <h2 className="text-center text-3xl font-serif font-bold text-vietnam-green">
           Đặt lại mật khẩu
         </h2>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {message && (
-            <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-green-700">{message}</p>
-            </div>
+            <CustomAlert 
+              type="success"
+              message="Đặt lại mật khẩu thành công!"
+              description={message}
+              onClose={() => setMessage('')}
+            />
           )}
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+            <CustomAlert 
+              type="error"
+              message="Lỗi đặt lại mật khẩu!"
+              description={error}
+              onClose={() => setError('')}
+            />
           )}
 
           <div>
@@ -160,7 +167,7 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full bg-gradient-to-r from-vietnam-red to-vietnam-gold text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-vietnam-green to-vietnam-gold text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang đặt lại...' : 'Đặt lại mật khẩu'}
             </button>

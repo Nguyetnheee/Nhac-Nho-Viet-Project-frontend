@@ -13,7 +13,8 @@ const REGION_OPTIONS = [
 ];
 
 /* Ảnh fallback + build absolute URL nếu BE trả đường tương đối */
-const BACKEND_BASE = "https://isp-7jpp.onrender.com";
+// ✅ Sử dụng environment variable thay vì hardcode
+const BACKEND_BASE = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 const getImageUrl = (url) =>
   url
     ? url.startsWith("http")
@@ -231,7 +232,7 @@ const RitualLookup = () => {
                   "px-4 py-2.5 rounded-lg font-bold transition duration-300 transform hover:scale-[1.03] shadow-lg focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-vietnam-gold/50",
                   loading
                     ? "bg-gray-300 text-gray-600 cursor-not-allowed opacity-75"
-                    : "bg-vietnam-gold text-vietnam-red hover:bg-yellow-600",
+                    : "bg-vietnam-gold text-vietnam-green hover:bg-yellow-600",
                 ].join(" ")}
               >
                 Tìm
@@ -244,7 +245,7 @@ const RitualLookup = () => {
                   "hidden md:inline-block px-4 py-2.5 rounded-lg font-bold transition duration-300 transform hover:scale-[1.03] shadow-lg focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-vietnam-gold/50",
                   loading
                     ? "bg-gray-300 text-gray-600 cursor-not-allowed opacity-75"
-                    : "bg-white text-vietnam-red border border-vietnam-gold hover:bg-yellow-50",
+                    : "bg-white text-vietnam-green border border-vietnam-gold hover:bg-yellow-50",
                 ].join(" ")}
                 title="Áp dụng bộ lọc vùng miền"
               >
@@ -259,7 +260,7 @@ const RitualLookup = () => {
       <section className="py-20 bg-vietnam-cream">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-vietnam-red mb-3">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold text-vietnam-green mb-3">
               Các nghi lễ truyền thống
             </h2>
             <p className="text-xl text-gray-600 font-light">
@@ -267,7 +268,7 @@ const RitualLookup = () => {
             </p>
             {lastQuery && (
               <p className="mt-3 text-sm text-gray-500">
-                Kết quả cho: <span className="font-semibold text-vietnam-red">“{lastQuery}”</span>{" "}
+                Kết quả cho: <span className="font-semibold text-vietnam-green">"{lastQuery}"</span>{" "}
                 <button onClick={clearSearch} className="underline ml-1">Xóa</button>
               </p>
             )}
@@ -292,7 +293,7 @@ const RitualLookup = () => {
                       />
                     </div>
                     <div className="card-body p-6 flex flex-col flex-grow">
-                      <h3 className="text-2xl font-serif font-bold text-vietnam-red mb-3 leading-snug flex-shrink-0">
+                      <h3 className="text-2xl font-serif font-bold text-vietnam-green mb-3 leading-snug flex-shrink-0">
                         {ritual.ritualName}
                       </h3>
                       <div className="text-base text-gray-600 mb-4 flex items-center flex-shrink-0">
@@ -306,7 +307,7 @@ const RitualLookup = () => {
                     <div className="card-footer p-4 border-t border-gray-100 flex-shrink-0">
                       <Link
                         to={`/rituals/${ritual.ritualId}`}
-                        className="bg-vietnam-red text-white px-5 py-2.5 rounded-lg font-semibold text-center block transition duration-300 hover:bg-red-800 hover:shadow-lg transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-vietnam-red/50"
+                        className="bg-vietnam-green text-white px-5 py-2.5 rounded-lg font-semibold text-center block transition duration-300 hover:bg-emerald-800 hover:shadow-lg transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-vietnam-green/50"
                       >
                         Xem chi tiết
                       </Link>
@@ -317,7 +318,7 @@ const RitualLookup = () => {
             ) : (
               <div className="col-span-full text-center text-xl text-gray-500 py-10">
                 {lastQuery
-                  ? <p>🤷‍♀️ Không có nghi lễ nào khớp với từ khóa <span className="font-semibold text-vietnam-red">“{lastQuery}”</span>.</p>
+                  ? <p>🤷‍♀️ Không có nghi lễ nào khớp với từ khóa <span className="font-semibold text-vietnam-green">"{lastQuery}"</span>.</p>
                   : "😔 Không có nghi lễ nào phù hợp bộ lọc đã chọn."}
               </div>
             )}

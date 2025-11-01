@@ -5,7 +5,8 @@ import { ritualService } from "../services/ritualService";
 import { checklistService } from "../services/checklistService";
 import { scrollToTop } from "../utils/scrollUtils";
 
-const BACKEND_BASE = "https://isp-7jpp.onrender.com";
+// ✅ Sử dụng environment variable thay vì hardcode
+const BACKEND_BASE = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 
 // helper ảnh BE
 const getImageUrl = (url) =>
@@ -75,12 +76,22 @@ const RitualDetail = () => {
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
+      setError(null); // Reset error state
+      
       try {
+        console.log('🔍 Fetching ritual details for ID:', id);
+        
+        // Fetch ritual details
         const res = await ritualService.getRitualById(id);
         const ritualData = res?.data || res;
+        console.log('✅ Ritual data loaded:', ritualData);
         setRitual(ritualData);
 
+        // Fetch checklist
+        console.log('🔍 Fetching checklist for ritual ID:', id);
         const list = await checklistService.getByRitual(id);
+        console.log('✅ Checklist loaded:', list);
+        
         const base = list.map((row, idx) => ({
           key: `${row.itemId || row.checklistId || idx}`,
           itemId: row.itemId,
@@ -105,8 +116,15 @@ const RitualDetail = () => {
         } else {
           setItems(base);
         }
+        
+        console.log('✅ All data loaded successfully');
       } catch (err) {
-        console.error(err);
+        console.error('❌ Error loading ritual/checklist:', err);
+        console.error('Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
         setError("Không thể tải thông tin nghi lễ hoặc checklist");
       } finally {
         setLoading(false);
@@ -164,7 +182,7 @@ const RitualDetail = () => {
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-vietnam-cream">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-vietnam-red border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-vietnam-green border-t-transparent"></div>
       </div>
     );
 
@@ -172,7 +190,7 @@ const RitualDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-vietnam-cream text-center">
         <div>
-          <h1 className="text-2xl font-bold text-vietnam-red mb-4">
+          <h1 className="text-2xl font-bold text-vietnam-green mb-4">
             {error || "Không tìm thấy nghi lễ"}
           </h1>
           <Link to="/" className="text-vietnam-green underline">
@@ -283,7 +301,7 @@ const RitualDetail = () => {
             >
               <div className="absolute inset-0 bg-white/75"></div>
               <div className="relative p-7 text-stone-800">
-                <h2 className="text-2xl font-serif font-bold text-vietnam-red mb-5">
+                <h2 className="text-2xl font-serif font-bold text-vietnam-green mb-5">
                   Mô tả chi tiết
                 </h2>
                 <p className="leading-relaxed whitespace-pre-wrap">
@@ -292,7 +310,7 @@ const RitualDetail = () => {
 
                 {ritual.meaning && (
                   <>
-                    <h2 className="text-2xl font-serif font-bold text-vietnam-red mt-10 mb-4">
+                    <h2 className="text-2xl font-serif font-bold text-vietnam-green mt-10 mb-4">
                       Ý nghĩa
                     </h2>
                     <p className="leading-relaxed whitespace-pre-wrap">

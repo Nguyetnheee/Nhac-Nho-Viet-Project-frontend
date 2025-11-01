@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 
@@ -7,11 +7,9 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { cart, loading } = useCart();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate("/");
     setIsMenuOpen(false);
   };
 
@@ -20,9 +18,37 @@ const Navbar = () => {
     return cart.items.length;
   };
 
+  // If user is Staff, show simplified navbar
+  if (user?.role === 'STAFF') {
+    return (
+      <nav className="bg-vietnam-green shadow-lg relative z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            <div className="flex items-center space-x-2">
+              <img
+                src={`${process.env.PUBLIC_URL}/favicon-96x96.png`}
+                alt="Nhắc Nhớ Việt"
+                className="w-10 h-10 rounded-full object-cover border-2 border-vietnam-gold shadow-sm"
+              />
+              <span className="text-white font-serif text-xl font-bold">
+                Nhắc Nhớ Việt - Quản lý cửa hàng
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
+            >
+              Đăng xuất
+            </button>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
+  // Regular navbar for other users
   return (
-    <nav className="bg-vietnam-red shadow-lg relative z-50">
+    <nav className="bg-vietnam-green shadow-lg relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
@@ -65,17 +91,19 @@ const Navbar = () => {
             >
               Mâm cúng
             </Link>
+            {isAuthenticated && (
               <Link
-              to="/cart"
-              className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium relative"
-            >
-              Giỏ hàng
-              {!loading && getCartItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-vietnam-gold text-vietnam-red text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getCartItemCount()}
-                </span>
-              )}
-            </Link>
+                to="/cart"
+                className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium relative"
+              >
+                Giỏ hàng
+                {!loading && getCartItemCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-vietnam-gold text-vietnam-green text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {getCartItemCount()}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* User Section */}
             {isAuthenticated ? (
@@ -87,25 +115,17 @@ const Navbar = () => {
                   Tài khoản
                 </Link>
                 
-                {user?.role === 'Admin' && (
+                {user?.role === 'ADMIN' && (
                   <Link
-                    to="/admin"
+                    to="/admin-dashboard"
                     className="text-white hover:text-vietnam-gold transition-colors"
                   >
                     Quản trị
                   </Link>
                 )}
-                {user?.role === 'Staff' && (
+                {user?.role === 'SHIPPER' && (
                   <Link
-                    to="/staff"
-                    className="text-white hover:text-vietnam-gold transition-colors"
-                  >
-                    Quản lý cửa hàng
-                  </Link>
-                )}
-                {user?.role === 'Shipper' && (
-                  <Link
-                    to="/shipper"
+                    to="/shipper-dashboard"
                     className="text-white hover:text-vietnam-gold transition-colors"
                   >
                     Giao hàng
@@ -114,7 +134,7 @@ const Navbar = () => {
                 
                 <button
                   onClick={handleLogout}
-                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
+                  className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
                 >
                   Đăng xuất
                 </button>
@@ -129,7 +149,7 @@ const Navbar = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-vietnam-gold text-vietnam-red px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-600 transition"
+                  className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-600 transition"
                 >
                   Đăng ký
                 </Link>
@@ -164,7 +184,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden relative z-50">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-vietnam-red">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-vietnam-green">
             <Link
               to="/"
               className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
@@ -186,13 +206,24 @@ const Navbar = () => {
             >
               Mâm cúng
             </Link>
-            <Link
-              to="/cart"
-              className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Giỏ hàng ({getCartItemCount()})
-            </Link>
+            {isAuthenticated && (
+              <Link
+                to="/checklist"
+                className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Checklist
+              </Link>
+            )}
+            {isAuthenticated && (
+              <Link
+                to="/cart"
+                className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Giỏ hàng ({getCartItemCount()})
+              </Link>
+            )}
             {isAuthenticated ? (
               <>
                 <Link
@@ -202,18 +233,18 @@ const Navbar = () => {
                 >
                   Thông tin cá nhân
                 </Link>
-                {user?.role === 'Admin' && (
+                {user?.role === 'ADMIN' && (
                   <Link
-                    to="/admin"
+                    to="/admin-dashboard"
                     className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Quản trị
                   </Link>
                 )}
-                {user?.role === 'Shipper' && (
+                {user?.role === 'SHIPPER' && (
                   <Link
-                    to="/shipper"
+                    to="/shipper-dashboard"
                     className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >

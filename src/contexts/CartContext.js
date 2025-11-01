@@ -1,7 +1,6 @@
-// src/contexts/CartContext.js
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./AuthContext"; 
 import * as cartService from "../services/cartService";
 import { useToast } from '../components/ToastContainer';
 
@@ -14,17 +13,18 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, user } = useAuth(); 
   const navigate = useNavigate();
   const { showSuccess } = useToast();
 
-  // Server state only
   const [cartItems, setCartItems] = useState([]);
   const [totals, setTotals] = useState({ totalItems: 0, subTotal: 0, currency: "" });
   const [serverSynced, setServerSynced] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  const isCustomer = user?.role === 'CUSTOMER' || (!user?.role && isAuthenticated);
 
-  // -------- Adapter theo schema GET /api/cart --------
   const adaptCartFromApi = (apiCart) => {
     const items = Array.isArray(apiCart?.items) ? apiCart.items : [];
     const mapped = items.map((i) => ({
@@ -58,6 +58,13 @@ export const CartProvider = ({ children }) => {
 
   // -------- API calls --------
   const fetchCart = async () => {
+    //Nếu không phải Customer, KHÔNG tải giỏ hàng
+    if (!isCustomer) {
+      setServerSynced(false);
+      setError(null);
+      return;
+    }
+    
     if (!isAuthenticated || !token) {
       setServerSynced(false);
       setError({ type: "auth", message: "Vui lòng đăng nhập để xem giỏ hàng." });
@@ -81,15 +88,21 @@ export const CartProvider = ({ children }) => {
         setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
         navigate('/login');
       } else if (err?.response?.status === 403) {
+        // Lỗi 403 thường xảy ra khi Staff/Admin cố gắng truy cập, đã được chặn ở trên,
+        // nhưng vẫn giữ phòng trường hợp API trả về lỗi này.
         setError({ type: "auth", message: "Tài khoản của bạn không có quyền xem giỏ hàng." });
         navigate('/');
       } else {
+        // Lỗi chung cần chặn đối với Staff đã được xử lý ở if (!isCustomer)
         setError({ type: "error", message: "Không thể tải giỏ hàng từ server. Vui lòng thử lại." });
       }
     }
   };
 
   const addToCart = async (productOrId, quantity = 1) => {
+    // Nếu không phải Customer, KHÔNG cho phép thêm hàng vào giỏ
+    if (!isCustomer) return; 
+    
     if (!isAuthenticated) return requireAuth();
 
     const productId =
@@ -107,7 +120,7 @@ export const CartProvider = ({ children }) => {
       await cartService.updateCartItem(productId, Number(quantity) || 1);
       await fetchCart();
       setError(null);
-      showSuccess("Đã cập nhật giỏ hàng thành công!"); // Hiển thị toast
+      showSuccess("Đã cập nhật giỏ hàng thành công!");
     } catch (err) {
       console.error("addToCart error:", err);
       if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
@@ -115,89 +128,76 @@ export const CartProvider = ({ children }) => {
       else setError({ type: "error", message: "Không thể thêm sản phẩm. Vui lòng thử lại sau." });
     }
   };
-
-  // Cập nhật số lượng sản phẩm
+  
+  //Thêm điều kiện isCustomer vào các hàm khác
   const updateQuantity = async (productId, nextQty) => {
+    if (!isCustomer) return;
     if (!isAuthenticated) return requireAuth();
 
     try {
-      // Lấy thông tin sản phẩm hiện tại từ server
-      const currentCart = await cartService.getCart();
-      const currentItem = currentCart.items?.find(item => item.productId === productId);
+      if (nextQty <= 0) {
+        await removeFromCart(productId);
+        return;
+      }
       
-      if (!currentItem) {
-        setError({ type: "error", message: "Không tìm thấy sản phẩm trong giỏ hàng." });
-        return;
-      }
-
-      const currentQty = Number(currentItem.quantity) || 0;
-      const desiredQty = Number(nextQty);
-
-      // Validate số lượng mới
-      if (!Number.isFinite(desiredQty) || desiredQty < 0) {
-        setError({ type: "error", message: "Số lượng không hợp lệ." });
-        return;
-      }
-
-      // Nếu số lượng = 0, xóa sản phẩm
-      if (desiredQty === 0) {
-        await cartService.removeFromCart(productId);
-        await fetchCart();
-        setError(null);
-        return;
-      }
-
-      // Cập nhật số lượng trên server
-      await cartService.updateCartItem(productId, desiredQty);
-      
-      // Refresh lại data từ server
+      await cartService.updateCartItem(productId, Number(nextQty));
       await fetchCart();
       setError(null);
+      showSuccess("Đã cập nhật số lượng!");
     } catch (err) {
       console.error("updateQuantity error:", err);
-      // Nếu lỗi, refresh lại data từ server
-      await fetchCart();
-      if (err?.status === 401) {
-        setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
-      } else if (err?.status === 403) {
-        setError({ type: "auth", message: "Tài khoản của bạn không có quyền thao tác giỏ hàng." });
-      } else {
-        setError({ type: "error", message: "Không thể cập nhật số lượng. Vui lòng thử lại sau." });
-      }
+      if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
+      else if (err?.status === 403) setError({ type: "auth", message: "Tài khoản của bạn không có quyền thao tác giỏ hàng." });
+      else setError({ type: "error", message: "Không thể cập nhật số lượng. Vui lòng thử lại sau." });
     }
   };
 
   const removeFromCart = async (productId) => {
+    if (!isCustomer) return;
     if (!isAuthenticated) return requireAuth();
+    if (loading) return; // Prevent double-click
+
     try {
-      await cartService.removeFromCart(productId); // POST /api/cart/items/remove?productId=...
+      setLoading(true);
+      await cartService.removeFromCart(productId);
       await fetchCart();
       setError(null);
+      showSuccess("Đã xóa sản phẩm khỏi giỏ hàng!");
     } catch (err) {
       console.error("removeFromCart error:", err);
       if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
       else if (err?.status === 403) setError({ type: "auth", message: "Tài khoản của bạn không có quyền thao tác giỏ hàng." });
       else setError({ type: "error", message: "Không thể xóa sản phẩm. Vui lòng thử lại sau." });
+    } finally {
+      setLoading(false);
     }
   };
 
   const clearCart = async () => {
+    if (!isCustomer) return;
     if (!isAuthenticated) return requireAuth();
+    if (loading) return; // Prevent double-click
+
     try {
-      await cartService.clearCart(); // nếu BE hỗ trợ /api/cart/clear
+      setLoading(true);
+      await cartService.clearCart();
       await fetchCart();
       setError(null);
+      showSuccess("Đã xóa tất cả sản phẩm khỏi giỏ hàng!");
     } catch (err) {
       console.error("clearCart error:", err);
       if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
       else if (err?.status === 403) setError({ type: "auth", message: "Tài khoản của bạn không có quyền thao tác giỏ hàng." });
       else setError({ type: "error", message: "Không thể xóa giỏ hàng. Vui lòng thử lại sau." });
+    } finally {
+      setLoading(false);
     }
   };
 
   // -------- Effects --------
   useEffect(() => {
-    if (isAuthenticated) {
+    // Chỉ chạy fetchCart nếu là Customer
+    if (isAuthenticated && isCustomer) {
       fetchCart();
     } else {
       setCartItems([]);
@@ -205,14 +205,12 @@ export const CartProvider = ({ children }) => {
       setServerSynced(false);
       setError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.role]); // Thêm user?.role vào dependency
 
-  // -------- Selectors --------
   const getTotalItems = () => totals.totalItems;
   const getTotalPrice = () => totals.subTotal;
   const getDistinctProductCount = () => {
-    return cartItems.length; // Số lượng loại sản phẩm khác nhau
+    return cartItems.length; 
   };
 
   const value = {
@@ -226,13 +224,15 @@ export const CartProvider = ({ children }) => {
     fetchCart,
     getTotalItems,
     getTotalPrice,
-    getDistinctProductCount, // Thêm selector
+    getDistinctProductCount, 
     error,
+    loading,
   };
 
   return (
     <CartContext.Provider value={value}>
-      {error && (
+      {/*  CHỈ HIỆN LỖI NỘI BỘ CỦA CartContext NẾU LÀ CUSTOMER */}
+      {error && isCustomer && ( 
         <div
           className={`fixed top-4 right-4 p-4 rounded-lg ${
             error?.type === "auth" ? "bg-blue-600 text-white" : "bg-red-600 text-white"

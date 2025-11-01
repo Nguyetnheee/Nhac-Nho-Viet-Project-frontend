@@ -211,7 +211,8 @@ const TrayCatalog = () => {
   };
 
   const handleAddToCart = (tray) => {
-    addToCart(tray);
+    // Truyền productId và quantity (mặc định là 1)
+    addToCart(tray.productId, 1);
     toast.success('Đã thêm vào giỏ hàng!');
   };
 
@@ -246,7 +247,7 @@ const TrayCatalog = () => {
           <li className={`page-item ${currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}>
             <button 
               onClick={() => changePage(currentPage - 1)}
-              className="page-link relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 hover:text-vietnam-red focus:shadow-none"
+              className="page-link relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 hover:text-vietnam-green focus:shadow-none"
               aria-label="Previous"
             >
               <span aria-hidden="true">&laquo;</span>
@@ -259,7 +260,7 @@ const TrayCatalog = () => {
                 onClick={() => changePage(page)}
                 className={`page-link relative block py-1.5 px-3 rounded-full border-0 outline-none transition-all duration-300 shadow-md ${
                   currentPage === page 
-                  ? 'bg-vietnam-red text-white font-bold' 
+                  ? 'bg-vietnam-green text-white font-bold' 
                   : 'bg-white text-gray-800 hover:bg-gray-200'
                 }`}
               >
@@ -271,7 +272,7 @@ const TrayCatalog = () => {
           <li className={`page-item ${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}`}>
             <button 
               onClick={() => changePage(currentPage + 1)}
-              className="page-link relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 hover:text-vietnam-red focus:shadow-none"
+              className="page-link relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 hover:text-vietnam-green focus:shadow-none"
               aria-label="Next"
             >
               <span aria-hidden="true">&raquo;</span>
@@ -287,7 +288,7 @@ const TrayCatalog = () => {
     <div className="min-h-screen bg-vietnam-cream pt-20 pb-8">
       
       {/* Hero Section (Giữ nguyên) */}
-      <section className="bg-vietnam-red py-16 mb-12 shadow-xl">
+      <section className="bg-vietnam-green py-16 mb-12 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 drop-shadow-lg">
             Mâm Cúng Truyền Thống
@@ -303,7 +304,7 @@ const TrayCatalog = () => {
         
         {/* Filters and Search */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-10 border-t-4 border-vietnam-gold">
-            <h2 className="text-xl font-serif font-semibold text-vietnam-red mb-4">Bộ lọc & Tìm kiếm</h2>
+            <h2 className="text-xl font-serif font-semibold text-vietnam-green mb-4">Bộ lọc & Tìm kiếm</h2>
             
             {/* Search Bar */}
             <div className="mb-6">
@@ -342,7 +343,7 @@ const TrayCatalog = () => {
                     </div>
                     <button 
                       onClick={applyFilters}
-                      className="px-6 py-2 bg-vietnam-red text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-semibold shadow-md"
+                      className="px-6 py-2 bg-vietnam-green text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-semibold shadow-md"
                     >
                       Tìm kiếm
                     </button>
@@ -419,7 +420,7 @@ const TrayCatalog = () => {
             <div className="flex space-x-4 mt-6">
               <button 
                 onClick={applyFilters} 
-                className="px-6 py-2 bg-vietnam-gold text-vietnam-red rounded-lg font-semibold shadow-md hover:bg-yellow-600 transition duration-200"
+                className="px-6 py-2 bg-vietnam-gold text-vietnam-green rounded-lg font-semibold shadow-md hover:bg-yellow-600 transition duration-200"
               >
                 Áp dụng bộ lọc
               </button>
@@ -437,7 +438,7 @@ const TrayCatalog = () => {
         <section>
           {loading ? (
             <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-vietnam-red"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-vietnam-green"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -455,7 +456,7 @@ const TrayCatalog = () => {
                       onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/23473d/ffffff?text=Mâm+Cúng'; }}
                     />
                     <div className="absolute top-0 right-0 p-3">
-                      <span className="px-3 py-1 bg-vietnam-red text-white text-xs font-bold rounded-full shadow-md">
+                      <span className="px-3 py-1 bg-vietnam-green text-white text-xs font-bold rounded-full shadow-md">
                         Mới
                       </span>
                     </div>
@@ -463,7 +464,7 @@ const TrayCatalog = () => {
                   
                   <div className="p-5 flex flex-col justify-between h-full">
                     <div>
-                      <h3 className="text-xl font-serif font-semibold text-vietnam-red mb-1 line-clamp-2">
+                      <h3 className="text-xl font-serif font-semibold text-vietnam-green mb-1 line-clamp-2">
                         {tray.productName}
                       </h3>
                       <p className="text-sm text-gray-600 mb-3 line-clamp-3">
@@ -473,7 +474,7 @@ const TrayCatalog = () => {
                       {/* Tags */}
                       <div className="flex flex-wrap gap-2 mb-4">
                         {tray.regionName && ( // Sử dụng regionName
-                          <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-red text-xs rounded-lg font-medium">
+                          <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-green text-xs rounded-lg font-medium">
                             {tray.regionName}
                           </span>
                         )}
@@ -488,7 +489,7 @@ const TrayCatalog = () => {
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       {/* Giá */}
                       <div className="flex items-center justify-between mb-3">
-                          <span className="text-2xl font-bold text-vietnam-red">
+                          <span className="text-2xl font-bold text-vietnam-green">
                             {tray.price ? tray.price.toLocaleString('vi-VN') : 0} VNĐ
                           </span>
                       </div>
@@ -499,7 +500,7 @@ const TrayCatalog = () => {
                             e.stopPropagation(); 
                             handleAddToCart(tray);
                         }}
-                        className="w-full py-2.5 bg-vietnam-red text-white rounded-lg font-bold hover:bg-red-700 transition duration-300 shadow-md transform hover:scale-[1.02] flex items-center justify-center space-x-2"
+                        className="w-full py-2.5 bg-vietnam-green text-white rounded-lg font-bold hover:bg-emerald-700 transition duration-300 shadow-md transform hover:scale-[1.02] flex items-center justify-center space-x-2"
                       >
                         {/* Icon giỏ hàng */}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -535,7 +536,7 @@ const TrayCatalog = () => {
             </p>
             <button 
               onClick={clearFilters} 
-              className="px-6 py-2 border border-vietnam-gold text-vietnam-red rounded-lg shadow-sm hover:bg-yellow-50 transition duration-200"
+              className="px-6 py-2 border border-vietnam-gold text-vietnam-green rounded-lg shadow-sm hover:bg-yellow-50 transition duration-200"
             >
               Xem tất cả
             </button>

@@ -72,7 +72,7 @@ const ShipperPanel = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           {/* ⚠️ Thêm header chào mừng */}
-          <h1 className="text-3xl font-serif font-bold text-vietnam-red mb-2">
+          <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">
              Chào mừng, {shipperUsername}!
           </h1>
           <p className="text-gray-600">Quản lý đơn hàng giao</p>
@@ -81,19 +81,19 @@ const ShipperPanel = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="card text-center">
-            <div className="text-2xl font-bold text-vietnam-red mb-2">
+            <div className="text-2xl font-bold text-vietnam-green mb-2">
               {orders.filter(o => o.status === 'confirmed').length}
             </div>
             <div className="text-gray-600">Đơn chờ giao</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-vietnam-red mb-2">
+            <div className="text-2xl font-bold text-vietnam-green mb-2">
               {orders.filter(o => o.status === 'shipping').length}
             </div>
             <div className="text-gray-600">Đang giao</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-vietnam-red mb-2">
+            <div className="text-2xl font-bold text-vietnam-green mb-2">
               {orders.filter(o => o.status === 'success').length}
             </div>
             <div className="text-gray-600">Đã giao thành công</div>
@@ -103,7 +103,7 @@ const ShipperPanel = () => {
         {/* Orders List */}
         <div className="card">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-vietnam-red">Danh sách đơn hàng</h2>
+            <h2 className="text-xl font-semibold text-vietnam-green">Danh sách đơn hàng</h2>
             <button onClick={fetchOrders} className="btn-secondary">
               Làm mới
             </button>
@@ -111,7 +111,7 @@ const ShipperPanel = () => {
 
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vietnam-red"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vietnam-green"></div>
             </div>
           ) : orders.length > 0 ? (
             <div className="overflow-x-auto">

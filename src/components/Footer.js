@@ -31,14 +31,14 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-vietnam-red text-white ritual-pattern">
+    <footer className="bg-vietnam-green text-white ritual-pattern">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-vietnam-gold rounded-full flex items-center justify-center">
-                <span className="text-vietnam-red font-bold text-lg">N</span>
+                <span className="text-vietnam-green font-bold text-lg">N</span>
               </div>
               <span className="font-serif text-xl font-bold">Nhắc Nhớ Việt</span>
             </div>
@@ -118,7 +118,7 @@ const Footer = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-vietnam-gold text-vietnam-red font-semibold py-2 px-4 rounded-md hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-vietnam-gold text-vietnam-green font-semibold py-2 px-4 rounded-md hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Đang xử lý...' : 'Đăng ký ngay'}
               </button>

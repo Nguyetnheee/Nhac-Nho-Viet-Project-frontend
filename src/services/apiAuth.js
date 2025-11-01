@@ -9,7 +9,9 @@ const apiAuth = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: true
+  withCredentials: true,
+  // Ngăn treo khi backend chậm
+  timeout: 15000,
 });
 
 // Request interceptor to add auth token
@@ -34,7 +36,7 @@ apiAuth.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Tránh reload cứng; để route guard xử lý điều hướng
     }
     return Promise.reject(error);
   }

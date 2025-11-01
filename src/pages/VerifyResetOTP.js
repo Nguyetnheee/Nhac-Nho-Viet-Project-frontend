@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { forgotPassword, verifyResetOTP } from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 const VerifyResetOTP = () => {
   const navigate = useNavigate();
@@ -161,14 +162,22 @@ const VerifyResetOTP = () => {
 
           {/* Messages */}
           {error && (
-            <div className="mb-4 bg-red-600 border border-red-700 text-white font-bold px-4 py-3 rounded-lg text-sm text-center shadow">
-              {String(error)}
-            </div>
+            <CustomAlert 
+              type="error"
+              message="Lỗi xác thực OTP!"
+              description={String(error)}
+              onClose={() => setError('')}
+              className="mb-4"
+            />
           )}
           {resendMessage && (
-            <div className="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm text-center">
-              {resendMessage}
-            </div>
+            <CustomAlert 
+              type="success"
+              message="OTP đã được gửi lại!"
+              description={resendMessage}
+              onClose={() => setResendMessage('')}
+              className="mb-4"
+            />
           )}
 
           {/* Actions */}

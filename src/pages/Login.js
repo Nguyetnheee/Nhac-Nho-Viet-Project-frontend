@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import CustomAlert from '../components/CustomAlert';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -62,16 +63,16 @@ const Login = () => {
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-vietnam-red to-vietnam-gold rounded-full flex items-center justify-center shadow-lg transform hover:scale-105 transition-all duration-300">
+            <div className="w-20 h-20 bg-gradient-to-br from-vietnam-green to-vietnam-gold rounded-full flex items-center justify-center shadow-lg transform hover:scale-105 transition-all duration-300">
               <span className="text-white font-bold text-3xl font-serif">N</span>
             </div>
           </div>
-          <h2 className="mt-8 text-center text-3xl font-serif font-bold text-vietnam-red">
+          <h2 className="mt-8 text-center text-3xl font-serif font-bold text-vietnam-green">
             Đăng nhập
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Hoặc{' '}
-            <Link to="/register" className="font-medium text-vietnam-gold hover:text-vietnam-red transition-colors duration-300">
+            <Link to="/register" className="font-medium text-vietnam-gold hover:text-vietnam-green transition-colors duration-300">
               tạo tài khoản mới
             </Link>
           </p>
@@ -79,33 +80,21 @@ const Login = () => {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {successMessage && (
-            <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-sm">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-700">{successMessage}</p>
-                </div>
-              </div>
-            </div>
+            <CustomAlert 
+              type="success"
+              message="Đăng nhập thành công!"
+              description={successMessage}
+              onClose={() => setSuccessMessage('')}
+            />
           )}
           
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
+            <CustomAlert 
+              type="error"
+              message="Lỗi đăng nhập!"
+              description={error}
+              onClose={() => setError('')}
+            />
           )}
           
           <div className="space-y-6">
@@ -150,14 +139,14 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-vietnam-red to-vietnam-gold text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-vietnam-green to-vietnam-gold text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </div>
 
           <p className="mt-2 text-center text-sm text-gray-600">
-            <Link to="/forgot-password" className="font-medium text-vietnam-gold hover:text-vietnam-red transition-colors duration-300">
+            <Link to="/forgot-password" className="font-medium text-vietnam-gold hover:text-vietnam-green transition-colors duration-300">
               Quên mật khẩu?
             </Link>
           </p>

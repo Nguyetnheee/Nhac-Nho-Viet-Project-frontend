@@ -44,7 +44,7 @@ const ConfirmationModal = ({
             disabled={isLoading}
             className={`
               px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-              ${type === 'error' ? 'bg-vietnam-red hover:opacity-80' : 
+              ${type === 'error' ? 'bg-vietnam-green hover:opacity-80' : 
                 type === 'success' ? 'bg-green-500 hover:bg-green-600' :
                 type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600' :
                 'bg-blue-500 hover:bg-blue-600'}

@@ -1,14 +1,13 @@
-// src/contexts/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { 
-    fetchCustomerProfile, 
-    fetchStaffProfile,
-    loginShipper,
-    loginStaff,
-    loginCustomer
-} from '../services/apiAuth'; 
+import {
+  fetchCustomerProfile,
+  fetchStaffProfile,
+  loginShipper,
+  loginStaff,
+  loginCustomer
+} from '../services/apiAuth';
 
 const AuthContext = createContext();
 
@@ -21,231 +20,233 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate(); 
-  
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(localStorage.getItem('token'));
   
-  const tokenFromStorage = localStorage.getItem('token');
-  const roleFromStorage = localStorage.getItem('role');
-  
-  const [token, setToken] = useState(tokenFromStorage || null);
+  // Lấy role từ localStorage (giữ nguyên UPPERCASE như database)
+  const rawRoleFromStorage = localStorage.getItem('role');
+  const roleFromStorage = rawRoleFromStorage; // Không normalize, giữ nguyên UPPERCASE
 
-  // Fetch profile theo role
+  // Helper: wrap a promise with timeout to avoid hanging UI
+  const withTimeout = (promise, ms = 8000) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), ms))
+    ]);
+
   const fetchUserProfile = async (role) => {
-    setLoading(true);
     try {
       let data;
-      console.log('Fetching profile for role:', role);
-      // Normalize role check
       const normalizedRole = role?.toUpperCase();
+      
       if (normalizedRole === 'STAFF' || normalizedRole === 'ADMIN' || normalizedRole === 'SHIPPER') {
         data = await fetchStaffProfile();
       } else {
         data = await fetchCustomerProfile();
       }
-      
+
       if (!data.role) {
-          data.role = role;
+        data.role = role;
       }
-      console.log('Profile data:', data);
+      
+      // Giữ role ở dạng UPPERCASE như database (STAFF, ADMIN, CUSTOMER, SHIPPER)
+      if (data.role) {
+        const originalRole = data.role;
+        data.role = data.role.toUpperCase(); // Đảm bảo luôn là UPPERCASE
+        console.log('🔄 Role keeping in UPPERCASE:', originalRole, '=>', data.role);
+      }
+      
       setUser(data);
+      console.log('👤 User profile set:', data);
       return data;
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      throw error; 
-    } finally {
-      setLoading(false);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        logout();
+      }
     }
-  };
-
-  // Đăng xuất
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    
-    // Xóa header thủ công (nếu có)
-    const apiInstance = api; 
-    if (apiInstance && apiInstance.defaults && apiInstance.defaults.headers.common['Authorization']) {
-        delete apiInstance.defaults.headers.common['Authorization'];
-    }
-    
-    navigate('/login'); 
   };
   
-  // -------- Auth Initialization (useEffect) --------
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+
+    if (api.defaults?.headers?.common['Authorization']) {
+      delete api.defaults.headers.common['Authorization'];
+    }
+    // Navigate to login page on logout
+    navigate('/login', { replace: true });
+  };
+
   useEffect(() => {
     const initializeAuth = async () => {
-      if (tokenFromStorage) {
-        // Thiết lập header tạm thời cho API instance (API CŨ của bạn)
-        const apiInstance = api; 
-        if (apiInstance.defaults && !apiInstance.defaults.headers.common['Authorization']) {
-            apiInstance.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
-        }
-        
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-          try {
-            await fetchUserProfile(roleFromStorage);
-          } catch (error) {
-            console.error('Error during auth initialization:', error);
-            // 🚨 TỰ ĐỘNG LOGOUT KHI GẶP 401/403
-            if (error.response?.status === 401 || error.response?.status === 403) {
-              logout();
-            }
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        try {
+          // Avoid hanging forever if backend is slow
+          await withTimeout(fetchUserProfile(roleFromStorage));
+        } catch (err) {
+          console.warn('Init auth failed or timed out:', err?.message);
+          // Just clear the auth state without redirect on error/timeout
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          if (api.defaults?.headers?.common['Authorization']) {
+            delete api.defaults.headers.common['Authorization'];
           }
         }
-      } else {
-        setLoading(false);
       }
+      setLoading(false);
     };
 
     initializeAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenFromStorage]); 
+  }, [token]);
 
-
-  // -------- Login Function (Thử lần lượt) --------
   const login = async (username, password) => {
     setLoading(true);
-    let loginResponse = null;
-    let finalRole = null;
-    
     try {
-      // 1. Thử login Customer
+      let loginResponse;
+      let userRole;
+      let dashboardPath;
+
       try {
-        const res = await loginCustomer(username, password); 
-        if (res?.token) {
-            loginResponse = res;
-            finalRole = res.role || 'Customer';
+        loginResponse = await loginStaff(username, password);
+        
+        // Lấy role từ response (giữ nguyên UPPERCASE như database)
+        userRole = loginResponse.data?.role || loginResponse.role || 'STAFF';
+        userRole = userRole.toUpperCase();
+        
+        switch (userRole) {
+          case 'STAFF':
+            dashboardPath = '/staff-dashboard';
+            break;
+          case 'ADMIN':
+            dashboardPath = '/admin-dashboard';
+            break;
+          case 'SHIPPER':
+            dashboardPath = '/shipper-dashboard';
+            break;
+          default:
+            dashboardPath = '/staff-dashboard';
+            break;
         }
-      } catch (_) {} 
+        
+        console.log('Staff login - role:', userRole, 'will redirect to:', dashboardPath);
 
-      // 2. Thử login Shipper
-      if (!loginResponse) {
+      } catch (staffError) {
+        try {
+          loginResponse = await loginCustomer(username, password);
+          userRole = 'CUSTOMER'; 
+          dashboardPath = '/';
+        } catch (customerError) {
           try {
-              console.log('Attempting shipper login...');
-              const res = await loginShipper(username, password); 
-              console.log('Shipper login response:', res);
-              if (res?.token) {
-                  loginResponse = res;
-                  finalRole = res.role || 'Shipper';
-              }
-          } catch (error) {
-              console.error('Shipper login error:', error);
+            loginResponse = await loginShipper(username, password);
+            userRole = 'SHIPPER'; 
+            dashboardPath = '/shipper-dashboard';
+          } catch (shipperError) {
+            throw new Error('Tên đăng nhập hoặc mật khẩu không hợp lệ.');
           }
+        }
       }
+      
+      if (!loginResponse?.token) {
+        throw new Error('Đăng nhập thất bại, không nhận được token.');
+      }
+      
+      localStorage.setItem('token', loginResponse.token);
+      localStorage.setItem('role', userRole);
 
-      // 3. Thử login Staff (bao gồm Admin)
-      if (!loginResponse) {
-          try {
-              const res = await loginStaff(username, password); 
-              if (res?.token) {
-                  loginResponse = res;
-                  finalRole = res.role || 'Staff'; 
-              }
-          } catch (err) {
-              // Nếu cả 3 đều thất bại, ném lỗi cuối cùng
-              throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
+      setToken(loginResponse.token);
+      
+      // Set API header immediately
+      api.defaults.headers.common['Authorization'] = `Bearer ${loginResponse.token}`;
+      
+      // Fetch user profile to ensure user state is set before navigation
+      try {
+        await fetchUserProfile(userRole);
+      } catch (profileError) {
+        console.warn('Failed to fetch profile after login:', profileError);
+        // Continue with navigation even if profile fetch fails
+      }
+      
+      // Navigate after profile is fetched - use setTimeout to ensure it happens after state updates
+      setTimeout(() => {
+        console.log('Executing navigation to:', dashboardPath);
+        navigate(dashboardPath, { replace: true });
+        
+        // Additional fallback: force redirect if navigate doesn't work
+        setTimeout(() => {
+          if (window.location.pathname !== dashboardPath) {
+            console.warn('Navigate failed, using window.location redirect');
+            window.location.replace(dashboardPath);
+          } else {
+            console.log('Navigation successful to:', window.location.pathname);
           }
-      }
-      
-      // KIỂM TRA CUỐI CÙNG
-      if (!loginResponse || !loginResponse.token) {
-          throw new Error('Đăng nhập thất bại: Thiếu Token.');
-      }
-      
-      const { token: jwtToken } = loginResponse; 
-      
-      // Lưu thông tin vào localStorage và state
-      setToken(jwtToken);
-      localStorage.setItem('token', jwtToken);
-      localStorage.setItem('role', finalRole);
-      
-      // Thiết lập header cho API instance chính (để fetchUserProfile hoạt động)
-      api.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
-      
-      // Fetch profile tương ứng để lấy toàn bộ data user và xác nhận role
-      const userData = await fetchUserProfile(finalRole);
-      
-      // LOGIC CHUYỂN HƯỚNG CUỐI CÙNG
-      if (finalRole === 'Admin') {
-        navigate('/admin');
-      } else if (finalRole === 'Staff') {
-        navigate('/staff');
-      } else if (finalRole === 'Shipper') {
-        navigate('/shipper'); 
-      } else {
-        navigate('/profile');
-      }
-      
-      return { success: true, role: finalRole };
+        }, 500);
+      }, 0);
+
+      return { success: true, role: userRole };
+
     } catch (error) {
       console.error('Login error:', error);
-      // Xử lý lỗi
-      if (error.response?.status === 401 || error.response?.status === 403) {
-         logout(); 
-      }
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Đăng nhập thất bại',
+        error: error.message || 'Đăng nhập thất bại.',
       };
     } finally {
       setLoading(false);
     }
   };
 
-  // Đăng ký (customer) - Giữ nguyên
   const register = async (userData) => {
     try {
-      const response = await api.post('/api/customer/register', userData); 
+      await api.post('/api/customer/register', userData);
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || 'Đăng ký thất bại',
+        error: error.response?.data?.message || 'Đăng ký thất bại.',
       };
     }
   };
 
-  // Cập nhật profile dựa vào role - Giữ nguyên
   const updateProfile = async (profileData) => {
     try {
-      const role = localStorage.getItem('role');
-      const endpoint =
-        role === 'STAFF' || role === 'Shipper' || role === 'Admin' 
-          ? '/api/staff/profile' 
+        const role = localStorage.getItem('role');
+        const endpoint = role === 'STAFF' || role === 'SHIPPER' || role === 'ADMIN'
+          ? '/api/staff/profile'
           : '/api/customer/profile';
-
-      const payload = {
-        ...profileData,
-        birthday: profileData.birthDate || profileData.birthday || null,
-      };
-
-      const response = await api.put(endpoint, payload);
-      setUser(response.data);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error.response?.data?.message || 'Cập nhật thất bại',
-      };
-    }
+  
+        const payload = {
+          ...profileData,
+          birthday: profileData.birthDate || profileData.birthday || null,
+        };
+  
+        const response = await api.put(endpoint, payload);
+        setUser(response.data);
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error.response?.data?.message || 'Cập nhật hồ sơ thất bại.',
+        };
+      }
   };
-
 
   const value = {
     user,
     token,
     loading,
-    login, 
+    login,
     register,
     logout,
     updateProfile,
     isAuthenticated: !!user,
-    role: user?.role || roleFromStorage,
+    role: user?.role || roleFromStorage, 
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

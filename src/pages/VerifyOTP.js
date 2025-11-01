@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import CustomAlert from '../components/CustomAlert';
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -190,9 +191,13 @@ const VerifyOTP = () => {
 
           {/* Error */}
           {error && (
-            <div className="mb-4 bg-red-600 border border-red-700 text-white font-bold px-4 py-3 rounded-lg text-sm text-center shadow-lg">
-              {String(error)}
-            </div>
+            <CustomAlert 
+              type="error"
+              message="Lỗi xác thực OTP!"
+              description={String(error)}
+              onClose={() => setError('')}
+              className="mb-4"
+            />
           )}
 
           {/* Success resend */}
