@@ -25,27 +25,16 @@ const OrderHistory = () => {
       const role = localStorage.getItem('role');
       console.log('🔐 Debug Auth Info:', {
         hasToken: !!token,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'NO TOKEN',
+        tokenPreview: token ? `${token.substring(0, 30)}...` : 'NO TOKEN',
         role: role,
         tokenLength: token?.length
       });
       
-      // Gọi API lấy danh sách đơn hàng của khách hàng
-      // TRY 1: GET /api/customer/orders (bị 403 Forbidden)
-      // TRY 2: GET /api/orders (fallback endpoint)
-      let response;
-      try {
-        console.log('🔍 Trying /api/customer/orders...');
-        response = await orderService.getCustomerOrders();
-      } catch (error) {
-        if (error.response?.status === 403) {
-          console.log('⚠️ 403 on /api/customer/orders, trying /api/orders...');
-          response = await orderService.getUserOrders();
-        } else {
-          throw error;
-        }
-      }
+      // Backend endpoint: GET /api/customer/orders
+      // Backend đã set quyền: ROLE_CUSTOMER và CUSTOMER
+      console.log('🔍 Fetching orders from: /api/customer/orders');
       
+      const response = await orderService.getCustomerOrders();
       const orderData = response.data || response;
       console.log('✅ Orders fetched:', orderData);
       
@@ -56,7 +45,17 @@ const OrderHistory = () => {
         firstItem: Array.isArray(orderData) && orderData.length > 0 ? orderData[0] : null
       });
       
-      setOrders(Array.isArray(orderData) ? orderData : []);
+      // Sắp xếp đơn hàng theo thời gian mới nhất lên đầu
+      const sortedOrders = Array.isArray(orderData) 
+        ? orderData.sort((a, b) => {
+            const dateA = new Date(a.orderDate);
+            const dateB = new Date(b.orderDate);
+            return dateB - dateA; // Mới nhất lên đầu (descending)
+          })
+        : [];
+      
+      console.log('📅 Orders sorted by date (newest first)');
+      setOrders(sortedOrders);
     } catch (error) {
       console.error('❌ Fetch orders error:', error);
       console.error('❌ Error details:', {
@@ -66,7 +65,15 @@ const OrderHistory = () => {
         url: error.config?.url,
         headers: error.config?.headers
       });
-      showError(`Không thể tải danh sách đơn hàng. ${error.response?.status === 403 ? 'Backend chưa cấu hình quyền truy cập cho CUSTOMER.' : 'Vui lòng thử lại sau.'}`);
+      
+      // Thông báo chi tiết hơn cho user
+      if (error.response?.status === 403) {
+        showError('⚠️ Không có quyền truy cập. Vui lòng đăng xuất và đăng nhập lại để làm mới token.');
+      } else if (error.response?.status === 401) {
+        showError('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        showError(`Không thể tải danh sách đơn hàng. ${error.response?.data?.message || ''}`);
+      }
       setOrders([]);
     } finally {
       setLoading(false);

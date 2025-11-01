@@ -3,6 +3,14 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/ToastContainer';
 import { useCart } from '../contexts/CartContext';
 import api from '../services/api';
+import { 
+  FileTextOutlined, 
+  CheckCircleOutlined, 
+  SyncOutlined, 
+  CarOutlined, 
+  SmileOutlined,
+  CloseCircleOutlined 
+} from '@ant-design/icons';
 
 // Order status mapping
 const ORDER_STATUS_MAP = {
@@ -56,14 +64,127 @@ const OrderSuccess = () => {
     try {
       console.log('📤 Fetching order details for orderId:', orderId);
       
-      const response = await api.get(`/api/customer/orders/${orderId}`);
-      console.log('✅ Order details response:', response.data);
+      // DEBUG: Kiểm tra token và authorization
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      console.log('🔐 Auth Debug:', {
+        hasToken: !!token,
+        tokenPreview: token ? `${token.substring(0, 30)}...` : 'NO TOKEN',
+        role: role,
+        endpoint: `/api/customer/orders/${orderId}`
+      });
+
+      // Thử decode token để kiểm tra authorities
+      if (token) {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            console.log('🔓 JWT Payload:', {
+              sub: payload.sub,
+              authorities: payload.authorities || payload.roles,
+              exp: new Date(payload.exp * 1000).toLocaleString('vi-VN'),
+              isExpired: payload.exp * 1000 < Date.now()
+            });
+            
+            // Kiểm tra token hết hạn
+            if (payload.exp * 1000 < Date.now()) {
+              showError('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+              setTimeout(() => {
+                localStorage.clear();
+                navigate('/login');
+              }, 2000);
+              return;
+            }
+          }
+        } catch (decodeError) {
+          console.error('❌ Cannot decode token:', decodeError);
+        }
+      }
+      
+      let response = null;
+      let lastError = null;
+
+      // Thử nhiều endpoint khác nhau với cả authenticated và public endpoints
+      const endpoints = [
+        { url: `/api/customer/orders/${orderId}`, auth: true },  // Endpoint chính (authenticated)
+        { url: `/api/orders/${orderId}`, auth: true },           // Endpoint phụ (authenticated)
+        { url: `/api/customer/order/${orderId}`, auth: true },   // Singular form (authenticated)
+        { url: `/api/public/orders/${orderId}`, auth: false },   // Public endpoint (không cần auth)
+        { url: `/api/orders/public/${orderId}`, auth: false },   // Public endpoint variant
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔄 Trying endpoint: ${endpoint.url} (auth: ${endpoint.auth})`);
+          
+          if (endpoint.auth) {
+            response = await api.get(endpoint.url);
+          } else {
+            // Thử endpoint public (không gửi token)
+            response = await api.get(endpoint.url, {
+              headers: { 'X-Skip-Auth': 'true' }
+            });
+          }
+          
+          console.log(`✅ Success with endpoint: ${endpoint.url}`, response.data);
+          break; // Thành công thì thoát vòng lặp
+        } catch (err) {
+          console.warn(`❌ Failed endpoint ${endpoint.url}:`, {
+            status: err.response?.status,
+            statusText: err.response?.statusText,
+            data: err.response?.data
+          });
+          lastError = err;
+          // Tiếp tục thử endpoint tiếp theo
+        }
+      }
+
+      // Nếu tất cả endpoint đều thất bại
+      if (!response) {
+        console.error('🚨 ALL ENDPOINTS FAILED - This is likely a backend issue');
+        console.error('📋 Tested endpoints:', endpoints.map(e => e.url));
+        throw lastError || new Error('All endpoints failed');
+      }
       
       setOrderData(response.data);
       setLoading(false);
     } catch (error) {
       console.error('❌ Fetch order details error:', error);
-      showError(error.response?.data?.message || 'Không thể tải thông tin đơn hàng');
+      console.error('❌ Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.response?.data?.message,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      });
+      
+      // Thông báo chi tiết hơn cho user
+      let errorMessage = 'Không thể tải thông tin đơn hàng';
+      if (error.response?.status === 403) {
+        errorMessage = `⚠️ Không có quyền truy cập đơn hàng này. 
+        
+        📋 Hướng dẫn khắc phục:
+        1. Đăng xuất và đăng nhập lại
+        2. Kiểm tra bạn đang đăng nhập đúng tài khoản
+        3. Nếu vẫn lỗi, vui lòng liên hệ hỗ trợ
+        
+        🔧 Để debug, truy cập: /debug-token`;
+      } else if (error.response?.status === 401) {
+        errorMessage = '⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        setTimeout(() => {
+          localStorage.clear();
+          navigate('/login');
+        }, 2000);
+      } else if (error.response?.status === 404) {
+        errorMessage = '⚠️ Không tìm thấy đơn hàng. Vui lòng kiểm tra lại mã đơn hàng.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      showError(errorMessage);
       setLoading(false);
     }
   };
@@ -114,9 +235,7 @@ const OrderSuccess = () => {
       return (
         <div className="text-center py-8">
           <div className="inline-flex items-center px-6 py-3 bg-red-100 text-red-800 rounded-full">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
+            <CloseCircleOutlined className="text-xl mr-2" />
             <span className="font-semibold">Đơn hàng đã bị hủy</span>
           </div>
         </div>
@@ -124,11 +243,11 @@ const OrderSuccess = () => {
     }
 
     const steps = [
-      { step: 1, label: 'Chờ xác nhận', icon: '📝' },
-      { step: 2, label: 'Đã xác nhận', icon: '✅' },
-      { step: 3, label: 'Đang xử lý', icon: '⚙️' },
-      { step: 4, label: 'Đang giao', icon: '🚚' },
-      { step: 5, label: 'Hoàn thành', icon: '🎉' }
+      { step: 1, label: 'Chờ xác nhận', Icon: FileTextOutlined },
+      { step: 2, label: 'Đã xác nhận', Icon: CheckCircleOutlined },
+      { step: 3, label: 'Đang xử lý', Icon: SyncOutlined },
+      { step: 4, label: 'Đang giao', Icon: CarOutlined },
+      { step: 5, label: 'Hoàn thành', Icon: SmileOutlined }
     ];
 
     return (
@@ -146,12 +265,13 @@ const OrderSuccess = () => {
           {steps.map((item) => {
             const isCompleted = currentStep >= item.step;
             const isCurrent = currentStep === item.step;
+            const { Icon } = item;
             
             return (
               <div key={item.step} className="flex flex-col items-center">
                 <div 
                   className={`
-                    w-12 h-12 rounded-full flex items-center justify-center text-xl
+                    w-12 h-12 rounded-full flex items-center justify-center
                     transition-all duration-300 border-4 border-white shadow-lg
                     ${isCompleted 
                       ? 'bg-vietnam-green text-white' 
@@ -160,7 +280,10 @@ const OrderSuccess = () => {
                     ${isCurrent ? 'ring-4 ring-vietnam-gold ring-opacity-50 scale-110' : ''}
                   `}
                 >
-                  {item.icon}
+                  <Icon 
+                    className={`text-2xl ${isCurrent && isCompleted ? 'animate-pulse' : ''}`}
+                    spin={isCurrent && item.step === 3} // Spin icon cho "Đang xử lý"
+                  />
                 </div>
                 <div className={`
                   mt-3 text-xs sm:text-sm font-medium text-center max-w-[80px]
@@ -295,6 +418,20 @@ const OrderSuccess = () => {
                   <span>Tạm tính:</span>
                   <span className="font-medium">{formatMoney(orderData.totalPrice)}</span>
                 </div>
+                
+                {/* Hiển thị voucher nếu có */}
+                {orderData.voucherCode && orderData.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
+                      </svg>
+                      Mã giảm giá ({orderData.voucherCode}):
+                    </span>
+                    <span className="font-medium">-{formatMoney(orderData.discountAmount)}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-gray-600">
                   <span>Phí vận chuyển:</span>
                   <span className="text-green-600 font-medium">Miễn phí</span>

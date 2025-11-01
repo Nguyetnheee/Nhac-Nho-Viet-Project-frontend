@@ -33,6 +33,8 @@ import ToastColorDemo from "./components/ToastColorDemo";
 import CustomAlertDemo from "./components/CustomAlertDemo";
 import AlertTestPage from "./pages/AlertTestPage";
 import CSSVerificationPage from "./pages/CSSVerificationPage";
+import DebugOrders from "./pages/DebugOrders";
+import TestTokenDebug from "./pages/TestTokenDebug";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -111,6 +113,14 @@ export const router = createBrowserRouter([
       {
         path: "css-verification",
         element: <CSSVerificationPage />
+      },
+      {
+        path: "debug-orders",
+        element: <DebugOrders />
+      },
+      {
+        path: "debug-token",
+        element: <TestTokenDebug />
       },
 
       // Customer Only Routes
