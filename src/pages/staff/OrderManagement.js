@@ -50,10 +50,71 @@ const OrderManagement = () => {
     shipping: 0,
   });
 
+  // ⭐ LOCAL STORAGE KEY cho shipper mapping
+  const SHIPPER_MAPPING_KEY = 'order_shipper_mapping';
+
+  // Lưu thông tin shipper vào localStorage
+  const saveShipperMapping = (orderId, shipperInfo) => {
+    try {
+      const mapping = JSON.parse(localStorage.getItem(SHIPPER_MAPPING_KEY) || '{}');
+      mapping[orderId] = {
+        shipperId: shipperInfo.shipperId,
+        shipperName: shipperInfo.shipperName,
+        shipperPhone: shipperInfo.shipperPhone,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(SHIPPER_MAPPING_KEY, JSON.stringify(mapping));
+      console.log(`💾 Saved shipper mapping for order #${orderId}:`, mapping[orderId]);
+    } catch (error) {
+      console.error('Error saving shipper mapping:', error);
+    }
+  };
+
+  // Lấy thông tin shipper từ localStorage
+  const getShipperMapping = (orderId) => {
+    try {
+      const mapping = JSON.parse(localStorage.getItem(SHIPPER_MAPPING_KEY) || '{}');
+      return mapping[orderId] || null;
+    } catch (error) {
+      console.error('Error getting shipper mapping:', error);
+      return null;
+    }
+  };
+
+  // Load data khi component mount
   useEffect(() => {
-    fetchOrders();
-    fetchShippers();
+    const loadData = async () => {
+      // Load shippers trước
+      await fetchShippers();
+      // Sau đó load orders (để có thể map tên shipper ngay)
+      await fetchOrders();
+    };
+    loadData();
   }, []);
+
+  // Tự động cập nhật tên shipper cho orders khi danh sách shippers thay đổi
+  useEffect(() => {
+    if (shippers.length > 0 && orders.length > 0) {
+      setOrders(prevOrders => 
+        prevOrders.map(order => {
+          // Nếu có shipperId nhưng chưa có shipperName
+          if (order.shipperId && !order.shipperName) {
+            const foundShipper = shippers.find(s => s.shipperId === order.shipperId);
+            if (foundShipper) {
+              const shipperName = foundShipper.name || foundShipper.shipperName || foundShipper.username;
+              console.log(`🔄 Auto-updating shipper name for Order #${order.orderId}: ${shipperName}`);
+              return {
+                ...order,
+                shipperName: shipperName,
+                shipperPhone: foundShipper.phoneNumber || foundShipper.phone
+              };
+            }
+          }
+          return order;
+        })
+      );
+    }
+  }, [shippers]); // Chạy mỗi khi danh sách shippers thay đổi
 
   useEffect(() => {
     calculateStatistics();
@@ -75,37 +136,80 @@ const OrderManagement = () => {
       setLoading(true);
       const response = await staffService.getAllOrders();
       
-      // Debug: Check raw backend response
-      console.log('Raw orders from backend:', response);
-      console.log('First order sample:', response[0]);
+      console.log('📦 Raw orders from backend:', response);
+      console.log('📦 First order sample:', response[0]);
       
       // Map backend response to frontend format
-      const mappedOrders = response.map(order => ({
-        orderId: order.orderId,
-        customerName: order.receiverName,
-        phoneNumber: order.phone,
-        email: order.email || 'N/A',
-        deliveryAddress: order.address,
-        totalAmount: order.totalPrice,
-        status: order.status,
-        paymentMethod: order.paymentMethod || 'N/A',
-        shipperName: order.shipperName || null,
-        shipperId: order.shipperId || null,
-        shipperPhone: order.shipperPhone || null,
-        createdAt: order.orderDate,
-        updatedAt: order.updatedAt || order.orderDate,
-        note: order.note,
-        items: order.items || [],
-      }));
+      const mappedOrders = response.map(order => {
+        let shipperName = order.shipperName || order.shipper?.name || null;
+        const shipperId = order.shipperId || order.shipper?.shipperId || null;
+        let shipperPhone = order.shipperPhone || order.shipper?.phone || null;
+        
+        // ⭐ BƯỚC 1: Nếu backend không trả về shipperName, tìm từ localStorage
+        if (shipperId && !shipperName) {
+          const savedMapping = getShipperMapping(order.orderId);
+          if (savedMapping && savedMapping.shipperId === shipperId) {
+            shipperName = savedMapping.shipperName;
+            shipperPhone = savedMapping.shipperPhone;
+            console.log(`💾 Restored from localStorage - Order #${order.orderId}: ${shipperName}`);
+          }
+        }
+        
+        // ⭐ BƯỚC 2: Nếu vẫn chưa có shipperName, tìm từ danh sách shippers
+        if (shipperId && !shipperName && shippers.length > 0) {
+          const foundShipper = shippers.find(s => s.shipperId === shipperId);
+          if (foundShipper) {
+            shipperName = foundShipper.name || foundShipper.shipperName || foundShipper.username;
+            shipperPhone = foundShipper.phoneNumber || foundShipper.phone;
+            console.log(`🔍 Found from shippers list - Order #${order.orderId}: ${shipperName}`);
+            
+            // Lưu vào localStorage để lần sau dùng
+            saveShipperMapping(order.orderId, {
+              shipperId,
+              shipperName,
+              shipperPhone
+            });
+          }
+        }
+        
+        const mapped = {
+          orderId: order.orderId,
+          customerName: order.receiverName,
+          phoneNumber: order.phone,
+          email: order.email || 'N/A',
+          deliveryAddress: order.address,
+          totalAmount: order.totalPrice,
+          status: order.status,
+          paymentMethod: order.paymentMethod || 'N/A',
+          shipperName: shipperName,
+          shipperId: shipperId,
+          shipperPhone: shipperPhone,
+          createdAt: order.orderDate,
+          updatedAt: order.updatedAt || order.orderDate,
+          note: order.note,
+          items: order.items || [],
+        };
+        
+        // Log để debug
+        if (mapped.shipperId) {
+          console.log(`📌 Order #${mapped.orderId} has shipper:`, {
+            shipperName: mapped.shipperName,
+            shipperId: mapped.shipperId,
+            shipperPhone: mapped.shipperPhone
+          });
+        }
+        
+        return mapped;
+      });
       
-      console.log('Mapped orders:', mappedOrders);
-      console.log('First mapped order:', mappedOrders[0]);
+      console.log('✅ Mapped orders:', mappedOrders);
+      console.log(`✅ Total orders: ${mappedOrders.length}`);
       
       setOrders(mappedOrders);
-      message.success('Tải danh sách đơn hàng thành công');
+      message.success(`Tải ${mappedOrders.length} đơn hàng thành công`);
     } catch (error) {
       message.error('Không thể tải danh sách đơn hàng: ' + (error.response?.data?.message || error.message));
-      console.error('Error fetching orders:', error);
+      console.error('❌ Error fetching orders:', error);
     } finally {
       setLoading(false);
     }
@@ -113,6 +217,7 @@ const OrderManagement = () => {
 
   const fetchShippers = async () => {
     try {
+      console.log('🚚 Loading shippers...');
       const response = await staffService.getAllShippers();
       
       // Map backend response to frontend format
@@ -128,10 +233,13 @@ const OrderManagement = () => {
       }));
       
       setShippers(mappedShippers);
-      console.log('Shippers loaded:', mappedShippers); // Debug log
+      console.log('✅ Shippers loaded:', mappedShippers.length, 'shippers');
+      console.log('📋 Shipper list:', mappedShippers);
+      return mappedShippers; // Return để có thể await
     } catch (error) {
       message.error('Không thể tải danh sách shipper: ' + (error.response?.data?.message || error.message));
-      console.error('Error fetching shippers:', error);
+      console.error('❌ Error fetching shippers:', error);
+      return []; // Return empty array nếu lỗi
     }
   };
 
@@ -165,38 +273,64 @@ const OrderManagement = () => {
 
   // Xử lý gán shipper nhanh từ dropdown trong bảng
   const handleQuickAssign = async (orderId, shipperId) => {
+    // Tìm thông tin shipper từ danh sách TRƯỚC khi gọi API
+    const selectedShipper = shippers.find(s => s.shipperId === shipperId);
+    
+    if (!selectedShipper) {
+      message.error('Không tìm thấy thông tin shipper');
+      return;
+    }
+    
+    const shipperName = selectedShipper.name || selectedShipper.shipperName || selectedShipper.username;
+    const shipperPhone = selectedShipper.phoneNumber || selectedShipper.phone;
+    
+    console.log('🚀 Assigning shipper:', { 
+      orderId, 
+      shipperId,
+      shipperName
+    });
+    
     try {
-      setLoading(true);
-      await staffService.assignOrderToShipper(orderId, shipperId);
+      // ⭐ BƯỚC 1: LƯU VÀO LOCALSTORAGE NGAY LẬP TỨC
+      saveShipperMapping(orderId, {
+        shipperId,
+        shipperName,
+        shipperPhone
+      });
       
-      // Tìm tên shipper từ danh sách
-      const selectedShipper = shippers.find(s => s.shipperId === shipperId);
-      
-      // Cập nhật state ngay lập tức (optimistic update)
+      // ⭐ BƯỚC 2: Cập nhật state UI NGAY LẬP TỨC
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.orderId === orderId 
             ? { 
                 ...order, 
-                shipperName: selectedShipper?.name || selectedShipper?.shipperName,
+                shipperName: shipperName,
                 shipperId: shipperId,
-                shipperPhone: selectedShipper?.phoneNumber || selectedShipper?.phone
+                shipperPhone: shipperPhone
               } 
             : order
         )
       );
       
-      message.success('Gán shipper thành công');
+      console.log(`✅ UI updated + Saved to localStorage: Order #${orderId} → ${shipperName}`);
       
-      // Vẫn fetch lại để đảm bảo dữ liệu đồng bộ với backend
-      fetchOrders();
+      // ⭐ BƯỚC 3: Gọi API để lưu vào database (background)
+      staffService.assignOrderToShipper(orderId, shipperId)
+        .then(() => {
+          console.log(`✅ Backend saved: Order #${orderId} assigned to shipper ${shipperId}`);
+          message.success(`Đã gán shipper "${shipperName}" cho đơn hàng #${orderId}`);
+        })
+        .catch((error) => {
+          console.error('❌ Error saving to backend:', error);
+          message.error('Lỗi khi lưu vào database: ' + (error.response?.data?.message || error.message));
+          // Rollback nếu lỗi (xóa khỏi localStorage và fetch lại)
+          localStorage.removeItem(`${SHIPPER_MAPPING_KEY}_${orderId}`);
+          fetchOrders();
+        });
+      
     } catch (error) {
-      message.error('Không thể gán shipper: ' + (error.response?.data?.message || error.message));
-      console.error('Error assigning shipper:', error);
-      // Nếu lỗi, fetch lại để rollback về trạng thái thực tế
-      fetchOrders();
-    } finally {
-      setLoading(false);
+      console.error('❌ Error in handleQuickAssign:', error);
+      message.error('Không thể gán shipper');
     }
   };
 
@@ -206,16 +340,65 @@ const OrderManagement = () => {
       return;
     }
 
+    // Tìm thông tin shipper TRƯỚC khi gọi API
+    const shipper = shippers.find(s => s.shipperId === selectedShipper || s.id === selectedShipper);
+    
+    if (!shipper) {
+      message.error('Không tìm thấy thông tin shipper');
+      return;
+    }
+
+    const orderId = selectedOrder.orderId;
+    const shipperName = shipper.name || shipper.username || shipper.shipperName;
+    const shipperPhone = shipper.phoneNumber || shipper.phone;
+
+    console.log('🚀 Assigning shipper via modal:', { 
+      orderId, 
+      shipperId: selectedShipper,
+      shipperName 
+    });
+    
     try {
       setLoading(true);
-      await staffService.assignOrderToShipper(selectedOrder.orderId, selectedShipper);
-      message.success('Gán đơn hàng cho shipper thành công');
+      
+      // ⭐ BƯỚC 1: LƯU VÀO LOCALSTORAGE NGAY
+      saveShipperMapping(orderId, {
+        shipperId: selectedShipper,
+        shipperName,
+        shipperPhone
+      });
+      
+      // ⭐ BƯỚC 2: Cập nhật state NGAY LẬP TỨC
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === orderId 
+            ? { 
+                ...order, 
+                shipperName: shipperName,
+                shipperId: selectedShipper,
+                shipperPhone: shipperPhone
+              } 
+            : order
+        )
+      );
+      
+      console.log(`✅ UI updated + Saved to localStorage: Order #${orderId} → ${shipperName}`);
+      
+      // Đóng modal và clear state
       setAssignModalVisible(false);
       setSelectedShipper(null);
-      fetchOrders(); // Refresh danh sách
+      
+      // ⭐ BƯỚC 3: Gọi API để lưu vào database
+      await staffService.assignOrderToShipper(orderId, selectedShipper);
+      
+      console.log(`✅ Backend saved: Order #${orderId} assigned to shipper ${selectedShipper}`);
+      message.success(`Đã gán shipper "${shipperName}" cho đơn hàng #${orderId}`);
+      
     } catch (error) {
       message.error('Không thể gán đơn hàng: ' + (error.response?.data?.message || error.message));
-      console.error('Error assigning order:', error);
+      console.error('❌ Error assigning order:', error);
+      // Rollback nếu lỗi
+      fetchOrders();
     } finally {
       setLoading(false);
     }
@@ -343,24 +526,48 @@ const OrderManagement = () => {
       key: 'shipper',
       width: 200,
       render: (_, record) => {
-        // Debug
-        console.log('Shipper column - Order:', record.orderId, '| shipperName:', record.shipperName, '| shipperId:', record.shipperId);
+        // Debug - log để kiểm tra backend response
+        console.log('🚚 Shipper column - Order:', record.orderId, 
+          '| Status:', record.status,
+          '| shipperName:', record.shipperName, 
+          '| shipperId:', record.shipperId);
         
-        // Chỉ cho phép gán shipper khi đơn đã CONFIRMED
-        if (record.status !== 'CONFIRMED') {
-          return record.shipperName ? (
-            <Tag color="blue">{record.shipperName}</Tag>
-          ) : (
-            <Tag color="default">Chưa gán</Tag>
+        // ✅ Nếu đã có tên shipper => LUÔN hiển thị Tag (giữ nguyên)
+        if (record.shipperName) {
+          return (
+            <Tag color="blue" icon={<UserOutlined />}>
+              {record.shipperName}
+            </Tag>
+          );
+        }
+        
+        // ⚠️ Nếu có shipperId nhưng không có tên (edge case)
+        if (record.shipperId) {
+          // Tìm tên shipper từ danh sách shippers
+          const shipper = shippers.find(s => s.shipperId === record.shipperId);
+          if (shipper) {
+            const shipperName = shipper.name || shipper.shipperName || shipper.username;
+            return (
+              <Tag color="blue" icon={<UserOutlined />}>
+                {shipperName}
+              </Tag>
+            );
+          }
+          // Nếu không tìm thấy, hiển thị ID
+          return (
+            <Tag color="orange" icon={<UserOutlined />}>
+              Shipper #{record.shipperId}
+            </Tag>
           );
         }
 
-        // Nếu đã có shipper, hiển thị tên
-        if (record.shipperName) {
-          return <Tag color="blue">{record.shipperName}</Tag>;
+        // ❌ Nếu chưa có shipper
+        if (record.status !== 'CONFIRMED') {
+          // Các status khác không cho gán
+          return <Tag color="default">Chưa gán</Tag>;
         }
 
-        // Nếu chưa có shipper và status = CONFIRMED, hiển thị dropdown
+        // ✅ Status = CONFIRMED và chưa có shipper => hiển thị dropdown để gán
         return (
           <Select
             placeholder="Chọn shipper"

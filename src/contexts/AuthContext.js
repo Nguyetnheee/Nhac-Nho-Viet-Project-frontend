@@ -86,8 +86,14 @@ export const AuthProvider = ({ children }) => {
     // Lấy role trước khi xóa để biết redirect về đâu
     const currentRole = localStorage.getItem('role');
     
+    // ✅ CẬP NHẬT STATE NGAY LẬP TỨC trước khi redirect
+    setUser(null);
+    setToken(null);
+    
+    // ✅ XÓA TẤT CẢ DỮ LIỆU LIÊN QUAN ĐẾN AUTH từ localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('username');
 
     if (api.defaults?.headers?.common['Authorization']) {
       delete api.defaults.headers.common['Authorization'];
