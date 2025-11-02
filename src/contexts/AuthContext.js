@@ -83,14 +83,26 @@ export const AuthProvider = ({ children }) => {
   };
   
   const logout = () => {
+    // Lấy role trước khi xóa để biết redirect về đâu
+    const currentRole = localStorage.getItem('role');
+    
     localStorage.removeItem('token');
     localStorage.removeItem('role');
 
     if (api.defaults?.headers?.common['Authorization']) {
       delete api.defaults.headers.common['Authorization'];
     }
-    // Navigate to login page on logout
-    navigate('/login', { replace: true });
+    
+    // Redirect dựa trên role
+    // Admin/Staff/Shipper → /admin-login
+    // Customer → /login
+    if (currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'SHIPPER') {
+      console.log('Logout from', currentRole, '→ redirecting to /admin-login');
+      navigate('/admin-login', { replace: true });
+    } else {
+      console.log('Logout from CUSTOMER → redirecting to /login');
+      navigate('/login', { replace: true });
+    }
   };
 
   useEffect(() => {
@@ -153,13 +165,42 @@ export const AuthProvider = ({ children }) => {
       } catch (staffError) {
         try {
           loginResponse = await loginCustomer(username, password);
-          userRole = 'CUSTOMER'; 
-          dashboardPath = '/';
+          
+          // ⚠️ FIX: Lấy role từ response thay vì gán cứng
+          userRole = loginResponse.data?.role || loginResponse.role || 'CUSTOMER';
+          userRole = userRole.toUpperCase();
+          
+          console.log('Customer login - extracted role:', userRole);
+          
+          // Xác định dashboard path dựa trên role thực tế
+          switch (userRole) {
+            case 'CUSTOMER':
+              dashboardPath = '/';
+              break;
+            case 'SHIPPER':
+              dashboardPath = '/shipper-dashboard';
+              break;
+            case 'STAFF':
+              dashboardPath = '/staff-dashboard';
+              break;
+            case 'ADMIN':
+              dashboardPath = '/admin-dashboard';
+              break;
+            default:
+              dashboardPath = '/';
+          }
+          
         } catch (customerError) {
           try {
             loginResponse = await loginShipper(username, password);
-            userRole = 'SHIPPER'; 
+            
+            // ⚠️ FIX: Lấy role từ response thay vì gán cứng
+            userRole = loginResponse.data?.role || loginResponse.role || 'SHIPPER';
+            userRole = userRole.toUpperCase();
+            
+            console.log('Shipper login - extracted role:', userRole);
             dashboardPath = '/shipper-dashboard';
+            
           } catch (shipperError) {
             throw new Error('Tên đăng nhập hoặc mật khẩu không hợp lệ.');
           }

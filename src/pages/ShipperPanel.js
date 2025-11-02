@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const ShipperPanel = () => {
   const { showSuccess, showError } = useToast();
-  const { user } = useAuth(); // ⚠️ Lấy thông tin user
+  const { user, logout } = useAuth(); // ⚠️ Lấy thông tin user và logout function
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,13 +19,9 @@ const ShipperPanel = () => {
   const shipperUsername = user?.username || "Shipper"; // Lấy username để chào mừng
 
   const handleLogout = () => {
-    // Xóa token và role
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
-    
-    // Redirect về trang shipper login
-    window.location.href = '/shipper-login';
+    // ✅ Sử dụng logout từ AuthContext thay vì logic riêng
+    // AuthContext sẽ tự động redirect về /admin-login cho SHIPPER
+    logout();
   };
 
   useEffect(() => {
