@@ -19,34 +19,7 @@ const Navbar = () => {
     return cart.items.length;
   };
 
-  // If user is Staff, show simplified navbar
-  if (user?.role === 'STAFF') {
-    return (
-      <nav className="bg-vietnam-green shadow-lg relative z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center space-x-2">
-              <img
-                src={`${process.env.PUBLIC_URL}/favicon-96x96.png`}
-                alt="Nhắc Nhớ Việt"
-                className="w-10 h-10 rounded-full object-cover border-2 border-vietnam-gold shadow-sm"
-              />
-              <span className="text-white font-serif text-xl font-bold">
-                Nhắc Nhớ Việt - Quản lý cửa hàng
-              </span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
-            >
-              Đăng xuất
-            </button>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
+  
   // Regular navbar for other users
   return (
     <nav className="bg-vietnam-green shadow-lg relative z-50">
