@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; 
+import { EyeOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { trayService } from '../services/trayService';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const ITEMS_PER_PAGE = 6; 
 
 const TrayCatalog = () => {
   const navigate = useNavigate(); 
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   
   const [trays, setTrays] = useState([]); 
   const [loading, setLoading] = useState(true);
@@ -21,7 +25,6 @@ const TrayCatalog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [regions, setRegions] = useState([]);
   const [categories, setCategories] = useState([]);
-  const { addToCart } = useCart();
   
   // Logic cũ (fetchInitialData, fetchTrays, handleFilterChange, applyFilters, clearFilters, Pagination)
   
@@ -211,9 +214,32 @@ const TrayCatalog = () => {
   };
 
   const handleAddToCart = (tray) => {
-    // Truyền productId và quantity (mặc định là 1)
-    addToCart(tray.productId, 1);
-    toast.success('Đã thêm vào giỏ hàng!');
+    if (!tray) return;
+
+    // Kiểm tra xem user đã đăng nhập chưa
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
+      navigate('/login');
+      return;
+    }
+
+    // Tạo cart item object giống ProductDetail
+    const cartItem = {
+      id: tray.productId,
+      productId: tray.productId,
+      name: tray.productName || 'Unknown Product',
+      price: tray.price || 0,
+      quantity: 1,
+      image: tray.productImage || ''
+    };
+
+    try {
+      // Thêm vào giỏ hàng với quantity mặc định là 1
+      addToCart(cartItem, 1);
+      toast.success(`Đã thêm ${tray.productName} vào giỏ hàng`);
+    } catch (error) {
+      toast.error('Không thể thêm sản phẩm vào giỏ hàng');
+    }
   };
 
   const handleViewDetails = (productId) => {
@@ -285,11 +311,18 @@ const TrayCatalog = () => {
   // END LOGIC PHÂN TRANG GIẢ ĐỊNH
 
   return (
-    <div className="min-h-screen bg-vietnam-cream pt-20 pb-8">
+    <div className="min-h-screen bg-vietnam-cream">
       
-      {/* Hero Section (Giữ nguyên) */}
-      <section className="bg-vietnam-green py-16 mb-12 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+      {/* Hero Section */}
+      <section 
+        className="relative py-20 shadow-xl bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(/hero-background.jpg)' }}
+      >
+        {/* Overlay trong suốt */}
+        <div className="absolute inset-0 bg-vietnam-green bg-opacity-75"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 drop-shadow-lg">
             Mâm Cúng Truyền Thống
           </h1>
@@ -300,7 +333,7 @@ const TrayCatalog = () => {
       </section>
       {/* END Hero Section */}
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
         {/* Filters and Search */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-10 border-t-4 border-vietnam-gold">
@@ -315,16 +348,6 @@ const TrayCatalog = () => {
                         value={filters.searchQuery}
                         onChange={(e) => {
                           handleFilterChange('searchQuery', e.target.value);
-                          if (e.target.value.trim()) {
-                            setFilters(prev => ({
-                              ...prev,
-                              regionId: '',
-                              categoryId: '',
-                              minPrice: '',
-                              maxPrice: '',
-                              searchQuery: e.target.value
-                            }));
-                          }
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -445,8 +468,7 @@ const TrayCatalog = () => {
               {paginatedTrays.map((tray) => (
                 <div 
                   key={tray.productId} 
-                  onClick={() => handleViewDetails(tray.productId)} 
-                  className="bg-white rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 cursor-pointer" 
+                  className="bg-white rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex flex-col" 
                 >
                   <div className="relative">
                     <img
@@ -462,8 +484,8 @@ const TrayCatalog = () => {
                     </div>
                   </div>
                   
-                  <div className="p-5 flex flex-col justify-between h-full">
-                    <div>
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="flex-grow">
                       <h3 className="text-xl font-serif font-semibold text-vietnam-green mb-1 line-clamp-2">
                         {tray.productName}
                       </h3>
@@ -473,12 +495,12 @@ const TrayCatalog = () => {
                       
                       {/* Tags */}
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {tray.regionName && ( // Sử dụng regionName
+                        {tray.regionName && (
                           <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-green text-xs rounded-lg font-medium">
                             {tray.regionName}
                           </span>
                         )}
-                        {tray.categoryName && ( // Sử dụng categoryName
+                        {tray.categoryName && (
                           <span className="px-2 py-1 bg-vietnam-green/20 text-vietnam-green text-xs rounded-lg font-medium">
                             {tray.categoryName}
                           </span>
@@ -488,26 +510,32 @@ const TrayCatalog = () => {
                     
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       {/* Giá */}
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="mb-4">
                           <span className="text-2xl font-bold text-vietnam-green">
                             {tray.price ? tray.price.toLocaleString('vi-VN') : 0} VNĐ
                           </span>
                       </div>
                       
-                      {/* Nút Thêm vào giỏ - Dùng event stopPropagation để ngăn click vào giỏ hàng mở trang chi tiết */}
-                      <button
-                        onClick={(e) => {
-                            e.stopPropagation(); 
-                            handleAddToCart(tray);
-                        }}
-                        className="w-full py-2.5 bg-vietnam-green text-white rounded-lg font-bold hover:bg-emerald-700 transition duration-300 shadow-md transform hover:scale-[1.02] flex items-center justify-center space-x-2"
-                      >
-                        {/* Icon giỏ hàng */}
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.023.824l.798 4.792a1.8 1.8 0 00.97.942v0c.954.269 1.636 1.066 1.636 2.072v2.793a1.5 1.5 0 001.5 1.5H19.5a1.5 1.5 0 001.5-1.5v-2.793c0-1.006-.682-1.803-1.636-2.072l-.798-4.792A1.8 1.8 0 0018.386 3H2.25z" />
-                        </svg>
-                        <span>Thêm vào giỏ hàng</span>
-                      </button>
+                      {/* 2 Nút hành động */}
+                      <div className="flex gap-3 items-center">
+                        {/* Nút Xem chi tiết - Bên trái */}
+                        <button
+                          onClick={() => handleViewDetails(tray.productId)}
+                          className="flex-1 py-2.5 bg-white border-2 border-vietnam-green text-vietnam-green rounded-lg font-bold hover:bg-vietnam-green hover:text-white transition duration-300 shadow-sm transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                        >
+                          <EyeOutlined className="text-lg" />
+                          <span>Chi tiết</span>
+                        </button>
+
+                        {/* Nút Thêm vào giỏ - Bên phải */}
+                        <button
+                          onClick={() => handleAddToCart(tray)}
+                          className="flex-1 py-2.5 bg-vietnam-green text-white rounded-lg font-bold hover:bg-emerald-700 transition duration-300 shadow-md transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCartOutlined className="text-lg" />
+                          <span>Giỏ hàng</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

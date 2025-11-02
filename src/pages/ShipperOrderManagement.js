@@ -173,9 +173,9 @@ const ShipperOrderManagement = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (!amount && amount !== 0) return '0 ₫';
+    if (!amount && amount !== 0) return '0 VNĐ';
     const validAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    if (isNaN(validAmount)) return '0 ₫';
+    if (isNaN(validAmount)) return '0 VNĐ';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
