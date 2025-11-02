@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext"; 
 import * as cartService from "../services/cartService";
 import { useToast } from '../components/ToastContainer';
@@ -15,6 +15,7 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { isAuthenticated, token, user } = useAuth(); 
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSuccess } = useToast();
 
   const [cartItems, setCartItems] = useState([]);
@@ -23,7 +24,28 @@ export const CartProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  const isCustomer = user?.role === 'CUSTOMER' || (!user?.role && isAuthenticated);
+  // ✅ Kiểm tra nếu đang ở trang admin/staff/shipper
+  const isAdminRoute = location.pathname.startsWith('/admin-login') ||
+                       location.pathname.startsWith('/admin-dashboard') ||
+                       location.pathname.startsWith('/staff-dashboard') ||
+                       location.pathname.startsWith('/staff-login') ||
+                       location.pathname.startsWith('/shipper-dashboard') ||
+                       location.pathname.startsWith('/shipper-login') ||
+                       location.pathname.startsWith('/shipper-panel');
+  
+  // ✅ CHẶT CHẼ HƠN - Chỉ là customer khi:
+  // 1. Role = CUSTOMER hoặc ROLE_CUSTOMER
+  // 2. KHÔNG phải đang ở trang admin/staff/shipper
+  const isCustomer = (user?.role === 'CUSTOMER' || user?.role === 'ROLE_CUSTOMER') && !isAdminRoute;
+  
+  console.log('🛒 CartContext Debug:', {
+    pathname: location.pathname,
+    isAdminRoute,
+    isAuthenticated,
+    userRole: user?.role,
+    isCustomer,
+    hasToken: !!token
+  });
 
   const adaptCartFromApi = (apiCart) => {
     const items = Array.isArray(apiCart?.items) ? apiCart.items : [];
@@ -58,12 +80,14 @@ export const CartProvider = ({ children }) => {
 
   // -------- API calls --------
   const fetchCart = async () => {
-    // ⚠️ Nếu không phải Customer, KHÔNG tải giỏ hàng và KHÔNG hiển thị lỗi
+    // ✅ Nếu không phải Customer, KHÔNG làm gì cả - HOÀN TOÀN IM LẶNG
     if (!isCustomer) {
+      console.log('⏭️ Skip cart fetch - User is not CUSTOMER');
       setServerSynced(false);
-      setError(null); // Không hiển thị error cho Staff/Admin/Shipper
+      setError(null);
       setCartItems([]);
       setTotals({ totalItems: 0, subTotal: 0, currency: "" });
+      setLoading(false);
       return;
     }
     
@@ -74,6 +98,7 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
+    setLoading(true);
     try {
       const data = await cartService.getCart();
       if (data) {
@@ -87,10 +112,10 @@ export const CartProvider = ({ children }) => {
       console.error("fetchCart error:", err);
       setServerSynced(false);
       
-      // ⚠️ CHỈ hiển thị lỗi cho CUSTOMER
+      // ✅ DOUBLE CHECK - Nếu không phải customer thì im lặng hoàn toàn
       if (!isCustomer) {
-        // Không hiển thị lỗi cho Staff/Admin/Shipper
         setError(null);
+        setLoading(false);
         return;
       }
       
@@ -98,12 +123,14 @@ export const CartProvider = ({ children }) => {
         setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
         navigate('/login');
       } else if (err?.response?.status === 403) {
-        // 403 - Không có quyền (chỉ hiển thị cho Customer nếu bị lỗi thật)
-        setError(null); // Không hiển thị error
+        // 403 - Không có quyền
+        setError(null);
       } else {
-        // Lỗi chung (chỉ cho Customer)
+        // Lỗi chung - CHỈ hiển thị cho CUSTOMER
         setError({ type: "error", message: "Không thể tải giỏ hàng từ server. Vui lòng thử lại." });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -239,8 +266,11 @@ export const CartProvider = ({ children }) => {
 
   return (
     <CartContext.Provider value={value}>
-      {/*  ⚠️ CHỈ HIỆN LỖI CHO CUSTOMER - TUYỆT ĐỐI KHÔNG HIỆN CHO ADMIN/STAFF/SHIPPER */}
-      {error && isCustomer && user?.role === 'CUSTOMER' && ( 
+      {/*  ✅ CHỈ HIỆN LỖI CHO CUSTOMER - CHECK NHIỀU LẦN ĐỂ CHẮC CHẮN */}
+      {error && 
+       isCustomer && 
+       user?.role === 'CUSTOMER' && 
+       isAuthenticated && ( 
         <div
           className={`fixed top-4 right-4 p-4 rounded-lg ${
             error?.type === "auth" ? "bg-blue-600 text-white" : "bg-red-600 text-white"
