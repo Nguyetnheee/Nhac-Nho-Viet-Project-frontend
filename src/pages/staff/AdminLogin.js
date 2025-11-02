@@ -99,14 +99,16 @@ const AdminLogin = () => {
         <div
             className="min-h-screen flex items-center justify-center relative"
             style={{
-                backgroundImage: `url(${process.env.PUBLIC_URL}/login-background.jpg), url(${process.env.PUBLIC_URL}/login-background.jpg)`,
+                backgroundImage: `url(${process.env.PUBLIC_URL}/login-background.jpg)`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                imageRendering: 'crisp-edges',
+                filter: 'contrast(1.1) brightness(1.05)'
             }}
         >
-            {/* Overlay tối để text dễ đọc hơn */}
-            <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+            {/* Overlay tối nhẹ để text dễ đọc nhưng giữ background sắc nét */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/35 to-black/40"></div>
 
             {/* Left side - Welcome text */}
             <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative z-10">
@@ -123,10 +125,15 @@ const AdminLogin = () => {
             {/* Right side - Login form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative z-10">
                 <div className="w-full max-w-md">
-                    {/* Card với nền trong suốt tối */}
+                    {/* Card với nền trắng trong suốt */}
                     <div className="rounded-2xl bg-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/20 p-8 sm:p-10">
 
-                        <h2 className="text-center text-3xl font-bold tracking-tight text-white mb-2">
+                        <h2 className="text-center text-3xl font-bold tracking-tight mb-2" style={{
+                            background: 'linear-gradient(to right, #B8860B, #DAA520)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text'
+                        }}>
                             Đăng nhập Admin
                         </h2>
                         <p className="text-center text-sm text-gray-200 mb-8">
@@ -137,8 +144,9 @@ const AdminLogin = () => {
 
                             {/* Username */}
                             <div>
-                                <label htmlFor="username" className="mb-2 block text-sm font-medium text-white">
-                                    Username                                </label>
+                                <label htmlFor="username" className="mb-2 block text-sm font-medium text-gray-200">
+                                    Username
+                                </label>
                                 <input
                                     id="username"
                                     name="username"
@@ -146,14 +154,14 @@ const AdminLogin = () => {
                                     required
                                     value={formData.username}
                                     onChange={handleChange}
-                                    className="w-full rounded-lg border-0 bg-white/20 backdrop-blur-sm px-4 py-3 text-white placeholder:text-gray-300 outline-none transition-all focus:bg-white/30 focus:ring-2 focus:ring-white/50"
+                                    className="w-full rounded-lg border-2 border-vietnam-gold bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:bg-gray-50 focus:border-vietnam-gold focus:ring-2 focus:ring-vietnam-gold/30 shadow-sm"
                                     placeholder="Nhập username"
                                 />
                             </div>
 
                             {/* Password */}
                             <div>
-                                <label htmlFor="password" className="mb-2 block text-sm font-medium text-white">
+                                <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-200">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -164,7 +172,7 @@ const AdminLogin = () => {
                                         required
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="w-full rounded-lg border-0 bg-white/20 backdrop-blur-sm px-4 py-3 text-white placeholder:text-gray-300 outline-none transition-all focus:bg-white/30 focus:ring-2 focus:ring-white/50"
+                                        className="w-full rounded-lg border-2 border-vietnam-gold bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:bg-gray-50 focus:border-vietnam-gold focus:ring-2 focus:ring-vietnam-gold/30 shadow-sm"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -172,18 +180,22 @@ const AdminLogin = () => {
 
                             {/* Remember me & Forgot password */}
                             <div className="flex items-center justify-between">
-                                <label className="flex items-center gap-2 cursor-pointer">
+                                <label className="flex items-center gap-2 cursor-pointer group">
                                     <input
                                         type="checkbox"
-                                        className="h-4 w-4 rounded border-white/30 bg-white/20 text-white focus:ring-white/50"
+                                        style={{
+                                            accentColor: '#B8860B'
+                                        }}
+                                        className="h-4 w-4 rounded cursor-pointer"
                                     />
-                                    <span className="text-sm text-white">Ghi nhớ tài khoản</span>
+                                    <span className="text-sm text-white group-hover:text-vietnam-gold-900 transition-colors">Ghi nhớ tài khoản</span>
                                 </label>
                                 <Link
                                     to="/forgot-password"
-                                    className="text-sm font-medium text-white hover:underline"
+                                    className="text-sm font-medium hover:text-yellow-700 transition-colors"
+                                    style={{ color: '#B8860B' }}
                                 >
-                                    Quên mật khẩu? 
+                                    Quên mật khẩu?
                                 </Link>
                             </div>
 
@@ -192,7 +204,10 @@ const AdminLogin = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-black hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        background: 'linear-gradient(to right, #556B2F, #B8860B)'
+                                    }}
+                                    className="w-full text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-opacity-50 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                                 >
                                     {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                                 </button>
@@ -204,7 +219,7 @@ const AdminLogin = () => {
                                     Bạn là khách hàng?{' '}
                                     <Link
                                         to="/login"
-                                        className="font-semibold text-white hover:underline transition-colors"
+                                        className="font-semibold hover:underline transition-colors text-vietnam-gold"
                                     >
                                         Đăng nhập tại đây
                                     </Link>

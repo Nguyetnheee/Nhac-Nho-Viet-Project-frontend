@@ -58,10 +58,12 @@ export const CartProvider = ({ children }) => {
 
   // -------- API calls --------
   const fetchCart = async () => {
-    //Nếu không phải Customer, KHÔNG tải giỏ hàng
+    // ⚠️ Nếu không phải Customer, KHÔNG tải giỏ hàng và KHÔNG hiển thị lỗi
     if (!isCustomer) {
       setServerSynced(false);
-      setError(null);
+      setError(null); // Không hiển thị error cho Staff/Admin/Shipper
+      setCartItems([]);
+      setTotals({ totalItems: 0, subTotal: 0, currency: "" });
       return;
     }
     
@@ -84,16 +86,22 @@ export const CartProvider = ({ children }) => {
     } catch (err) {
       console.error("fetchCart error:", err);
       setServerSynced(false);
+      
+      // ⚠️ CHỈ hiển thị lỗi cho CUSTOMER
+      if (!isCustomer) {
+        // Không hiển thị lỗi cho Staff/Admin/Shipper
+        setError(null);
+        return;
+      }
+      
       if (err?.response?.status === 401) {
         setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
         navigate('/login');
       } else if (err?.response?.status === 403) {
-        // Lỗi 403 thường xảy ra khi Staff/Admin cố gắng truy cập, đã được chặn ở trên,
-        // nhưng vẫn giữ phòng trường hợp API trả về lỗi này.
-        setError({ type: "auth", message: "Tài khoản của bạn không có quyền xem giỏ hàng." });
-        navigate('/');
+        // 403 - Không có quyền (chỉ hiển thị cho Customer nếu bị lỗi thật)
+        setError(null); // Không hiển thị error
       } else {
-        // Lỗi chung cần chặn đối với Staff đã được xử lý ở if (!isCustomer)
+        // Lỗi chung (chỉ cho Customer)
         setError({ type: "error", message: "Không thể tải giỏ hàng từ server. Vui lòng thử lại." });
       }
     }
@@ -231,8 +239,8 @@ export const CartProvider = ({ children }) => {
 
   return (
     <CartContext.Provider value={value}>
-      {/*  CHỈ HIỆN LỖI NỘI BỘ CỦA CartContext NẾU LÀ CUSTOMER */}
-      {error && isCustomer && ( 
+      {/*  ⚠️ CHỈ HIỆN LỖI CHO CUSTOMER - TUYỆT ĐỐI KHÔNG HIỆN CHO ADMIN/STAFF/SHIPPER */}
+      {error && isCustomer && user?.role === 'CUSTOMER' && ( 
         <div
           className={`fixed top-4 right-4 p-4 rounded-lg ${
             error?.type === "auth" ? "bg-blue-600 text-white" : "bg-red-600 text-white"
