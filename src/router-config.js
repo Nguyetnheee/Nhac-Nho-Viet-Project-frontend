@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
+import Notifications from "./pages/Notifications";
 import AdminPanel from "./pages/AdminPanel";
 import ShipperPanel from "./pages/ShipperPanel";
 import StaffDashboard from "./pages/StaffDashboard";
@@ -195,6 +196,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
             <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "notifications",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <Notifications />
           </ProtectedRoute>
         ),
       },

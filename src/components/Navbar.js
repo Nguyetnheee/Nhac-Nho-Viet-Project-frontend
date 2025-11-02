@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -108,6 +109,9 @@ const Navbar = () => {
             {/* User Section */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
+                {/* Notification Bell - Chỉ hiển thị cho CUSTOMER */}
+                {user?.role === 'ROLE_CUSTOMER' && <NotificationBell />}
+                
                 <Link
                   to="/profile"
                   className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"

@@ -1,6 +1,19 @@
-import api from './api';
+import { api } from './api';
 
 const shipperService = {
+  // Lấy profile của shipper
+  getProfile: async () => {
+    try {
+      console.log('Fetching shipper profile...');
+      const response = await api.get('/api/shipper/profile');
+      console.log('Shipper profile response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching shipper profile:', error);
+      throw error;
+    }
+  },
+
   // Tạo tài khoản shipper mới
   createShipper: async (shipperData) => {
     try {
@@ -51,7 +64,104 @@ const shipperService = {
       console.error('Error deleting shipper:', error);
       throw error;
     }
-  }
+  },
+
+  // ========== ORDER MANAGEMENT APIs ==========
+  
+  /**
+   * Lấy danh sách đơn hàng đang chờ (pending - đã được gán cho shipper)
+   */
+  getPendingOrders: async () => {
+    try {
+      console.log('Fetching pending orders for shipper...');
+      const response = await api.get('/api/shipper/orders/pending');
+      console.log('Pending orders response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching pending orders:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách đơn hàng đang giao (active - shipper đã xác nhận đi giao)
+   */
+  getActiveOrders: async () => {
+    try {
+      console.log('Fetching active orders for shipper...');
+      const response = await api.get('/api/shipper/orders/active');
+      console.log('Active orders response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active orders:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách đơn hàng đã hoàn thành
+   */
+  getCompletedOrders: async () => {
+    try {
+      console.log('Fetching completed orders for shipper...');
+      const response = await api.get('/api/shipper/orders/completed');
+      console.log('Completed orders response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching completed orders:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Shipper xác nhận nhận đơn hàng (sẽ đi giao)
+   * @param {number} orderId - ID của đơn hàng
+   */
+  acceptOrder: async (orderId) => {
+    try {
+      console.log('Accepting order:', orderId);
+      
+      // Debug: Check token and headers
+      const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      console.log('Token (first 20 chars):', token?.substring(0, 20));
+      
+      const response = await api.put(`/api/shipper/orders/${orderId}/accept`);
+      console.log('Order accepted successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /**
+   * Shipper xác nhận đã giao hàng thành công
+   * @param {number} orderId - ID của đơn hàng
+   */
+  completeOrder: async (orderId) => {
+    try {
+      console.log('Completing order:', orderId);
+      
+      // Debug: Check token and headers
+      const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      console.log('Token (first 20 chars):', token?.substring(0, 20));
+      
+      const response = await api.put(`/api/shipper/orders/${orderId}/complete`);
+      console.log('Order completed successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error completing order:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      throw error;
+    }
+  },
 };
 
 export default shipperService;

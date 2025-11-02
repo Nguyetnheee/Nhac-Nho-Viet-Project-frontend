@@ -30,20 +30,30 @@ const OrderHistory = () => {
         tokenLength: token?.length
       });
       
-      // Backend endpoint: GET /api/customer/orders
-      // Backend đã set quyền: ROLE_CUSTOMER và CUSTOMER
-      console.log('🔍 Fetching orders from: /api/customer/orders');
+      // FORCE REFRESH: Thêm timestamp để tránh cache
+      const timestamp = new Date().getTime();
+      console.log(`🔍 Fetching orders from: /api/customer/orders?t=${timestamp}`);
       
       const response = await orderService.getCustomerOrders();
       const orderData = response.data || response;
       console.log('✅ Orders fetched:', orderData);
+      console.log('✅ Raw response:', response);
       
-      // DEBUG: Kiểm tra response structure
+      // DEBUG: Kiểm tra response structure chi tiết
       console.log('📊 Response details:', {
         isArray: Array.isArray(orderData),
         length: Array.isArray(orderData) ? orderData.length : 'N/A',
-        firstItem: Array.isArray(orderData) && orderData.length > 0 ? orderData[0] : null
+        firstItem: Array.isArray(orderData) && orderData.length > 0 ? orderData[0] : null,
+        allStatuses: Array.isArray(orderData) ? orderData.map(o => o.status) : []
       });
+      
+      // DEBUG: In ra tất cả status để kiểm tra
+      if (Array.isArray(orderData)) {
+        console.log('📋 All orders with status:');
+        orderData.forEach((order, index) => {
+          console.log(`  Order #${order.orderId || index}: Status = "${order.status}"`);
+        });
+      }
       
       // Sắp xếp đơn hàng theo thời gian mới nhất lên đầu
       const sortedOrders = Array.isArray(orderData) 
@@ -55,6 +65,7 @@ const OrderHistory = () => {
         : [];
       
       console.log('📅 Orders sorted by date (newest first)');
+      console.log('📊 Total orders after sorting:', sortedOrders.length);
       setOrders(sortedOrders);
     } catch (error) {
       console.error('❌ Fetch orders error:', error);
@@ -101,6 +112,12 @@ const OrderHistory = () => {
   const filteredOrders = filter === 'ALL' 
     ? orders 
     : orders.filter(order => order.status === filter);
+
+  // Debug: Log filter results
+  console.log('🔍 Filter applied:', filter);
+  console.log('🔍 Total orders:', orders.length);
+  console.log('🔍 Filtered orders:', filteredOrders.length);
+  console.log('🔍 All order statuses:', orders.map(o => ({ id: o.orderId, status: o.status })));
 
   // Pagination logic
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
