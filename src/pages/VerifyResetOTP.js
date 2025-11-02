@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { forgotPassword, verifyResetOTP } from '../services/api';
 import CustomAlert from '../components/CustomAlert';
+import { SafetyOutlined, ArrowRightOutlined } from '@ant-design/icons';
 
 const VerifyResetOTP = () => {
   const navigate = useNavigate();
@@ -119,14 +120,9 @@ const VerifyResetOTP = () => {
           {/* Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-vietnam-green rounded-2xl flex items-center justify-center relative">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M16 12H8m8 0a8 8 0 11-16 0 8 8 0 0116 0zm0 0l-3 3m3-3l-3-3" />
-              </svg>
+              <SafetyOutlined className="text-5xl text-white" />
               <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-700 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
+                <ArrowRightOutlined className="text-lg text-white font-bold" />
               </div>
             </div>
           </div>

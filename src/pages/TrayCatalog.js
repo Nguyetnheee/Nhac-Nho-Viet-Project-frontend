@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { EyeOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { EyeOutlined, ShoppingCartOutlined, SearchOutlined, InboxOutlined } from '@ant-design/icons';
 import { trayService } from '../services/trayService';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -359,9 +359,7 @@ const TrayCatalog = () => {
                         placeholder="Tìm kiếm mâm cúng..."
                       />
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                        <SearchOutlined className="text-gray-400 text-lg" />
                       </div>
                     </div>
                     <button 
@@ -552,9 +550,7 @@ const TrayCatalog = () => {
         {trays.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-xl shadow-lg mt-8">
             <div className="text-gray-400 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-              </svg>
+              <InboxOutlined className="text-6xl mx-auto" />
             </div>
             <h3 className="text-xl font-serif font-semibold text-gray-600 mb-2">
               Không tìm thấy mâm cúng nào

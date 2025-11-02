@@ -3,6 +3,7 @@ import { useToast } from '../components/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
 import NewsletterStats from '../components/NewsletterStats';
 import { orderService } from '../services/orderService';
+import { LogoutOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
 const AdminPanel = () => {
   const { showSuccess, showError } = useToast();
@@ -78,9 +79,7 @@ const AdminPanel = () => {
             onClick={handleLogout}
             className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-300 flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-            </svg>
+            <LogoutOutlined className="text-lg" />
             Đăng xuất
           </button>
         </div>
@@ -204,9 +203,7 @@ const AdminPanel = () => {
           ) : (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+                <CheckCircleOutlined className="text-6xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-600 mb-2">
                 Không có đơn hàng nào

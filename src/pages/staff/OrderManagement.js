@@ -29,6 +29,7 @@ import {
   FileTextOutlined,
   ClockCircleOutlined,
   MoreOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import staffService from '../../services/staffService';
 
@@ -947,7 +948,7 @@ const OrderManagement = () => {
           </Select>
           {shippers.length === 0 && (
             <p style={{ color: '#faad14', marginTop: 8 }}>
-              ⚠️ Chưa có shipper nào trong hệ thống
+              <WarningOutlined className="mr-2" />Chưa có shipper nào trong hệ thống
             </p>
           )}
         </div>

@@ -79,9 +79,9 @@ const OrderHistory = () => {
       
       // Thông báo chi tiết hơn cho user
       if (error.response?.status === 403) {
-        showError('⚠️ Không có quyền truy cập. Vui lòng đăng xuất và đăng nhập lại để làm mới token.');
+        showError('Không có quyền truy cập. Vui lòng đăng xuất và đăng nhập lại để làm mới token.');
       } else if (error.response?.status === 401) {
-        showError('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       } else {
         showError(`Không thể tải danh sách đơn hàng. ${error.response?.data?.message || ''}`);
       }

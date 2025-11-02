@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { WarningOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
@@ -14,13 +15,14 @@ const Checkout = () => {
   const location = useLocation();
   
   const [formData, setFormData] = useState({
-    customerName: user?.name || '',
-    customerEmail: user?.email || '',
-    customerPhone: user?.phone || '',
-    customerAddress: user?.address || '',
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    customerAddress: '',
     paymentMethod: 'ONLINE', // Mặc định là thanh toán online trước
     notes: ''
   });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   // Hiển thị thông báo khi redirect từ payment-result
@@ -32,8 +34,95 @@ const Checkout = () => {
     }
   }, [location, showWarning]);
 
+  // Validation functions
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    // Cho phép số điện thoại Việt Nam: 10 chữ số, bắt đầu bằng 0
+    const phoneRegex = /^0\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch(name) {
+      case 'customerName':
+        if (!value.trim()) {
+          error = 'Vui lòng nhập họ và tên';
+        } else if (value.trim().length < 2) {
+          error = 'Họ và tên phải có ít nhất 2 ký tự';
+        }
+        break;
+        
+      case 'customerEmail':
+        if (!value.trim()) {
+          error = 'Vui lòng nhập email';
+        } else if (!validateEmail(value)) {
+          error = 'Email không hợp lệ (ví dụ: example@gmail.com)';
+        }
+        break;
+        
+      case 'customerPhone':
+        if (!value.trim()) {
+          error = 'Vui lòng nhập số điện thoại';
+        } else if (!validatePhone(value)) {
+          error = 'Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0';
+        }
+        break;
+        
+      case 'customerAddress':
+        if (!value.trim()) {
+          error = 'Vui lòng nhập địa chỉ giao hàng';
+        } else if (value.trim().length < 10) {
+          error = 'Địa chỉ phải có ít nhất 10 ký tự';
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Update form data
+    setFormData({ ...formData, [name]: value });
+    
+    // Validate field on change
+    const error = validateField(name, value);
+    setErrors({ ...errors, [name]: error });
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    newErrors.customerName = validateField('customerName', formData.customerName);
+    newErrors.customerEmail = validateField('customerEmail', formData.customerEmail);
+    newErrors.customerPhone = validateField('customerPhone', formData.customerPhone);
+    newErrors.customerAddress = validateField('customerAddress', formData.customerAddress);
+    
+    setErrors(newErrors);
+    
+    // Return true if no errors
+    return !Object.values(newErrors).some(error => error !== '');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submit
+    if (!validateForm()) {
+      showError('Vui lòng kiểm tra lại thông tin đã nhập');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -59,7 +148,7 @@ const Checkout = () => {
         throw new Error('Không nhận được mã đơn hàng từ server');
       }
 
-      showSuccess(`✅ Checkout thành công! Mã đơn hàng: ${orderId}`);
+      showSuccess(`Checkout thành công! Mã đơn hàng: ${orderId}`);
       
       // Bước 2: Gọi API tạo payment link với orderId
       console.log('📤 Creating payment for orderId:', orderId);
@@ -122,6 +211,22 @@ const Checkout = () => {
           <p className="text-gray-600">Hoàn tất đơn hàng của bạn</p>
         </div>
 
+        {/* Warning Banner */}
+        <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <WarningOutlined className="text-xl text-red-500" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-semibold text-red-800">Lưu ý quan trọng</h3>
+              <p className="mt-1 text-sm text-red-700">
+                <strong>Nếu bạn hủy thanh toán hoặc đóng trang thanh toán,</strong> bạn sẽ phải quay lại trang chủ và chọn lại sản phẩm từ đầu. 
+                Vui lòng kiểm tra kỹ thông tin đơn hàng trước khi tiếp tục.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Form */}
           <div className="card">
@@ -137,10 +242,14 @@ const Checkout = () => {
                   name="customerName"
                   type="text"
                   required
+                  placeholder="Nguyễn Văn A"
                   value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  className="input-field"
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.customerName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 />
+                {errors.customerName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.customerName}</p>
+                )}
               </div>
 
               <div>
@@ -152,10 +261,14 @@ const Checkout = () => {
                   name="customerEmail"
                   type="email"
                   required
+                  placeholder="example@gmail.com"
                   value={formData.customerEmail}
-                  onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                  className="input-field"
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.customerEmail ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 />
+                {errors.customerEmail && (
+                  <p className="mt-1 text-sm text-red-600">{errors.customerEmail}</p>
+                )}
               </div>
 
               <div>
@@ -167,10 +280,15 @@ const Checkout = () => {
                   name="customerPhone"
                   type="tel"
                   required
+                  placeholder="0123456789"
+                  maxLength="10"
                   value={formData.customerPhone}
-                  onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                  className="input-field"
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.customerPhone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 />
+                {errors.customerPhone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.customerPhone}</p>
+                )}
               </div>
 
               <div>
@@ -182,10 +300,14 @@ const Checkout = () => {
                   name="customerAddress"
                   rows={3}
                   required
+                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
                   value={formData.customerAddress}
-                  onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                  className="input-field"
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.customerAddress ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 />
+                {errors.customerAddress && (
+                  <p className="mt-1 text-sm text-red-600">{errors.customerAddress}</p>
+                )}
               </div>
 
               {/* Phương thức thanh toán - Ẩn vì chỉ có 1 phương thức */}
@@ -201,9 +323,7 @@ const Checkout = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
+                    <InfoCircleOutlined className="text-xl text-blue-400" />
                   </div>
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-blue-800">
@@ -226,9 +346,9 @@ const Checkout = () => {
                   name="notes"
                   rows={3}
                   value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={handleInputChange}
                   className="input-field"
-                  placeholder="Ghi chú thêm cho đơn hàng..."
+                  placeholder="Ghi chú thêm cho đơn hàng (nếu có)..."
                 />
               </div>
             </div>

@@ -1,6 +1,7 @@
 // src/pages/RitualLookup.js
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { EnvironmentOutlined } from '@ant-design/icons';
 import { ritualService } from "../services/ritualService";
 import { scrollToTop } from "../utils/scrollUtils";
 
@@ -297,7 +298,7 @@ const RitualLookup = () => {
                         {ritual.ritualName}
                       </h3>
                       <div className="text-base text-gray-600 mb-4 flex items-center flex-shrink-0">
-                        <svg className="w-4 h-4 mr-2 text-vietnam-green" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"></path></svg>
+                        <EnvironmentOutlined className="text-lg mr-2 text-vietnam-green" />
                         <p>Vùng miền: <span className="font-semibold">{ritual.regionName}</span></p>
                       </div>
                       <p className="text-gray-700 mb-5 line-clamp-4 text-sm flex-grow">

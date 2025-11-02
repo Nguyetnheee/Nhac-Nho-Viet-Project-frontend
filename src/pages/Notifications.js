@@ -6,7 +6,13 @@ import {
   BellOutlined, 
   CheckOutlined, 
   DeleteOutlined,
-  InboxOutlined 
+  InboxOutlined,
+  CheckCircleOutlined,
+  CarOutlined,
+  ShoppingOutlined,
+  GiftOutlined,
+  CloseCircleOutlined,
+  NotificationOutlined
 } from '@ant-design/icons';
 
 const Notifications = () => {
@@ -179,17 +185,17 @@ const Notifications = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'ORDER_CONFIRMED':
-        return { icon: '✅', color: 'text-blue-500', bg: 'bg-blue-100' };
+        return { IconComponent: CheckCircleOutlined, color: 'text-blue-500', bg: 'bg-blue-100' };
       case 'ORDER_SHIPPING':
-        return { icon: '🚚', color: 'text-purple-500', bg: 'bg-purple-100' };
+        return { IconComponent: CarOutlined, color: 'text-purple-500', bg: 'bg-purple-100' };
       case 'ORDER_DELIVERED':
-        return { icon: '📦', color: 'text-green-500', bg: 'bg-green-100' };
+        return { IconComponent: ShoppingOutlined, color: 'text-green-500', bg: 'bg-green-100' };
       case 'ORDER_COMPLETED':
-        return { icon: '🎉', color: 'text-emerald-500', bg: 'bg-emerald-100' };
+        return { IconComponent: GiftOutlined, color: 'text-emerald-500', bg: 'bg-emerald-100' };
       case 'ORDER_CANCELLED':
-        return { icon: '❌', color: 'text-red-500', bg: 'bg-red-100' };
+        return { IconComponent: CloseCircleOutlined, color: 'text-red-500', bg: 'bg-red-100' };
       default:
-        return { icon: '📢', color: 'text-gray-500', bg: 'bg-gray-100' };
+        return { IconComponent: NotificationOutlined, color: 'text-gray-500', bg: 'bg-gray-100' };
     }
   };
 
@@ -276,8 +282,8 @@ const Notifications = () => {
                   <div className="p-5">
                     <div className="flex items-start gap-4">
                       {/* Icon */}
-                      <div className={`w-12 h-12 rounded-full ${iconData.bg} flex items-center justify-center text-2xl flex-shrink-0`}>
-                        {iconData.icon}
+                      <div className={`w-12 h-12 rounded-full ${iconData.bg} flex items-center justify-center flex-shrink-0`}>
+                        {iconData.IconComponent && <iconData.IconComponent className={`text-2xl ${iconData.color}`} />}
                       </div>
 
                       {/* Content */}

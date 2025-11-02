@@ -9,7 +9,10 @@ import {
   SyncOutlined, 
   CarOutlined, 
   SmileOutlined,
-  CloseCircleOutlined 
+  CloseCircleOutlined,
+  TagOutlined,
+  ReloadOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons';
 
 // Order status mapping
@@ -91,7 +94,7 @@ const OrderSuccess = () => {
             
             // Kiểm tra token hết hạn
             if (payload.exp * 1000 < Date.now()) {
-              showError('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+              showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
               setTimeout(() => {
                 localStorage.clear();
                 navigate('/login');
@@ -180,22 +183,22 @@ const OrderSuccess = () => {
       // Thông báo chi tiết hơn cho user
       let errorMessage = 'Không thể tải thông tin đơn hàng';
       if (error.response?.status === 403) {
-        errorMessage = `⚠️ Không có quyền truy cập đơn hàng này. 
+        errorMessage = `Không có quyền truy cập đơn hàng này. 
         
-        📋 Hướng dẫn khắc phục:
+        Hướng dẫn khắc phục:
         1. Đăng xuất và đăng nhập lại
         2. Kiểm tra bạn đang đăng nhập đúng tài khoản
         3. Nếu vẫn lỗi, vui lòng liên hệ hỗ trợ
         
-        🔧 Để debug, truy cập: /debug-token`;
+        Để debug, truy cập: /debug-token`;
       } else if (error.response?.status === 401) {
-        errorMessage = '⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
         setTimeout(() => {
           localStorage.clear();
           navigate('/login');
         }, 2000);
       } else if (error.response?.status === 404) {
-        errorMessage = '⚠️ Không tìm thấy đơn hàng. Vui lòng kiểm tra lại mã đơn hàng.';
+        errorMessage = 'Không tìm thấy đơn hàng. Vui lòng kiểm tra lại mã đơn hàng.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
@@ -362,13 +365,11 @@ const OrderSuccess = () => {
         <div className="mb-8 text-center">
           {/* Success Icon */}
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4 animate-bounce">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-            </svg>
+            <CheckCircleOutlined className="text-5xl text-green-600" />
           </div>
           
           <h1 className="text-3xl sm:text-4xl font-serif font-bold text-vietnam-green mb-2">
-            Thanh toán thành công! 🎉
+            Thanh toán thành công!
           </h1>
           <p className="text-gray-600 text-lg">
             Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đang được xử lý.
@@ -455,9 +456,7 @@ const OrderSuccess = () => {
                 {orderData.voucherCode && orderData.discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
-                      </svg>
+                      <TagOutlined className="mr-2 text-base" />
                       Mã giảm giá ({orderData.voucherCode}):
                     </span>
                     <span className="font-medium">-{formatMoney(orderData.discountAmount)}</span>
@@ -488,9 +487,7 @@ const OrderSuccess = () => {
                   className="text-sm text-vietnam-green hover:text-vietnam-gold transition-colors flex items-center gap-1"
                   title="Làm mới trạng thái"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <ReloadOutlined className="text-base" />
                   Làm mới
                 </button>
               </div>
@@ -512,9 +509,7 @@ const OrderSuccess = () => {
             {/* Auto refresh notice */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="flex items-start">
-                <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+                <InfoCircleOutlined className="text-xl text-blue-500 mt-0.5 mr-3" />
                 <div className="flex-1">
                   <p className="text-sm text-blue-800">
                     <span className="font-semibold">Cập nhật tự động:</span> Trạng thái đơn hàng sẽ được cập nhật tự động mỗi 10 giây.

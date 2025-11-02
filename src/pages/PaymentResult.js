@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import paymentService from '../services/paymentService';
 import orderService from '../services/orderService';
 import { useToast } from '../components/ToastContainer';
@@ -73,7 +74,7 @@ const PaymentResult = () => {
           });
           setLoading(false);
           
-          showWarning('⚠️ Bạn chưa hoàn thành thanh toán. Vui lòng chọn lại sản phẩm và thực hiện thanh toán');
+          showWarning('Bạn chưa hoàn thành thanh toán. Vui lòng chọn lại sản phẩm và thực hiện thanh toán');
           
           // ❌ KHÔNG tự động redirect
           // User phải tự bấm nút để chọn hành động tiếp theo
@@ -112,7 +113,7 @@ const PaymentResult = () => {
           });
           setLoading(false);
           
-          showSuccess('✅ Thanh toán thành công!');
+          showSuccess('Thanh toán thành công!');
           
           // ❌ KHÔNG tự động redirect
           // User phải tự bấm nút để chọn hành động tiếp theo
@@ -144,7 +145,7 @@ const PaymentResult = () => {
         });
         setLoading(false);
         
-        showError('❌ Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
+        showError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
         
         // ❌ KHÔNG tự động redirect
         // User phải tự bấm nút để chọn hành động tiếp theo
@@ -186,21 +187,15 @@ const PaymentResult = () => {
           <div className="mb-6">
             {isSuccess ? (
               <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100">
-                <svg className="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <CheckCircleOutlined className="text-6xl text-green-600" />
               </div>
             ) : isCancelled ? (
               <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-yellow-100">
-                <svg className="h-12 w-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+                <ClockCircleOutlined className="text-6xl text-yellow-600" />
               </div>
             ) : (
               <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100">
-                <svg className="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <CloseCircleOutlined className="text-6xl text-red-600" />
               </div>
             )}
           </div>
