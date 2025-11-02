@@ -14,12 +14,14 @@ import {
 
 // Order status mapping
 const ORDER_STATUS_MAP = {
-  'PENDING': { label: 'Chờ xác nhận', step: 1, color: 'bg-yellow-500' },
+  'PENDING': { label: 'Chờ thanh toán', step: 0, color: 'bg-gray-500' },
+  'PAID': { label: 'Đã thanh toán', step: 1, color: 'bg-yellow-500' },
   'CONFIRMED': { label: 'Đã xác nhận', step: 2, color: 'bg-blue-500' },
   'PROCESSING': { label: 'Đang xử lý', step: 3, color: 'bg-indigo-500' },
   'SHIPPING': { label: 'Đang giao hàng', step: 4, color: 'bg-purple-500' },
   'DELIVERED': { label: 'Đã giao hàng', step: 5, color: 'bg-green-500' },
-  'CANCELLED': { label: 'Đã hủy', step: 0, color: 'bg-red-500' },
+  'COMPLETED': { label: 'Hoàn thành', step: 6, color: 'bg-emerald-600' },
+  'CANCELLED': { label: 'Đã hủy', step: -1, color: 'bg-red-500' },
 };
 
 const OrderSuccess = () => {
@@ -147,7 +149,21 @@ const OrderSuccess = () => {
         throw lastError || new Error('All endpoints failed');
       }
       
-      setOrderData(response.data);
+      // Map field names để đảm bảo tương thích với backend
+      const rawData = response.data;
+      const mappedData = {
+        ...rawData,
+        orderStatus: rawData.orderStatus || rawData.status, // Backend có thể dùng 'status' hoặc 'orderStatus'
+        orderId: rawData.orderId || rawData.id,
+        orderDate: rawData.orderDate || rawData.createdAt || rawData.createdDate,
+      };
+      
+      console.log('📊 Order data mapping:', {
+        raw: { status: rawData.status, orderStatus: rawData.orderStatus },
+        mapped: { orderStatus: mappedData.orderStatus }
+      });
+      
+      setOrderData(mappedData);
       setLoading(false);
     } catch (error) {
       console.error('❌ Fetch order details error:', error);
@@ -221,14 +237,25 @@ const OrderSuccess = () => {
 
   // Get current step based on order status
   const getCurrentStep = () => {
-    if (!orderData?.orderStatus) return 1;
-    return ORDER_STATUS_MAP[orderData.orderStatus]?.step || 1;
+    if (!orderData?.orderStatus) return 0;
+    const statusInfo = ORDER_STATUS_MAP[orderData.orderStatus];
+    if (!statusInfo) {
+      console.warn('⚠️ Unknown status:', orderData.orderStatus);
+      return 0;
+    }
+    return statusInfo.step;
   };
 
   // Render timeline
   const renderTimeline = () => {
     const currentStep = getCurrentStep();
     const status = orderData?.orderStatus;
+    
+    console.log('📊 Timeline Debug:', {
+      status: status,
+      currentStep: currentStep,
+      statusMapping: ORDER_STATUS_MAP[status]
+    });
     
     // Nếu đơn hàng bị hủy
     if (status === 'CANCELLED') {
@@ -243,11 +270,12 @@ const OrderSuccess = () => {
     }
 
     const steps = [
-      { step: 1, label: 'Chờ xác nhận', Icon: FileTextOutlined },
-      { step: 2, label: 'Đã xác nhận', Icon: CheckCircleOutlined },
-      { step: 3, label: 'Đang xử lý', Icon: SyncOutlined },
-      { step: 4, label: 'Đang giao', Icon: CarOutlined },
-      { step: 5, label: 'Hoàn thành', Icon: SmileOutlined }
+      { step: 1, label: 'Đã thanh toán', Icon: CheckCircleOutlined, status: 'PAID' },
+      { step: 2, label: 'Đã xác nhận', Icon: FileTextOutlined, status: 'CONFIRMED' },
+      { step: 3, label: 'Đang xử lý', Icon: SyncOutlined, status: 'PROCESSING' },
+      { step: 4, label: 'Đang giao', Icon: CarOutlined, status: 'SHIPPING' },
+      { step: 5, label: 'Đã giao', Icon: CheckCircleOutlined, status: 'DELIVERED' },
+      { step: 6, label: 'Hoàn thành', Icon: SmileOutlined, status: 'COMPLETED' }
     ];
 
     return (
@@ -256,7 +284,11 @@ const OrderSuccess = () => {
         <div className="absolute top-6 left-0 w-full h-1 bg-gray-200">
           <div 
             className="h-full bg-vietnam-green transition-all duration-500"
-            style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            style={{ 
+              width: currentStep >= 1 
+                ? `${((currentStep - 1) / (steps.length - 1)) * 100}%` 
+                : '0%'
+            }}
           />
         </div>
 

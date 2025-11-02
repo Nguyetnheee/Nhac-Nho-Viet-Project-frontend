@@ -1,6 +1,6 @@
 // src/pages/admin/ShipperManagement.js
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, message, Input, Card, Modal, Empty, Typography } from 'antd';
+import { Table, Button, Space, Tag, message, Input, Card, Modal, Empty, Typography, Dropdown } from 'antd';
 import { 
   PlusOutlined, 
   EditOutlined, 
@@ -8,82 +8,47 @@ import {
   SearchOutlined, 
   ReloadOutlined,
   TeamOutlined,
-  ExclamationCircleOutlined 
+  ExclamationCircleOutlined,
+  MoreOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import CreateShipperForm from './CreateShipperForm';
 import shipperService from '../../services/shipperService';
+import staffService from '../../services/staffService';
 
 const { Title, Text } = Typography;
 
-// Mock data cho shipper
-const MOCK_SHIPPERS = [
-  {
-    shipperId: 1,
-    shipperName: 'Nguyễn Văn An',
-    username: 'nguyenvanan',
-    email: 'an.nguyen@gmail.com',
-    phone: '0901234567',
-    gender: 'MALE',
-    createdAt: '2024-01-15T08:30:00'
-  },
-  {
-    shipperId: 2,
-    shipperName: 'Trần Thị Bình',
-    username: 'tranthibinh',
-    email: 'binh.tran@gmail.com',
-    phone: '0912345678',
-    gender: 'FEMALE',
-    createdAt: '2024-02-20T10:15:00'
-  },
-  {
-    shipperId: 3,
-    shipperName: 'Lê Văn Cường',
-    username: 'levancuong',
-    email: 'cuong.le@gmail.com',
-    phone: '0923456789',
-    gender: 'MALE',
-    createdAt: '2024-03-10T14:45:00'
-  },
-  {
-    shipperId: 4,
-    shipperName: 'Phạm Thị Dung',
-    username: 'phamthidung',
-    email: 'dung.pham@gmail.com',
-    phone: '0934567890',
-    gender: 'FEMALE',
-    createdAt: '2024-04-05T09:20:00'
-  },
-  {
-    shipperId: 5,
-    shipperName: 'Hoàng Văn Em',
-    username: 'hoangvanem',
-    email: 'em.hoang@gmail.com',
-    phone: '0945678901',
-    gender: 'MALE',
-    createdAt: '2024-05-12T11:00:00'
-  }
-];
-
 const ShipperManagement = () => {
   const [currentView, setCurrentView] = useState('list');
-  const [shippers, setShippers] = useState(MOCK_SHIPPERS); // Khởi tạo với mock data
+  const [shippers, setShippers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
 
   const loadShippers = async () => {
     setLoading(true);
     try {
-      // Uncomment dòng dưới để dùng real API, comment lại để dùng mock data
-      // const response = await shipperService.getAllShippers();
-      // setShippers(response || []);
+      console.log('Đang tải danh sách shipper từ API...');
+      const response = await staffService.getAllShippers();
+      console.log('API Response:', response);
       
-      // Sử dụng mock data (tạm thời)
-      setShippers(MOCK_SHIPPERS);
-      message.success('Đã tải danh sách shipper (Mock data)');
+      // Map dữ liệu từ backend (nếu cần)
+      // Backend trả về: shipperId, shipperName, email, phone, gender
+      const mappedShippers = response.map(shipper => ({
+        shipperId: shipper.shipperId,
+        shipperName: shipper.shipperName,
+        username: shipper.username || shipper.email?.split('@')[0], // Tạo username từ email nếu không có
+        email: shipper.email,
+        phone: shipper.phone,
+        gender: shipper.gender || 'OTHER',
+        createdAt: shipper.createdAt || new Date().toISOString()
+      }));
+      
+      setShippers(mappedShippers);
+      message.success(`Đã tải ${mappedShippers.length} shipper thành công`);
     } catch (error) {
       console.error('Error loading shippers:', error);
-      message.error('Tải danh sách shipper thất bại!');
-      setShippers(MOCK_SHIPPERS); // Fallback về mock data nếu API fail
+      message.error('Tải danh sách shipper thất bại: ' + (error.response?.data?.message || error.message));
+      setShippers([]);
     } finally {
       setLoading(false);
     }
@@ -199,13 +164,48 @@ const ShipperManagement = () => {
     {
       title: 'Thao tác',
       key: 'action',
-      width: 180,
-      render: (_, record) => (
-        <Space size="small">
-          <Button icon={<EditOutlined />} onClick={() => handleEdit(record.shipperId)}>Sửa</Button>
-          <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>Xóa</Button>
-        </Space>
-      ),
+      width: 100,
+      align: 'center',
+      render: (_, record) => {
+        const menuItems = [
+          {
+            key: 'view',
+            icon: <EyeOutlined />,
+            label: 'Chi tiết',
+            onClick: () => message.info(`Xem chi tiết shipper ID: ${record.shipperId} (Tính năng đang phát triển)`)
+          },
+          {
+            key: 'edit',
+            icon: <EditOutlined />,
+            label: 'Sửa',
+            onClick: () => handleEdit(record.shipperId)
+          },
+          {
+            type: 'divider',
+          },
+          {
+            key: 'delete',
+            icon: <DeleteOutlined />,
+            label: 'Xóa',
+            danger: true,
+            onClick: () => handleDelete(record)
+          }
+        ];
+
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button 
+              type="text" 
+              icon={<MoreOutlined style={{ fontSize: '18px' }} />}
+              className="hover:bg-gray-100"
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 

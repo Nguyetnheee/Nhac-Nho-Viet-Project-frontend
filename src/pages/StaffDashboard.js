@@ -19,6 +19,7 @@ import RitualManagement from './staff/RitualManagement';
 import TrayManagement from './staff/TrayManagement';
 import ChecklistManagement from './staff/ChecklistManagement';
 import ShipperManagement from './staff/ShipperManagement';
+import OrderManagement from './staff/OrderManagement';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -40,7 +41,7 @@ const items = [
     getItem('Checklist', '5'),
   ]),
   getItem('Vai trò', 'sub2', <TeamOutlined />, [getItem('Shipper', '6', <CarOutlined />), getItem('Khách hàng', '8', <UserOutlined />)]),
-  getItem('Files', '9', <FileOutlined />),
+  getItem('Đơn hàng', '9', <FileOutlined />),
 ];
 
 const StaffDashboard = () => {
@@ -75,7 +76,7 @@ const StaffDashboard = () => {
     case '8':
       return <div><h2>Khách hàng</h2><p>Quản lý khách hàng...</p></div>;
     case '9':
-      return <div><h2>Files</h2><p>Quản lý file...</p></div>;
+      return <OrderManagement />;
     default:
       return <Overview />;
   }
@@ -90,7 +91,7 @@ const getBreadcrumb = () => {
     '5': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Checklist' }],
     '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }], 
     '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
-    '9': [{ title: 'Dashboard' }, { title: 'Files' }],
+    '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],
   };
   return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
 };
