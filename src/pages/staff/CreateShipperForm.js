@@ -1,7 +1,7 @@
 // src/pages/admin/components/CreateShipperForm.js
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Select, Space, message, Row, Col, Alert, Typography, Divider } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, TeamOutlined, ArrowLeftOutlined, SaveOutlined, EyeTwoTone, EyeInvisibleOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, TeamOutlined, ArrowLeftOutlined, SaveOutlined, EyeTwoTone, EyeInvisibleOutlined, CheckCircleOutlined, BulbOutlined } from '@ant-design/icons';
 import shipperService from '../../services/shipperService';
 
 const { Option } = Select;
@@ -142,7 +142,10 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
 
         <Col xs={24} lg={8}>
           {createdAccount ? (
-            <Card title="✅ Tạo tài khoản thành công" className="shadow-lg rounded-xl bg-green-50 border-green-200">
+            <Card 
+              title={<span><CheckCircleOutlined className="mr-2" />Tạo tài khoản thành công</span>} 
+              className="shadow-lg rounded-xl bg-green-50 border-green-200"
+            >
               <Space direction="vertical" className="w-full">
                   <Text strong>Tên shipper:</Text> <Text copyable>{createdAccount.shipperName}</Text>
                   <Text strong>Username:</Text> <Text copyable code>{createdAccount.username}</Text>
@@ -152,12 +155,15 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
               <Alert message="Lưu ý quan trọng" description="Hãy sao chép và gửi thông tin tài khoản này cho shipper." type="warning" showIcon className="mt-4"/>
             </Card>
           ) : (
-             <Card title="💡 Hướng dẫn" className="shadow-lg rounded-xl">
+             <Card 
+               title={<span><BulbOutlined className="mr-2" />Hướng dẫn</span>} 
+               className="shadow-lg rounded-xl"
+             >
               <Space direction="vertical">
-                <Text>✅ Điền đầy đủ thông tin vào biểu mẫu bên trái.</Text>
-                <Text>✅ Username có thể được tạo tự động từ họ tên.</Text>
-                <Text>✅ Sử dụng chức năng "Tạo mật khẩu ngẫu nhiên" để bảo mật hơn.</Text>
-                <Text>✅ Sau khi tạo, thông tin tài khoản sẽ hiển thị ở đây.</Text>
+                <Text><CheckCircleOutlined className="mr-2 text-green-600" />Điền đầy đủ thông tin vào biểu mẫu bên trái.</Text>
+                <Text><CheckCircleOutlined className="mr-2 text-green-600" />Username có thể được tạo tự động từ họ tên.</Text>
+                <Text><CheckCircleOutlined className="mr-2 text-green-600" />Sử dụng chức năng "Tạo mật khẩu ngẫu nhiên" để bảo mật hơn.</Text>
+                <Text><CheckCircleOutlined className="mr-2 text-green-600" />Sau khi tạo, thông tin tài khoản sẽ hiển thị ở đây.</Text>
               </Space>
             </Card>
           )}

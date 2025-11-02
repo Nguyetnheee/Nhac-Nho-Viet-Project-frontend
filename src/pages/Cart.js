@@ -1,6 +1,7 @@
 // src/pages/Cart.js
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { ShoppingCartOutlined, MinusOutlined, PlusOutlined, DeleteOutlined, CloseCircleOutlined, CheckCircleOutlined, TagOutlined } from '@ant-design/icons';
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { decreaseCartItem, increaseCartItem } from "../services/apiAuth";
@@ -92,41 +93,66 @@ const Cart = () => {
           rawData: apiData
         };
         
-        console.log("✅ Mapped coupon:", mappedCoupon);
+        console.log("Mapped coupon:", mappedCoupon);
         
         setAppliedCoupon(mappedCoupon);
         setCouponError("");
-        showSuccess(`✅ Áp dụng mã giảm giá "${mappedCoupon.code}" thành công!`);
+        showSuccess(`Áp dụng mã giảm giá "${mappedCoupon.code}" thành công!`);
       } else {
         throw new Error("Không nhận được dữ liệu từ server");
       }
       
     } catch (error) {
-      console.error("❌ Lỗi áp dụng voucher:", error);
+      console.error("Lỗi áp dụng voucher:", error);
       
       // Xử lý các loại lỗi
       let errorMessage = "Mã giảm giá không hợp lệ hoặc đã hết hạn";
       
       if (error.response?.data?.message) {
         const msg = error.response.data.message;
-        if (msg.includes("not yet active")) {
+        
+        // Xử lý thông báo minimum order amount
+        if (msg.includes("Minimum order amount is") || msg.includes("minimum")) {
+          // Extract số tiền từ message (ví dụ: "Minimum order amount is 300000.00")
+          const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
+          if (amountMatch) {
+            const minAmount = parseFloat(amountMatch[1]);
+            errorMessage = `Giá trị đơn hàng tối thiểu là ${minAmount.toLocaleString('vi-VN')} VNĐ`;
+          } else {
+            errorMessage = "Đơn hàng chưa đủ giá trị tối thiểu";
+          }
+        } else if (msg.includes("not yet active")) {
           errorMessage = "Mã giảm giá chưa đến thời gian sử dụng";
         } else if (msg.includes("expired")) {
           errorMessage = "Mã giảm giá đã hết hạn";
-        } else if (msg.includes("minimum")) {
-          errorMessage = "Đơn hàng chưa đủ giá trị tối thiểu";
+        } else if (msg.includes("not found") || msg.includes("invalid")) {
+          errorMessage = "Mã giảm giá không tồn tại";
+        } else if (msg.includes("usage limit")) {
+          errorMessage = "Mã giảm giá đã hết lượt sử dụng";
         } else {
           errorMessage = msg;
         }
       } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+        const errMsg = error.response.data.error;
+        // Cũng xử lý error field nếu có minimum amount
+        if (errMsg.includes("Minimum order amount is")) {
+          const amountMatch = errMsg.match(/(\d+(?:\.\d+)?)/);
+          if (amountMatch) {
+            const minAmount = parseFloat(amountMatch[1]);
+            errorMessage = `Giá trị đơn hàng tối thiểu là ${minAmount.toLocaleString('vi-VN')} VNĐ`;
+          } else {
+            errorMessage = "Đơn hàng chưa đủ giá trị tối thiểu";
+          }
+        } else {
+          errorMessage = errMsg;
+        }
       } else if (error.message) {
         errorMessage = error.message;
       }
       
       setCouponError(errorMessage);
       setAppliedCoupon(null);
-      showError(`❌ ${errorMessage}`);
+      showError(`${errorMessage}`);
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -184,14 +210,14 @@ const Cart = () => {
   // ✅ Tính toán giảm giá - SỬ DỤNG GIÁ TRỊ TỪ BACKEND
   const calculateDiscount = () => {
     if (!appliedCoupon) {
-      console.log("⚠️ No coupon applied");
+      console.log("No coupon applied");
       return 0;
     }
     
     // Backend đã tính sẵn discountAmount, chúng ta chỉ cần lấy ra
     const discount = appliedCoupon.discountAmount || 0;
     
-    console.log('💰 Discount from backend:', discount);
+    console.log('Discount from backend:', discount);
     
     return discount;
   };
@@ -220,9 +246,7 @@ const Cart = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-16">
             <div className="text-gray-400 mb-4">
-              <svg className="w-24 h-24 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-              </svg>
+              <ShoppingCartOutlined className="text-8xl mx-auto" />
             </div>
             <h2 className="text-2xl font-semibold text-gray-600 mb-4">Giỏ hàng trống</h2>
             <p className="text-gray-500 mb-8">Bạn chưa có sản phẩm nào trong giỏ hàng</p>
@@ -383,9 +407,7 @@ const Cart = () => {
                   {/* Thông báo lỗi */}
                   {couponError && !appliedCoupon && (
                     <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <CloseCircleOutlined className="text-base" />
                       {couponError}
                     </p>
                   )}
@@ -393,9 +415,7 @@ const Cart = () => {
                   {/* Thông báo thành công - HIỂN THỊ Ở DƯỚI Ô NHẬP */}
                   {appliedCoupon && (
                     <div className="mt-2 flex items-center gap-1 text-green-600 text-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <CheckCircleOutlined className="text-base" />
                       <span>Đã áp dụng mã giảm giá thành công</span>
                     </div>
                   )}
@@ -411,9 +431,7 @@ const Cart = () => {
                 {appliedCoupon && calculateDiscount() > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
+                      <TagOutlined className="text-base" />
                       Giảm giá ({appliedCoupon.code}):
                     </span>
                     <span className="font-semibold">-{formatMoney(calculateDiscount())}</span>
@@ -423,7 +441,7 @@ const Cart = () => {
                 <div className="flex justify-between text-gray-700">
                   <span>Phí giao hàng:</span>
                   <span>{appliedCoupon?.discountType === 'FREE_SHIP' ? (
-                    <span className="text-green-600 font-semibold">Miễn phí ✓</span>
+                    <span className="text-green-600 font-semibold">Miễn phí</span>
                   ) : (
                     <span className="font-medium">Miễn phí</span>
                   )}</span>
@@ -436,9 +454,7 @@ const Cart = () => {
                   </div>
                   {appliedCoupon && calculateDiscount() > 0 && (
                     <div className="flex items-center justify-end gap-1 text-sm text-green-600 mt-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <CheckCircleOutlined className="text-base" />
                       <span>Tiết kiệm được {formatMoney(calculateDiscount())}</span>
                     </div>
                   )}

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { CloseOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, InfoCircleOutlined, MessageOutlined } from '@ant-design/icons';
 
 const Modal = ({ 
   isOpen, 
@@ -34,7 +35,7 @@ const Modal = ({
     switch (type) {
       case 'success':
         return {
-          icon: '✅',
+          IconComponent: CheckCircleOutlined,
           iconBg: 'bg-green-100',
           iconColor: 'text-green-600',
           borderColor: 'border-green-200',
@@ -42,7 +43,7 @@ const Modal = ({
         };
       case 'error':
         return {
-          icon: '❌',
+          IconComponent: CloseCircleOutlined,
           iconBg: 'bg-red-100',
           iconColor: 'text-red-600',
           borderColor: 'border-red-200',
@@ -50,7 +51,7 @@ const Modal = ({
         };
       case 'warning':
         return {
-          icon: '⚠️',
+          IconComponent: WarningOutlined,
           iconBg: 'bg-yellow-100',
           iconColor: 'text-yellow-600',
           borderColor: 'border-yellow-200',
@@ -58,7 +59,7 @@ const Modal = ({
         };
       case 'info':
         return {
-          icon: 'ℹ️',
+          IconComponent: InfoCircleOutlined,
           iconBg: 'bg-blue-100',
           iconColor: 'text-blue-600',
           borderColor: 'border-blue-200',
@@ -66,7 +67,7 @@ const Modal = ({
         };
       default:
         return {
-          icon: '💬',
+          IconComponent: MessageOutlined,
           iconBg: 'bg-gray-100',
           iconColor: 'text-gray-600',
           borderColor: 'border-gray-200',
@@ -116,9 +117,9 @@ const Modal = ({
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <div className={`p-2 rounded-full ${typeStyles.iconBg}`}>
-                  <span className={`text-xl ${typeStyles.iconColor}`}>
-                    {typeStyles.icon}
-                  </span>
+                  {typeStyles.IconComponent && (
+                    <typeStyles.IconComponent className={`text-xl ${typeStyles.iconColor}`} />
+                  )}
                 </div>
                 <h3 className={`text-xl font-semibold ${typeStyles.titleColor}`}>
                   {title}
@@ -130,9 +131,7 @@ const Modal = ({
                   onClick={onClose}
                   className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <CloseOutlined className="text-xl" />
                 </button>
               )}
             </div>
