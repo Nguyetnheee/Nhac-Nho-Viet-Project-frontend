@@ -40,8 +40,7 @@ import DebugChecklist from "./pages/DebugChecklist";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
-import StaffLogin from "./pages/staff/StaffLogin";
-import ShipperLogin from "./pages/staff/ShipperLogin";
+import AdminLogin from "./pages/staff/AdminLogin";
 
 export const router = createBrowserRouter([
   {
@@ -210,20 +209,10 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Admin Login Route - For Admin, Staff & Shipper
       {
-        path: "staff-login",
-        element: (
-          // <ProtectedRoute roles={["STAFF"]}>
-          <StaffLogin />
-
-          // </ProtectedRoute>
-
-        ),
-      },
-
-      {
-        path: "shipper-login",
-        element: <ShipperLogin />
+        path: "admin-login",
+        element: <AdminLogin />
       },
 
       // Admin Only Route

@@ -7,8 +7,10 @@ import {
   GoldOutlined,
   CarOutlined,
   UserOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
-import { Breadcrumb, Layout, Menu, theme } from 'antd';
+import { Breadcrumb, Layout, Menu, theme, Button } from 'antd';
+import { useAuth } from '../contexts/AuthContext';
 
 // Import các component trang con
 import Overview from './staff/Overview';
@@ -44,10 +46,16 @@ const items = [
 const StaffDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState('1'); // State để tracking menu được chọn
+  const { user, logout } = useAuth(); // Lấy thông tin user và logout function
   
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // Handle logout
+  const handleLogout = () => {
+    logout(); // AuthContext sẽ tự động redirect về /admin-login cho STAFF
+  };
 
   // Function để render content dựa trên menu được chọn
   const renderContent = () => {
@@ -110,15 +118,24 @@ const getBreadcrumb = () => {
       </Sider>
       <Layout>
         <Header style={{ 
-          padding: '0 16px', 
+          padding: '0 24px', 
           background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           borderBottom: '1px solid #f0f0f0'
         }}>
           <h3 style={{ margin: 0, color: '#1890ff' }}>
-           
+            Xin chào, {user?.username || 'Staff'}!
           </h3>
+          <Button 
+            type="primary" 
+            danger 
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+          >
+            Đăng xuất
+          </Button>
         </Header>
         <Content style={{ margin: '0 16px' }}>
           <Breadcrumb 

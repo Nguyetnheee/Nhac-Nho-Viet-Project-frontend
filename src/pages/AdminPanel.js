@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../components/ToastContainer';
+import { useAuth } from '../contexts/AuthContext';
 import NewsletterStats from '../components/NewsletterStats';
 import { orderService } from '../services/orderService';
 
 const AdminPanel = () => {
   const { showSuccess, showError } = useToast();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Handle logout
+  const handleLogout = () => {
+    logout(); // AuthContext sẽ tự động redirect về /admin-login cho ADMIN
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -61,9 +68,21 @@ const AdminPanel = () => {
   return (
     <div className="min-h-screen bg-vietnam-cream py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">Admin Panel</h1>
-          <p className="text-gray-600">Quản lý hệ thống và đơn hàng</p>
+        {/* Header with Logout Button */}
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-vietnam-green mb-2">Admin Panel</h1>
+            <p className="text-gray-600">Quản lý hệ thống và đơn hàng - Xin chào, {user?.username || 'Admin'}!</p>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-300 flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+            </svg>
+            Đăng xuất
+          </button>
         </div>
 
         {/* Stats */}

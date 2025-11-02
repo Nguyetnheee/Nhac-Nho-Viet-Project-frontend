@@ -10,8 +10,8 @@ const apiAuth = axios.create({
     'Accept': 'application/json',
   },
   withCredentials: true,
-  // Ngăn treo khi backend chậm
-  timeout: 15000,
+  // Tăng timeout lên 30s để hỗ trợ cold start của Render.com free tier
+  timeout: 30000,
 });
 
 // Request interceptor to add auth token
@@ -64,6 +64,8 @@ export const fetchCustomerProfile = async () => {
 export const loginCustomer = async (username, password) => {
   try {
     const response = await apiAuth.post('/api/customer/login', { username, password });
+    console.log('🔍 loginCustomer FULL response:', response);
+    console.log('🔍 loginCustomer response.data:', JSON.stringify(response.data, null, 2));
     if (response.status === 200) {
       return response.data;
     } else {
@@ -117,6 +119,8 @@ export const loginShipper = async (username, password) => {
   try {
     // Endpoint: POST: /api/shipper/login
     const response = await apiAuth.post('/api/shipper/login', { username, password });
+    console.log('🔍 loginShipper FULL response:', response);
+    console.log('🔍 loginShipper response.data:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Error during shipper login:', error);
