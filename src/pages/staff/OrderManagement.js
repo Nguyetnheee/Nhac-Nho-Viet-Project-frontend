@@ -444,7 +444,7 @@ const OrderManagement = () => {
     // Handle null, undefined, or invalid values
     const validAmount = Number(amount);
     if (isNaN(validAmount)) {
-      return '0 ₫';
+      return '0 VNĐ';
     }
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',

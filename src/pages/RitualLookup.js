@@ -318,8 +318,8 @@ const RitualLookup = () => {
             ) : (
               <div className="col-span-full text-center text-xl text-gray-500 py-10">
                 {lastQuery
-                  ? <p>🤷‍♀️ Không có nghi lễ nào khớp với từ khóa <span className="font-semibold text-vietnam-green">"{lastQuery}"</span>.</p>
-                  : "😔 Không có nghi lễ nào phù hợp bộ lọc đã chọn."}
+                  ? <p>Không có nghi lễ nào khớp với từ khóa <span className="font-semibold text-vietnam-green">"{lastQuery}"</span>.</p>
+                  : "Không có nghi lễ nào phù hợp bộ lọc đã chọn."}
               </div>
             )}
           </div>

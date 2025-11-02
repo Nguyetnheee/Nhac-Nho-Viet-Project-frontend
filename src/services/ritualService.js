@@ -110,4 +110,34 @@ export const ritualService = {
       throw error;
     }
   },
+
+  // Tìm kiếm lễ hội theo từ khóa
+  searchRituals: async (searchQuery) => {
+    try {
+      const response = await axiosInstance.get('/api/rituals/search', {
+        params: { q: searchQuery }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching rituals:', error);
+      throw error;
+    }
+  },
+
+  // Lọc lễ hội theo vùng miền
+  filterRitualsByRegions: async (regionNames = [], page = 0, size = 100) => {
+    try {
+      const response = await axiosInstance.get('/api/rituals/filter', {
+        params: {
+          regions: regionNames.join(','),
+          page,
+          size
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error filtering rituals by regions:', error);
+      throw error;
+    }
+  },
 };

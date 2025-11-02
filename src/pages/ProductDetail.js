@@ -124,10 +124,7 @@ const ProductDetail = () => {
           <h1 className="text-4xl font-serif font-bold text-vietnam-green">{product.productName}</h1>
           
           <div className="text-3xl font-bold text-vietnam-green border-b pb-4">
-            {new Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND'
-            }).format(product.price || 0)}
+            {(product.price || 0).toLocaleString('vi-VN')} VNĐ
           </div>
 
           <div className="prose max-w-none text-gray-700">
