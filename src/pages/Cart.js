@@ -32,7 +32,9 @@ const Cart = () => {
     getTotalPrice,
     totals,
     fetchCart,
-    loading
+    loading,
+    increaseLocalItem,
+    decreaseLocalItem,
   } = useCart();
   const { isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -321,8 +323,8 @@ const Cart = () => {
                             onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
+                              decreaseLocalItem(productId);
                               await decreaseCartItem(productId);
-                              await fetchCart()
                             }}
                             className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                           >
@@ -333,8 +335,8 @@ const Cart = () => {
                             onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
+                              increaseLocalItem(productId);
                               await increaseCartItem(productId);
-                              await fetchCart()
                             }}
                             className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                           >
