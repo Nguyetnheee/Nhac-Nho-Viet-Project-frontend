@@ -74,10 +74,12 @@ const PaymentResult = () => {
           });
           setLoading(false);
           
-          showWarning('Bạn chưa hoàn thành thanh toán. Vui lòng chọn lại sản phẩm và thực hiện thanh toán');
+          showWarning('Bạn chưa hoàn thành thanh toán. Đang chuyển đến trang chi tiết đơn hàng...');
           
-          // ❌ KHÔNG tự động redirect
-          // User phải tự bấm nút để chọn hành động tiếp theo
+          // ✅ Redirect đến PendingOrderDetail sau 2s
+          setTimeout(() => {
+            navigate(`/pending-order/${orderId}`);
+          }, 2000);
           
           return;
         }
@@ -145,10 +147,12 @@ const PaymentResult = () => {
         });
         setLoading(false);
         
-        showError('Thanh toán thất bại. Giỏ hàng của bạn vẫn được giữ nguyên.');
+        showError('Thanh toán thất bại. Đang chuyển đến trang chi tiết đơn hàng...');
         
-        // ❌ KHÔNG tự động redirect
-        // User phải tự bấm nút để chọn hành động tiếp theo
+        // ✅ Redirect đến PendingOrderDetail sau 2s
+        setTimeout(() => {
+          navigate(`/pending-order/${orderId}`);
+        }, 2000);
 
       } catch (error) {
         console.error('❌ Handle payment callback error:', error);
@@ -304,44 +308,13 @@ const PaymentResult = () => {
           )}
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isSuccess ? (
-              <>
-                <button
-                  onClick={() => navigate(`/order-success/${paymentStatus.orderId}`)}
-                  className="btn-primary"
-                >
-                  Xem đơn hàng
-                </button>
-                <button
-                  onClick={() => navigate('/')}
-                  className="btn-secondary"
-                >
-                  Về trang chủ
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => navigate('/cart')}
-                  className="btn-primary"
-                >
-                  🛒 Xem & Chỉnh sửa giỏ hàng
-                </button>
-                <button
-                  onClick={() => navigate('/checkout')}
-                  className="btn-secondary"
-                >
-                  💳 Thử thanh toán lại
-                </button>
-                <button
-                  onClick={() => navigate('/trays')}
-                  className="btn-outline"
-                >
-                  Tiếp tục mua sắm
-                </button>
-              </>
-            )}
+          <div className="flex justify-center">
+            <button
+              onClick={() => navigate('/trays')}
+              className="btn-primary px-8 py-3"
+            >
+              Tiếp tục mua hàng
+            </button>
           </div>
         </div>
       </div>

@@ -225,11 +225,18 @@ const OrderHistory = () => {
       ) : (
         <>
           <div className="space-y-4">
-            {currentOrders.map((order) => (
+            {currentOrders.map((order) => {
+              // Xác định trang chi tiết phù hợp dựa trên trạng thái đơn hàng
+              const isPendingOrCancelled = order.orderStatus === 'PENDING' || order.orderStatus === 'CANCELLED';
+              const detailRoute = isPendingOrCancelled 
+                ? `/pending-order/${order.orderId}` 
+                : `/order-success/${order.orderId}`;
+              
+              return (
             <div 
               key={order.orderId}
               className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate(`/order-success/${order.orderId}`)}
+              onClick={() => navigate(detailRoute)}
             >
               {/* Order Header */}
               <div className="flex justify-between items-start mb-4">
@@ -305,14 +312,15 @@ const OrderHistory = () => {
                   className="text-sm text-vietnam-green hover:text-vietnam-gold font-medium transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/order-success/${order.orderId}`);
+                    navigate(detailRoute);
                   }}
                 >
                   Xem chi tiết <i className="fas fa-arrow-right ml-1"></i>
                 </button>
               </div>
             </div>
-          ))}
+          );
+          })}
           </div>
 
           {/* Pagination */}

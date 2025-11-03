@@ -134,9 +134,15 @@ const Notifications = () => {
       );
     }
 
-    // Navigate đến trang chi tiết đơn hàng nếu có
+    // Navigate đến trang chi tiết đơn hàng phù hợp dựa trên loại notification
     if (notification.orderId) {
-      navigate(`/order-success/${notification.orderId}`);
+      // Nếu là notification về đơn hàng đã hủy hoặc pending -> PendingOrderDetail
+      if (notification.type === 'ORDER_CANCELLED' || notification.type === 'PAYMENT_PENDING') {
+        navigate(`/pending-order/${notification.orderId}`);
+      } else {
+        // Các notification khác (confirmed, shipping, delivered, completed) -> OrderSuccess
+        navigate(`/order-success/${notification.orderId}`);
+      }
     }
   };
 

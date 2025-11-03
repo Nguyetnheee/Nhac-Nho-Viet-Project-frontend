@@ -166,6 +166,14 @@ const OrderSuccess = () => {
         mapped: { orderStatus: mappedData.orderStatus }
       });
       
+      // ✅ KIỂM TRA: Nếu đơn hàng PENDING hoặc CANCELLED -> redirect sang PendingOrderDetail
+      const orderStatus = mappedData.orderStatus;
+      if (orderStatus === 'PENDING' || orderStatus === 'CANCELLED') {
+        console.log('⚠️ Order is PENDING/CANCELLED, redirecting to PendingOrderDetail');
+        navigate(`/pending-order/${orderId}`, { replace: true });
+        return;
+      }
+      
       setOrderData(mappedData);
       setLoading(false);
     } catch (error) {
@@ -237,6 +245,30 @@ const OrderSuccess = () => {
       if (interval) clearInterval(interval);
     };
   }, [orderId]);
+
+  // Lấy tiêu đề header theo status
+  const getHeaderTitle = () => {
+    const status = orderData?.orderStatus;
+    
+    switch(status) {
+      case 'PAID':
+        return 'Thanh toán thành công!';
+      case 'CONFIRMED':
+        return 'Đơn hàng đã được xác nhận!';
+      case 'PROCESSING':
+        return 'Đơn hàng đang được xử lý!';
+      case 'SHIPPING':
+        return 'Đơn hàng đang được giao!';
+      case 'DELIVERED':
+        return 'Đơn hàng đã được giao!';
+      case 'COMPLETED':
+        return 'Đơn hàng hoàn thành!';
+      case 'CANCELLED':
+        return 'Đơn hàng đã bị hủy';
+      default:
+        return 'Thông tin đơn hàng';
+    }
+  };
 
   // Get current step based on order status
   const getCurrentStep = () => {
@@ -369,7 +401,7 @@ const OrderSuccess = () => {
           </div>
           
           <h1 className="text-3xl sm:text-4xl font-serif font-bold text-vietnam-green mb-2">
-            Thanh toán thành công!
+            {getHeaderTitle()}
           </h1>
           <p className="text-gray-600 text-lg">
             Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đang được xử lý.

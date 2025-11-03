@@ -27,6 +27,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import Checklist from "./pages/Checklist";
 import PaymentResult from "./pages/PaymentResult";
 import OrderSuccess from "./pages/OrderSuccess";
+import PendingOrderDetail from "./pages/PendingOrderDetail";
 
 // Demo Pages
 import ToastDemo from "./pages/ToastDemo";
@@ -188,6 +189,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute roles={["CUSTOMER"]}>
             <OrderSuccess />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "pending-order/:orderId",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PendingOrderDetail />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "pending-order",
+        element: (
+          <ProtectedRoute roles={["CUSTOMER"]}>
+            <PendingOrderDetail />
           </ProtectedRoute>
         ),
       },
