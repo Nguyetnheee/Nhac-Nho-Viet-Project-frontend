@@ -22,10 +22,18 @@ const PaymentResult = () => {
         const status = searchParams.get('status') || searchParams.get('code');
         const cancel = searchParams.get('cancel'); // Kiểm tra nếu user cancel
         
+        // ⭐ Detect route path để biết success hay cancel
+        const currentPath = window.location.pathname;
+        const isSuccessRoute = currentPath.includes('/payment/success');
+        const isCancelRoute = currentPath.includes('/payment/cancel');
+        
         console.log('🔍 Payment callback params:', { 
           orderId, 
           status, 
           cancel,
+          currentPath,
+          isSuccessRoute,
+          isCancelRoute,
           allParams: Object.fromEntries(searchParams.entries())
         });
 
@@ -34,11 +42,11 @@ const PaymentResult = () => {
         }
 
         // TRƯỜNG HỢP 1: User thoát khỏi trang PayOS (cancel)
-        // Check cả cancel param và URL path
-        const isCancelled = cancel === 'true' || 
+        // ⭐ Ưu tiên check route path trước, sau đó mới check params
+        const isCancelled = isCancelRoute ||
+                           cancel === 'true' || 
                            status === 'CANCELLED' || 
-                           status === 'CANCEL' ||
-                           window.location.pathname.includes('/payment/cancel');
+                           status === 'CANCEL';
         
         if (isCancelled) {
           console.log('⚠️ User cancelled payment');
@@ -85,8 +93,9 @@ const PaymentResult = () => {
         }
 
         // TRƯỜNG HỢP 2: Thanh toán THÀNH CÔNG
-        // PayOS redirect với code=00 hoặc status=SUCCESS
-        const isSuccess = status === '00' || 
+        // ⭐ Ưu tiên check route path /payment/success
+        const isSuccess = isSuccessRoute ||
+                         status === '00' || 
                          status === 'SUCCESS' || 
                          status === 'PAID' ||
                          searchParams.get('code') === '00';
