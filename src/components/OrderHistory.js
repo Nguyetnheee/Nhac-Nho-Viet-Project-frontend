@@ -166,9 +166,7 @@ const OrderHistory = () => {
             Tổng {filteredOrders.length} đơn hàng
             {filter !== 'ALL' && ` (${filter === 'PENDING' ? 'Chờ xác nhận' :
              filter === 'CONFIRMED' ? 'Đã xác nhận' :
-             filter === 'PROCESSING' ? 'Đang xử lý' :
              filter === 'SHIPPING' ? 'Đang giao' :
-             filter === 'DELIVERED' ? 'Đã giao' :
              filter === 'COMPLETED' ? 'Hoàn thành' :
              'Đã hủy'})`}
           </p>
@@ -184,7 +182,7 @@ const OrderHistory = () => {
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
-        {['ALL', 'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED'].map((status) => (
+        {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELLED'].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -197,9 +195,7 @@ const OrderHistory = () => {
             {status === 'ALL' ? 'Tất cả' : 
              status === 'PENDING' ? 'Chờ xác nhận' :
              status === 'CONFIRMED' ? 'Đã xác nhận' :
-             status === 'PROCESSING' ? 'Đang xử lý' :
              status === 'SHIPPING' ? 'Đang giao' :
-             status === 'DELIVERED' ? 'Đã giao' :
              status === 'COMPLETED' ? 'Hoàn thành' :
              'Đã hủy'}
           </button>
