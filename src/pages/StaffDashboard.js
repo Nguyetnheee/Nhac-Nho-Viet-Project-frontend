@@ -35,7 +35,7 @@ function getItem(label, key, icon, children) {
 const items = [
   getItem('Tổng quan', '1', <PieChartOutlined />),
   getItem('Kho hàng', '2', <GoldOutlined />),
-  getItem('Xây dựng', 'sub1', <EditOutlined />, [
+  getItem('Quản lý', 'sub1', <EditOutlined />, [
     getItem('Lễ hội', '3'),
     getItem('Mâm cúng', '4'),
     getItem('Checklist', '5'),
@@ -48,7 +48,7 @@ const StaffDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState('1'); // State để tracking menu được chọn
   const { user, logout } = useAuth(); // Lấy thông tin user và logout function
-  
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -60,66 +60,78 @@ const StaffDashboard = () => {
 
   // Function để render content dựa trên menu được chọn
   const renderContent = () => {
-  switch (selectedKey) {
-    case '1':
-      return <Overview />;
-    case '2':
-      return <Inventory />;
-    case '3':
-      return <RitualManagement />;
-    case '4':
-      return <TrayManagement />;
-    case '5':
-      return <ChecklistManagement />;
-    case '6':
-      return <ShipperManagement />; 
-    case '8':
-      return <div><h2>Khách hàng</h2><p>Quản lý khách hàng...</p></div>;
-    case '9':
-      return <OrderManagement />;
-    default:
-      return <Overview />;
-  }
-};
-  // Function để lấy breadcrumb dựa trên menu được chọn
-const getBreadcrumb = () => {
-  const breadcrumbMap = {
-    '1': [{ title: 'Dashboard' }, { title: 'Tổng quan' }],
-    '2': [{ title: 'Dashboard' }, { title: 'Kho hàng' }],
-    '3': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Lễ hội' }],
-    '4': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Mâm cúng' }],
-    '5': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Checklist' }],
-    '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }], 
-    '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
-    '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],
+    switch (selectedKey) {
+      case '1':
+        return <Overview />;
+      case '2':
+        return <Inventory />;
+      case '3':
+        return <RitualManagement />;
+      case '4':
+        return <TrayManagement />;
+      case '5':
+        return <ChecklistManagement />;
+      case '6':
+        return <ShipperManagement />;
+      case '8':
+        return <div><h2>Khách hàng</h2><p>Quản lý khách hàng...</p></div>;
+      case '9':
+        return <OrderManagement />;
+      default:
+        return <Overview />;
+    }
   };
-  return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
-};
+  // Function để lấy breadcrumb dựa trên menu được chọn
+  const getBreadcrumb = () => {
+    const breadcrumbMap = {
+      '1': [{ title: 'Dashboard' }, { title: 'Tổng quan' }],
+      '2': [{ title: 'Dashboard' }, { title: 'Kho hàng' }],
+      '3': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Lễ hội' }],
+      '4': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Mâm cúng' }],
+      '5': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Checklist' }],
+      '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }],
+      '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
+      '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],
+    };
+    return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
+  };
 
   const handleMenuClick = (e) => {
     setSelectedKey(e.key);
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{
+      minHeight: '100vh',
+
+    }}>
       <Sider collapsible collapsed={collapsed} onCollapse={value => setCollapsed(value)}>
-        <div className="demo-logo-vertical" style={{ 
-          height: 32, 
-          margin: 16, 
-          background: 'rgba(255, 255, 255, 0.3)',
+        <div className="demo-logo-vertical" style={{
+          // height: 32,
+          margin: 16,
+          marginBottom: 20,
+          // background: 'rgba(255, 255, 255, 0.3)',
           borderRadius: 6
-        }} />
-        <Menu 
-          theme="dark" 
-          defaultSelectedKeys={['1']} 
-          mode="inline" 
+        }}
+        >
+          <img src={`${process.env.PUBLIC_URL}/android-icon-192x192.png`} />
+
+        </div>
+
+
+
+
+        <Menu
+          theme="dark"
+          defaultSelectedKeys={['1']}
+          mode="inline"
           items={items}
           onClick={handleMenuClick}
         />
       </Sider>
       <Layout>
-        <Header style={{ 
-          padding: '0 24px', 
+        <Header style={{
+          padding: '0 24px',
           background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
@@ -129,9 +141,9 @@ const getBreadcrumb = () => {
           <h3 style={{ margin: 0, color: '#1890ff' }}>
             Xin chào, {user?.username || 'Staff'}!
           </h3>
-          <Button 
-            type="primary" 
-            danger 
+          <Button
+            type="primary"
+            danger
             icon={<LogoutOutlined />}
             onClick={handleLogout}
           >
@@ -139,9 +151,9 @@ const getBreadcrumb = () => {
           </Button>
         </Header>
         <Content style={{ margin: '0 16px' }}>
-          <Breadcrumb 
-            style={{ margin: '16px 0' }} 
-            items={getBreadcrumb()} 
+          <Breadcrumb
+            style={{ margin: '16px 0' }}
+            items={getBreadcrumb()}
           />
           <div
             style={{

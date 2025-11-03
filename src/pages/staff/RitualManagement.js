@@ -89,9 +89,20 @@ const RitualManagement = () => {
   };
   
   const columns = [
-    { title: 'ID', dataIndex: 'ritualId', key: 'ritualId', width: 80 },
+    { title: 'STT', dataIndex: 'ritualId', key: 'ritualId', width: 80 },
     { title: 'Tên lễ hội', dataIndex: 'ritualName', key: 'ritualName', render: (text) => <Text strong>{text}</Text> },
-    { title: 'Vùng miền', dataIndex: 'regionName', key: 'regionName', render: (region) => <Tag color="gold">{region}</Tag> },
+    { title: 'Vùng miền', dataIndex: 'regionName', key: 'regionName', render: (region) => {
+      if ( region === 'Miền Bắc') {
+        return <Tag color="blue">Miền Bắc</Tag>;
+      } else if ( region === 'Miền Trung') {
+        return <Tag color="green">Miền Trung</Tag>;
+      } else if ( region === 'Miền Nam') {
+        return <Tag color="orange">Miền Nam</Tag>;
+      } else {
+        return <Tag color="purple">Toàn quốc</Tag>;
+      }
+
+    } },
     { title: 'Ngày âm lịch', dataIndex: 'dateLunar', key: 'dateLunar' },
     { title: 'Ngày dương lịch', dataIndex: 'dateSolar', key: 'dateSolar', render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '-' },
     {

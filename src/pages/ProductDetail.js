@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { trayService } from '../services/trayService'; 
+import { trayService } from '../services/trayService';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
@@ -11,7 +11,7 @@ const ProductDetail = () => {
   const { isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null); 
+  const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1); // State quantity
 
@@ -28,14 +28,14 @@ const ProductDetail = () => {
     try {
       setLoading(true);
       console.log('Fetching product details for ID:', productId);
-      
+
       const response = await trayService.getTrayById(productId);
       const data = response?.data;
-      
+
       console.log('API Response:', data);
 
       if (data && data.productId) {
-        setProduct(data); 
+        setProduct(data);
       } else {
         setProduct(null);
         showError('Không tìm thấy thông tin sản phẩm');
@@ -61,11 +61,11 @@ const ProductDetail = () => {
     }
 
     const cartItem = {
-      id: product.productId, 
+      id: product.productId,
       productId: product.productId,
       name: product.productName || 'Unknown Product',
       price: product.price || 0,
-      quantity: quantity, 
+      quantity: quantity,
       image: product.productImage || ''
     };
 
@@ -106,7 +106,7 @@ const ProductDetail = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -115,14 +115,14 @@ const ProductDetail = () => {
           <img
             src={product.productImage || 'https://via.placeholder.com/400x400'}
             alt={product.productName || 'Product Image'}
-            className="w-full h-auto object-cover max-h-[500px]"
+            className="w-full object-cover"
           />
         </div>
 
         {/* Product Info */}
         <div className="space-y-6">
           <h1 className="text-4xl font-serif font-bold text-vietnam-green">{product.productName}</h1>
-          
+
           <div className="text-3xl font-bold text-vietnam-green border-b pb-4">
             {(product.price || 0).toLocaleString('vi-VN')} VNĐ
           </div>
@@ -131,7 +131,7 @@ const ProductDetail = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Mô tả sản phẩm:</h3>
             <p className='text-base'>{product.productDescription || 'Chưa có mô tả'}</p>
           </div>
-          
+
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center space-x-4">
               <label htmlFor="quantity" className="font-medium text-lg text-gray-700">Số lượng:</label>
