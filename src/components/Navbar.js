@@ -1,27 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MenuOutlined } from '@ant-design/icons';
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import NotificationBell from "./NotificationBell";
+import * as cartService from "../services/cartService";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { cart, loading } = useCart();
+  const [cartCount, setCartCount] = useState(0);
 
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
   };
 
-  const getCartItemCount = () => {
-    if (!cart?.items || loading) return 0;
-    return cart.items.length;
+  const fetchCartCount = async () => {
+    try {
+      const data = await cartService.getCart();
+      setCartCount(data.totalItems || 0);
+    } catch (error) {
+      console.error("Lỗi khi lấy giỏ hàng:", error);
+      setCartCount(0);
+    }
   };
 
-  
-  // Regular navbar for other users
+  useEffect(() => {
+    fetchCartCount();
+  }, [cart, loading]); // cập nhật khi cart hoặc loading thay đổi
+
   return (
     <nav className="bg-vietnam-green shadow-lg relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,9 +81,9 @@ const Navbar = () => {
                 className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium relative"
               >
                 Giỏ hàng
-                {!loading && getCartItemCount() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-vietnam-gold text-vietnam-green text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {getCartItemCount()}
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
                   </span>
                 )}
               </Link>
@@ -83,16 +92,13 @@ const Navbar = () => {
             {/* User Section */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                {/* Notification Bell - Chỉ hiển thị cho CUSTOMER */}
                 {user?.role === 'ROLE_CUSTOMER' && <NotificationBell />}
-                
                 <Link
                   to="/profile"
                   className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Tài khoản
                 </Link>
-                
                 {user?.role === 'ADMIN' && (
                   <Link
                     to="/admin-dashboard"
@@ -109,7 +115,6 @@ const Navbar = () => {
                     Giao hàng
                   </Link>
                 )}
-                
                 <button
                   onClick={handleLogout}
                   className="bg-vietnam-gold text-vietnam-green px-4 py-2 rounded-md text-sm font-medium hover:bg-vietnam-gold/90 transition-colors"
@@ -184,10 +189,15 @@ const Navbar = () => {
             {isAuthenticated && (
               <Link
                 to="/cart"
-                className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
+                className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium relative"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Giỏ hàng ({getCartItemCount()})
+                Giỏ hàng
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
             )}
             {isAuthenticated ? (

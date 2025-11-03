@@ -78,6 +78,27 @@ export const CartProvider = ({ children }) => {
     setTimeout(() => navigate("/login"), 1200);
   };
 
+
+  const increaseLocalItem = (productId) => {
+    setCartItems(prev =>
+      prev.map(item =>
+        item.productId === productId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    );
+  };
+
+  const decreaseLocalItem = (productId) => {
+    setCartItems(prev =>
+      prev.map(item =>
+        item.productId === productId && item.quantity > 1
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
+    );
+  };
+
   // -------- API calls --------
   const fetchCart = async () => {
     // ✅ Nếu không phải Customer, KHÔNG làm gì cả - HOÀN TOÀN IM LẶNG
@@ -255,9 +276,11 @@ export const CartProvider = ({ children }) => {
     removeFromCart,
     clearCart,
     fetchCart,
+    increaseLocalItem,
+    decreaseLocalItem,
     getTotalItems,
     getTotalPrice,
-    getDistinctProductCount, 
+    getDistinctProductCount,
     error,
     loading,
   };

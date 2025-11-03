@@ -1,6 +1,6 @@
 // src/pages/RitualLookup.js
-import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { EnvironmentOutlined } from '@ant-design/icons';
 import { ritualService } from "../services/ritualService";
 import { scrollToTop } from "../utils/scrollUtils";
@@ -42,22 +42,28 @@ const RitualCardSkeleton = () => (
 
 const RitualLookup = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [rituals, setRituals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedKeys, setSelectedKeys] = useState(new Set(["all"]));
-  const [searchTerm, setSearchTerm] = useState("");   // (giữ lại để phòng sau này thêm ô search compact)
+  const [searchTerm, setSearchTerm] = useState("");
   const [lastQuery, setLastQuery] = useState("");
+
+  // Ref để lưu timeout ID cho debounce
+  const debounceTimerRef = useRef(null);
+  const isInitialMount = useRef(true);
 
   // Đọc query params mỗi khi URL đổi
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = (params.get("q") || "").trim();
-    const regionsParam = (params.get("regions") || "").trim(); // ví dụ: "north,central"
+    const regionsParam = (params.get("regions") || "").trim();
 
     // Ưu tiên search nếu có q
     if (q) {
+      setSearchTerm(q);
       doSearch(q);
       return;
     }
@@ -80,6 +86,43 @@ const RitualLookup = () => {
     scrollToTop(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
+
+  // Auto-call API khi selectedKeys thay đổi (với debounce)
+  useEffect(() => {
+    // Skip lần đầu tiên mount (vì useEffect trên đã xử lý)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Clear timeout cũ
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Debounce 500ms trước khi gọi API
+    debounceTimerRef.current = setTimeout(() => {
+      const keys = Array.from(selectedKeys);
+      
+      // Cập nhật URL với regions mới
+      const params = new URLSearchParams();
+      if (!keys.includes("all")) {
+        params.set("regions", keys.join(","));
+      }
+      navigate({ search: params.toString() }, { replace: true });
+      
+      // Gọi API
+      applyFilter(keys);
+    }, 500);
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedKeys]);
 
   const initialFetch = async () => {
     setLoading(true);
@@ -106,7 +149,7 @@ const RitualLookup = () => {
     });
   };
 
-  // Áp bộ lọc theo "keys" truyền vào (để dùng được cho query param)
+  // Áp bộ lọc theo "keys" truyền vào
   const applyFilter = async (keysArg) => {
     const keys = Array.isArray(keysArg) ? keysArg : Array.from(selectedKeys);
 
@@ -127,12 +170,23 @@ const RitualLookup = () => {
         100
       );
 
-      const selectedSet = new Set(regionNames);
+      // ✅ Thêm "Toàn Quốc" vào danh sách các miền được chọn
+      const selectedSet = new Set([...regionNames, "Toàn Quốc"]);
       const filtered = Array.isArray(content)
         ? content.filter((item) => selectedSet.has(item.regionName))
         : [];
 
-      setRituals(filtered);
+      // Sắp xếp theo regionName để nhóm các miền lại với nhau
+      const sortedRituals = filtered.sort((a, b) => {
+        const regionOrder = { "Miền Bắc": 1, "Miền Trung": 2, "Miền Nam": 3, "Toàn Quốc": 4 };
+        const orderA = regionOrder[a.regionName] || 999;
+        const orderB = regionOrder[b.regionName] || 999;
+        if (orderA !== orderB) return orderA - orderB;
+        // Nếu cùng miền thì sắp xếp theo tên
+        return a.ritualName.localeCompare(b.ritualName);
+      });
+
+      setRituals(sortedRituals);
       setLastQuery("");
     } catch (e) {
       console.error("Error filtering rituals:", e);
@@ -142,7 +196,7 @@ const RitualLookup = () => {
     }
   };
 
-  // Hàm search có thể gọi từ query param
+  // Hàm search có thể gọi từ query param hoặc form
   const doSearch = async (q) => {
     setLoading(true);
     try {
@@ -162,8 +216,15 @@ const RitualLookup = () => {
   const clearSearch = () => {
     setSearchTerm("");
     setLastQuery("");
+    navigate({ search: "" }, { replace: true });
+    setSelectedKeys(new Set(["all"]));
     initialFetch();
   };
+
+  // Debounce cho search input
+  const handleSearchInput = useCallback((value) => {
+    setSearchTerm(value);
+  }, []);
 
   const isActive = (key) => selectedKeys.has(key);
 
@@ -179,11 +240,13 @@ const RitualLookup = () => {
                 <button
                   key={opt.key}
                   onClick={() => toggleRegion(opt.key)}
+                  disabled={loading}
                   className={[
                     "px-5 py-2.5 rounded-full font-medium transition duration-300 transform hover:scale-[1.05] border-2 focus:outline-none focus:ring-4 focus:ring-offset-2",
                     isActive(opt.key)
                       ? "bg-vietnam-green text-white border-vietnam-green shadow-lg focus:ring-vietnam-green/50"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-vietnam-green/50 shadow-sm focus:ring-gray-300",
+                    loading && "opacity-50 cursor-not-allowed",
                   ].join(" ")}
                 >
                   {opt.label}
@@ -197,7 +260,10 @@ const RitualLookup = () => {
                 e.preventDefault();
                 const q = String(searchTerm || "").trim();
                 if (!q) return;
-                // Dùng hàm doSearch sẵn có
+                // Cập nhật URL
+                const params = new URLSearchParams();
+                params.set("q", q);
+                navigate({ search: params.toString() }, { replace: true });
                 doSearch(q);
               }}
               className="w-full md:w-auto flex items-center gap-2"
@@ -206,11 +272,10 @@ const RitualLookup = () => {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchInput(e.target.value)}
                   placeholder="Tìm kiếm lễ..."
                   className="w-[260px] md:w-[280px] lg:w-[320px] px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-4 focus:ring-vietnam-gold/40 focus:border-transparent"
                 />
-                {/* nút clear nhanh */}
                 {searchTerm && (
                   <button
                     type="button"
@@ -238,20 +303,6 @@ const RitualLookup = () => {
               >
                 Tìm
               </button>
-              <button
-                type="button"
-                onClick={() => applyFilter()}
-                disabled={loading}
-                className={[
-                  "hidden md:inline-block px-4 py-2.5 rounded-lg font-bold transition duration-300 transform hover:scale-[1.03] shadow-lg focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-vietnam-gold/50",
-                  loading
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed opacity-75"
-                    : "bg-white text-vietnam-green border border-vietnam-gold hover:bg-yellow-50",
-                ].join(" ")}
-                title="Áp dụng bộ lọc vùng miền"
-              >
-                Lọc
-              </button>
             </form>
           </div>
         </div>
@@ -271,6 +322,15 @@ const RitualLookup = () => {
               <p className="mt-3 text-sm text-gray-500">
                 Kết quả cho: <span className="font-semibold text-vietnam-green">"{lastQuery}"</span>{" "}
                 <button onClick={clearSearch} className="underline ml-1">Xóa</button>
+              </p>
+            )}
+            {!selectedKeys.has("all") && !lastQuery && (
+              <p className="mt-3 text-sm text-gray-500">
+                Đang hiển thị: <span className="font-semibold text-vietnam-green">
+                  {Array.from(selectedKeys).map(k => 
+                    REGION_OPTIONS.find(opt => opt.key === k)?.label
+                  ).join(", ")}
+                </span>
               </p>
             )}
           </div>
