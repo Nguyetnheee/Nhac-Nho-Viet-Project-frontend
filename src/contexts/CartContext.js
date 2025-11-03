@@ -197,7 +197,6 @@ export const CartProvider = ({ children }) => {
       await cartService.removeFromCart(productId);
       await fetchCart();
       setError(null);
-      showSuccess("Đã xóa sản phẩm khỏi giỏ hàng!");
     } catch (err) {
       console.error("removeFromCart error:", err);
       if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
@@ -218,7 +217,6 @@ export const CartProvider = ({ children }) => {
       await cartService.clearCart();
       await fetchCart();
       setError(null);
-      showSuccess("Đã xóa tất cả sản phẩm khỏi giỏ hàng!");
     } catch (err) {
       console.error("clearCart error:", err);
       if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
