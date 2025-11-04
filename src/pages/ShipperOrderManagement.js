@@ -16,6 +16,7 @@ import {
   Empty,
   Spin,
 } from 'antd';
+import { translateToVietnamese } from '../utils/errorMessages';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -152,11 +153,11 @@ const ShipperOrderManagement = () => {
           // Hiển thị thông báo lỗi chi tiết hơn
           let errorMessage = 'Không thể xác nhận giao hàng';
           if (error.response?.data?.message) {
-            errorMessage += ': ' + error.response.data.message;
+            errorMessage += ': ' + translateToVietnamese(error.response.data.message);
           } else if (error.response?.status === 403) {
             errorMessage += ': Không có quyền thực hiện. Vui lòng kiểm tra lại trạng thái đơn hàng.';
-          } else {
-            errorMessage += ': ' + error.message;
+          } else if (error.message) {
+            errorMessage += ': ' + translateToVietnamese(error.message);
           }
           
           message.error(errorMessage);

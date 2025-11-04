@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/ToastContainer';
 import { useCart } from '../contexts/CartContext';
 import api from '../services/api';
+import { translateToVietnamese } from '../utils/errorMessages';
 import { 
   FileTextOutlined, 
   CheckCircleOutlined, 
@@ -188,19 +189,17 @@ const OrderSuccess = () => {
         headers: error.config?.headers
       });
       
-      // Thông báo chi tiết hơn cho user
+      // Thông báo dễ hiểu cho người dùng
       let errorMessage = 'Không thể tải thông tin đơn hàng';
       if (error.response?.status === 403) {
-        errorMessage = `Không có quyền truy cập đơn hàng này. 
+        errorMessage = `Bạn không có quyền xem đơn hàng này.
         
-        Hướng dẫn khắc phục:
+        Vui lòng thử:
         1. Đăng xuất và đăng nhập lại
         2. Kiểm tra bạn đang đăng nhập đúng tài khoản
-        3. Nếu vẫn lỗi, vui lòng liên hệ hỗ trợ
-        
-        Để debug, truy cập: /debug-token`;
+        3. Nếu vẫn lỗi, vui lòng liên hệ bộ phận hỗ trợ`;
       } else if (error.response?.status === 401) {
-        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        errorMessage = 'Thời gian đăng nhập đã hết. Vui lòng đăng nhập lại để tiếp tục.';
         setTimeout(() => {
           localStorage.clear();
           navigate('/login');
@@ -208,7 +207,8 @@ const OrderSuccess = () => {
       } else if (error.response?.status === 404) {
         errorMessage = 'Không tìm thấy đơn hàng. Vui lòng kiểm tra lại mã đơn hàng.';
       } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+        // Dịch message từ backend sang tiếng Việt
+        errorMessage = translateToVietnamese(error.response.data.message);
       }
       
       showError(errorMessage);

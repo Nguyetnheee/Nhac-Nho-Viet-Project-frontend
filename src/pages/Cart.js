@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { decreaseCartItem, increaseCartItem } from "../services/apiAuth";
 import api from "../services/api";
 import { useToast } from "../components/ToastContainer";
+import { translateToVietnamese } from "../utils/errorMessages";
 // ✅ UNCOMMENT DÒNG NÀY ĐỂ BẬT DEBUG PANEL
 // import VoucherDebugPanel from "../components/VoucherDebugPanel";
 
@@ -247,7 +248,7 @@ const Cart = () => {
       
       // Ưu tiên sử dụng message từ Error object nếu có
       if (error.message && !error.message.includes('Request failed') && !error.message.includes('AxiosError')) {
-        errorMessage = error.message;
+        errorMessage = translateToVietnamese(error.message);
       } 
       // Nếu không, check response từ backend
       else if (error.response) {
@@ -256,7 +257,7 @@ const Cart = () => {
                           error.response.data;
         
         if (backendMsg && typeof backendMsg === 'string') {
-          errorMessage = backendMsg;
+          errorMessage = translateToVietnamese(backendMsg);
         } else {
           // Mapping theo HTTP status code
           switch (error.response.status) {
@@ -371,8 +372,8 @@ const Cart = () => {
                 <h2 className="text-xl font-semibold text-vietnam-green">
                   Sản phẩm ({cartItems.length})
                 </h2>
-                <button onClick={clearCart} className={`text-vietnam-green hover:opacity-80 text-sm ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={loading}>
-                  {loading ? 'Đang xóa...' : 'Xóa tất cả'}
+                <button onClick={clearCart} className="text-vietnam-green hover:opacity-80 text-sm">
+                  Xóa tất cả
                 </button>
               </div>
 
@@ -444,10 +445,9 @@ const Cart = () => {
                           </p>
                           <button
                             onClick={() => removeFromCart(productId)}
-                            className={`text-vietnam-green hover:opacity-80 text-sm mt-1 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            disabled={loading}
+                            className="text-vietnam-green hover:opacity-80 text-sm mt-1"
                           >
-                            {loading ? 'Đang xóa...' : 'Xóa'}
+                            Xóa
                           </button>
                         </div>
                       </div>

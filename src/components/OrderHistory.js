@@ -77,13 +77,18 @@ const OrderHistory = () => {
         headers: error.config?.headers
       });
       
-      // Thông báo chi tiết hơn cho user
+      // Thông báo dễ hiểu cho người dùng
       if (error.response?.status === 403) {
-        showError('Không có quyền truy cập. Vui lòng đăng xuất và đăng nhập lại để làm mới token.');
+        showError('Bạn không có quyền xem thông tin này. Vui lòng đăng xuất và đăng nhập lại.');
       } else if (error.response?.status === 401) {
-        showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        showError('Thời gian đăng nhập đã hết. Vui lòng đăng nhập lại để tiếp tục.');
       } else {
-        showError(`Không thể tải danh sách đơn hàng. ${error.response?.data?.message || ''}`);
+        const backendMsg = error.response?.data?.message;
+        if (backendMsg) {
+          showError(`Không thể tải danh sách đơn hàng. ${backendMsg}`);
+        } else {
+          showError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
+        }
       }
       setOrders([]);
     } finally {
@@ -109,15 +114,27 @@ const OrderHistory = () => {
     );
   };
 
-  const filteredOrders = filter === 'ALL' 
+  // Lọc và sắp xếp đơn hàng theo thời gian mới nhất lên đầu
+  const filteredOrders = (filter === 'ALL' 
     ? orders 
-    : orders.filter(order => order.status === filter);
+    : orders.filter(order => order.status === filter)
+  ).sort((a, b) => {
+    // Sắp xếp theo orderDate mới nhất lên đầu
+    const dateA = new Date(a.orderDate);
+    const dateB = new Date(b.orderDate);
+    return dateB - dateA; // Descending order (mới nhất lên đầu)
+  });
 
   // Debug: Log filter results
   console.log('🔍 Filter applied:', filter);
   console.log('🔍 Total orders:', orders.length);
   console.log('🔍 Filtered orders:', filteredOrders.length);
   console.log('🔍 All order statuses:', orders.map(o => ({ id: o.orderId, status: o.status })));
+  console.log('📅 Filtered orders sorted by date:', filteredOrders.map(o => ({ 
+    id: o.orderId, 
+    date: o.orderDate,
+    status: o.status 
+  })));
 
   // Pagination logic
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);

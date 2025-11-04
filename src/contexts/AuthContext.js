@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { translateToVietnamese } from '../utils/errorMessages';
 import {
   fetchCustomerProfile,
   fetchStaffProfile,
@@ -253,9 +254,23 @@ export const AuthProvider = ({ children }) => {
 
     } catch (error) {
       console.error('Login error:', error);
+      
+      // Tạo thông báo lỗi dễ hiểu
+      let userMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      
+      if (error.response?.status === 401) {
+        userMessage = 'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.';
+      } else if (error.response?.status === 403) {
+        userMessage = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.';
+      } else if (error.response?.data?.message) {
+        userMessage = translateToVietnamese(error.response.data.message);
+      } else if (error.message?.includes('Network')) {
+        userMessage = 'Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối mạng.';
+      }
+      
       return {
         success: false,
-        error: error.message || 'Đăng nhập thất bại.',
+        error: userMessage,
       };
     } finally {
       setLoading(false);
@@ -267,34 +282,86 @@ export const AuthProvider = ({ children }) => {
       await api.post('/api/customer/register', userData);
       return { success: true };
     } catch (error) {
+      // Tạo thông báo lỗi dễ hiểu
+      let userMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+      
+      if (error.response?.status === 409) {
+        userMessage = 'Tên đăng nhập hoặc email đã được sử dụng. Vui lòng chọn tên khác.';
+      } else if (error.response?.status === 400) {
+        userMessage = translateToVietnamese(error.response?.data?.message || 'Thông tin đăng ký không hợp lệ. Vui lòng kiểm tra lại.');
+      } else if (error.response?.data?.message) {
+        userMessage = translateToVietnamese(error.response.data.message);
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.message || 'Đăng ký thất bại.',
+        error: userMessage,
       };
     }
   };
 
   const updateProfile = async (profileData) => {
     try {
-        const role = localStorage.getItem('role');
-        const endpoint = role === 'STAFF' || role === 'SHIPPER' || role === 'ADMIN'
-          ? '/api/staff/profile'
-          : '/api/customer/profile';
-  
-        const payload = {
-          ...profileData,
-          birthday: profileData.birthDate || profileData.birthday || null,
-        };
-  
-        const response = await api.put(endpoint, payload);
-        setUser(response.data);
-        return { success: true };
-      } catch (error) {
-        return {
-          success: false,
-          error: error.response?.data?.message || 'Cập nhật hồ sơ thất bại.',
-        };
+      const role = localStorage.getItem('role');
+      const endpoint = role === 'STAFF' || role === 'SHIPPER' || role === 'ADMIN'
+        ? '/api/staff/profile'
+        : '/api/customer/profile';
+
+      // Chuẩn bị payload theo đúng format API yêu cầu
+      const payload = {
+        customerName: profileData.customerName,
+        gender: profileData.gender,
+        address: profileData.address,
+        phoneNumber: profileData.phone || profileData.phoneNumber, // API dùng phoneNumber
+        email: profileData.email,
+        birthDate: profileData.birthDate || null
+      };
+
+      console.log('📤 Updating profile with payload:', payload);
+      const response = await api.put(endpoint, payload);
+      console.log('✅ Profile updated successfully:', response.data);
+      
+      // Cập nhật user state với dữ liệu mới từ response
+      // Map response fields về user object
+      const updatedUser = {
+        ...user,
+        id: response.data.id,
+        username: response.data.username,
+        email: response.data.email,
+        phone: response.data.phone,
+        phoneNumber: response.data.phone, // Đồng bộ cả hai field
+        customerName: response.data.customerName,
+        gender: response.data.gender,
+        address: response.data.address,
+        birthDate: response.data.birthDate || profileData.birthDate // Backend sẽ bổ sung field này
+      };
+      
+      setUser(updatedUser);
+      console.log('👤 User state updated:', updatedUser);
+      
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('❌ Update profile error:', error);
+      
+      // Tạo thông báo lỗi dễ hiểu cho người dùng
+      let userMessage = 'Không thể cập nhật thông tin. Vui lòng thử lại.';
+      
+      if (error.response?.status === 401) {
+        userMessage = 'Thời gian đăng nhập đã hết. Vui lòng đăng nhập lại.';
+      } else if (error.response?.status === 403) {
+        userMessage = 'Bạn không có quyền cập nhật thông tin này.';
+      } else if (error.response?.status === 400) {
+        userMessage = translateToVietnamese(error.response?.data?.message || 'Thông tin không hợp lệ. Vui lòng kiểm tra lại.');
+      } else if (error.response?.data?.message) {
+        // Dịch message từ backend sang tiếng Việt
+        userMessage = translateToVietnamese(error.response.data.message);
       }
+      
+      return {
+        success: false,
+        error: userMessage,
+      };
+    }
   };
 
   const value = {
