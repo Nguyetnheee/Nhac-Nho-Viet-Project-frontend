@@ -81,10 +81,10 @@ const VerifyResetOTP = () => {
         // thành công thì chuyển sang trang đặt lại mật khẩu
         navigate('/reset-password', { replace: true, state: { email } });
       } else {
-        setError(res?.message || 'Mã OTP không đúng hoặc đã hết hạn.');
+        setError(res?.message || 'Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng thử lại.');
       }
     } catch (err) {
-      setError('Không thể xác thực OTP. Vui lòng thử lại.');
+      setError('Không thể xác thực mã xác nhận. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -98,14 +98,14 @@ const VerifyResetOTP = () => {
     try {
       const res = await forgotPassword(email);
       if (String(res?.status || '').toLowerCase() === 'success') {
-        setResendMessage('Mã OTP mới đã được gửi đến email của bạn.');
+        setResendMessage('Mã xác nhận mới đã được gửi đến email của bạn.');
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.current?.focus();
       } else {
-        setError(res?.message || 'Không thể gửi lại mã OTP.');
+        setError(res?.message || 'Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.');
       }
     } catch {
-      setError('Không thể gửi lại mã OTP.');
+      setError('Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.');
     } finally {
       setResendLoading(false);
     }

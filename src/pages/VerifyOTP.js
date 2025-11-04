@@ -93,10 +93,10 @@ const VerifyOTP = () => {
           },
         });
       } else {
-        setError(response?.data?.message || 'Mã OTP không đúng hoặc đã hết hạn.');
+        setError(response?.data?.message || 'Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng thử lại.');
       }
     } catch (err) {
-      setError('Có lỗi xảy ra. Vui lòng thử lại.');
+      setError('Không thể xác thực tài khoản. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -110,11 +110,11 @@ const VerifyOTP = () => {
     const result = await resendOTP(email); // giữ nguyên hàm resend từ AuthContext
 
     if (result?.success) {
-      setResendMessage('Mã OTP mới đã được gửi đến email của bạn');
+      setResendMessage('Mã xác nhận mới đã được gửi đến email của bạn');
       setOtp(['', '', '', '', '', '']);
       inputRefs[0].current.focus();
     } else {
-      setError(result?.error || 'Không thể gửi lại mã OTP');
+      setError(result?.error || 'Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.');
     }
 
     setResendLoading(false);

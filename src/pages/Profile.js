@@ -19,15 +19,35 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [profileData, setProfileData] = useState(null);
 
+  // Đồng bộ formData khi user thay đổi (sau khi update)
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        customerName: user.customerName || "",
+        gender: user.gender || '',
+        phone: user.phone || user.phoneNumber || '',
+        address: user.address || '',
+        email: user.email || '',
+        birthDate: user.birthDate || ''
+      });
+    }
+  }, [user]);
+
   const handleFetchProfile = async () => {
     setLoading(true);
     setMessage('');
     try {
       const data = await fetchCustomerProfile();
       setProfileData(data);
-      setMessage('Lấy thông tin thành công!');
+      setMessage('Tải thông tin thành công!');
     } catch (error) {
-      setMessage('Lỗi khi lấy thông tin: ' + (error?.response?.data?.message || error.message));
+      // Thông báo dễ hiểu cho người dùng
+      const backendMsg = error?.response?.data?.message;
+      if (backendMsg) {
+        setMessage(`Không thể tải thông tin: ${backendMsg}`);
+      } else {
+        setMessage('Không thể tải thông tin cá nhân. Vui lòng thử lại sau.');
+      }
     }
     setLoading(false);
   };
@@ -43,9 +63,19 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    
+    console.log('📝 Submitting profile update:', formData);
     const result = await updateProfile(formData);
-    if (result.success) setMessage('Cập nhật thông tin thành công');
-    else setMessage('Có lỗi xảy ra: ' + result.error);
+    
+    if (result.success) {
+      setMessage('Thông tin của bạn đã được cập nhật thành công!');
+      setTimeout(() => setMessage(''), 5000);
+    } else {
+      // Hiển thị lỗi dễ hiểu
+      const errorMsg = result.error || 'Không thể cập nhật thông tin. Vui lòng thử lại.';
+      setMessage(` ${errorMsg}`);
+    }
+    
     setLoading(false);
   };
 

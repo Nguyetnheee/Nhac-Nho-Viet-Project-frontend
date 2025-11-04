@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
 import { checkout } from '../services/api';
 import paymentService from '../services/paymentService';
+import { translateToVietnamese } from '../utils/errorMessages';
 
 const Checkout = () => {
   const { 
@@ -233,9 +234,20 @@ const Checkout = () => {
       
     } catch (error) {
       console.error('❌ CHECKOUT ERROR:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.';
+      
+      // Tạo thông báo lỗi dễ hiểu cho người dùng
+      let errorMessage = 'Không thể thanh toán. Vui lòng thử lại sau.';
+      
+      if (error.response?.status === 400) {
+        errorMessage = translateToVietnamese(error.response?.data?.message || 'Thông tin thanh toán không hợp lệ. Vui lòng kiểm tra lại.');
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Thời gian đăng nhập đã hết. Vui lòng đăng nhập lại.';
+      } else if (error.response?.data?.message) {
+        errorMessage = translateToVietnamese(error.response.data.message);
+      } else if (error.message) {
+        errorMessage = translateToVietnamese(error.message);
+      }
+      
       showError(errorMessage);
     } finally {
       setLoading(false);

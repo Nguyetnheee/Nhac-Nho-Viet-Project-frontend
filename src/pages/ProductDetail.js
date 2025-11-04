@@ -44,7 +44,7 @@ const ProductDetail = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching product details:', error);
-      showError('Có lỗi xảy ra khi tải thông tin sản phẩm');
+      showError('Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.');
       setProduct(null);
       setLoading(false);
     }
