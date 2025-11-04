@@ -86,9 +86,9 @@ const StaffDashboard = () => {
     const breadcrumbMap = {
       '1': [{ title: 'Dashboard' }, { title: 'Tổng quan' }],
       '2': [{ title: 'Dashboard' }, { title: 'Kho hàng' }],
-      '3': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Lễ hội' }],
-      '4': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Mâm cúng' }],
-      '5': [{ title: 'Dashboard' }, { title: 'Xây dựng' }, { title: 'Checklist' }],
+      '3': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Lễ hội' }],
+      '4': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Mâm cúng' }],
+      '5': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Checklist' }],
       '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }],
       '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
       '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],

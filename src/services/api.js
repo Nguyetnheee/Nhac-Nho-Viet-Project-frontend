@@ -23,7 +23,23 @@ api.interceptors.request.use(
       return config; // không gắn Authorization
     }
     const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    
+    // ✅ DEBUG: Log token để kiểm tra
+    console.log('🔐 API Request:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      tokenPreview: token ? token.substring(0, 30) + '...' : 'NO TOKEN',
+      fullTokenLength: token ? token.length : 0
+    });
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('📤 Authorization Header:', `Bearer ${token.substring(0, 30)}...`);
+    } else {
+      console.warn('⚠️ No token found for authenticated request!');
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
@@ -32,9 +48,27 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (res) => res,
   (error) => {
+    // ✅ DEBUG: Log chi tiết lỗi
+    console.error('❌ API Response Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message
+    });
+    
     if (error.response?.status === 401) {
+      console.warn('⚠️ 401 Unauthorized - Removing token');
       localStorage.removeItem('token');
+    } else if (error.response?.status === 403) {
+      console.error('🚫 403 Forbidden - Access denied!', {
+        url: error.config?.url,
+        hasToken: !!error.config?.headers?.Authorization,
+        backendMessage: error.response?.data?.message || error.response?.data
+      });
     }
+    
     return Promise.reject(error);
   }
 );
@@ -108,12 +142,61 @@ export const verifyRegisterOTP = async (email, otp) => {
  * @param {string} checkoutData.address - Địa chỉ giao hàng
  * @param {string} checkoutData.paymentMethod - Phương thức thanh toán (mặc định: ONLINE)
  * @param {string} checkoutData.note - Ghi chú đơn hàng
+ * @param {string} checkoutData.voucherCode - Mã voucher (nullable)
  * @returns {Promise} Response chứa orderId và thông tin đơn hàng
  */
 export const checkout = async (checkoutData) => {
   try {
-    const response = await api.post('/api/checkout', checkoutData);
-    console.log('✅ Checkout API raw response:', response);
+    console.log('📤 CHECKOUT REQUEST:', {
+      url: '/api/checkout',
+      method: 'POST',
+      data: checkoutData,
+      hasVoucher: !!checkoutData.voucherCode
+    });
+    
+    // ⚠️ TRY BOTH ENDPOINTS
+    let response;
+    let usedEndpoint = '';
+    
+    try {
+      // Try new endpoint first
+      response = await api.post('/api/checkout', checkoutData);
+      usedEndpoint = '/api/checkout';
+    } catch (firstError) {
+      if (firstError.response?.status === 403 || firstError.response?.status === 404) {
+        console.warn('⚠️ /api/checkout failed, trying /api/cart/checkout...');
+        // Fallback to old endpoint
+        response = await api.post('/api/cart/checkout', checkoutData);
+        usedEndpoint = '/api/cart/checkout';
+      } else {
+        throw firstError;
+      }
+    }
+    
+    console.log('✅ CHECKOUT RESPONSE:', {
+      endpoint: usedEndpoint,
+      status: response.status,
+      data: response.data
+    });
+    
+    // ⚠️ CRITICAL: Kiểm tra backend có xử lý voucher không
+    if (checkoutData.voucherCode && response.data) {
+      const hasVoucherInfo = response.data.voucherCode || 
+                            response.data.discountAmount !== undefined ||
+                            response.data.totalAmount !== undefined;
+      
+      if (!hasVoucherInfo) {
+        console.warn('⚠️ WARNING: Frontend gửi voucherCode nhưng backend KHÔNG trả về thông tin voucher!');
+        console.warn('Backend cần trả về: voucherCode, discountAmount, totalAmount');
+      } else {
+        console.log('✅ Backend đã xử lý voucher:', {
+          voucherCode: response.data.voucherCode,
+          subTotal: response.data.subTotal,
+          discountAmount: response.data.discountAmount,
+          totalAmount: response.data.totalAmount
+        });
+      }
+    }
     
     // Xử lý response từ backend
     // Backend có thể trả về: { orderId, fullName, email, ... } hoặc { data: { orderId, ... } }
@@ -121,6 +204,27 @@ export const checkout = async (checkoutData) => {
     
     return data;
   } catch (error) {
+    // ✅ XỬ LÝ LỖI 403 CỤ THỂ
+    if (error.response?.status === 403) {
+      const backendMsg = error.response?.data?.message || 
+                        error.response?.data?.error ||
+                        'Bạn không có quyền thực hiện thao tác này';
+      
+      console.error('🚫 403 Forbidden Details:', {
+        message: backendMsg,
+        url: '/api/checkout',
+        data: error.response?.data,
+        possibleReasons: [
+          '1. Token hết hạn hoặc không hợp lệ',
+          '2. User không có quyền CUSTOMER',
+          '3. Backend yêu cầu CSRF token',
+          '4. Endpoint không tồn tại - thử /api/cart/checkout'
+        ]
+      });
+      
+      throw new Error(backendMsg);
+    }
+    
     const msg = error.response?.data?.message || error.message || 'Đã xảy ra lỗi không xác định.';
     console.error('❌ Checkout API error:', msg);
     console.error('Error details:', error.response?.data);

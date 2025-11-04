@@ -163,10 +163,12 @@ const TrayCatalog = () => {
         filterParams.categoryId = filters.categoryId;
       }
 
-      if (filters.minPrice && filters.minPrice !== '') {
-        // API filterTrays trong trayService đã xử lý chuyển đổi thành chuỗi
+      // Chỉ thêm minPrice nếu có giá trị và khác 0
+      if (filters.minPrice && filters.minPrice !== '' && filters.minPrice !== '0') {
         filterParams.minPrice = filters.minPrice.toString();
       }
+      
+      // Chỉ thêm maxPrice nếu có giá trị
       if (filters.maxPrice && filters.maxPrice !== '') {
         filterParams.maxPrice = filters.maxPrice.toString();
       }
@@ -176,9 +178,13 @@ const TrayCatalog = () => {
       const hasFilters = Object.keys(filterParams).length > 0;
 
       if (!hasFilters) {
+        console.log('No filters applied - fetching all trays');
         const response = await trayService.getAllTrays();
+        console.log('GetAllTrays response:', response?.data);
         if (response.data?.content) {
           setTrays(response.data.content);
+        } else if (Array.isArray(response.data)) {
+          setTrays(response.data);
         } else {
           setTrays([]);
         }
@@ -186,11 +192,14 @@ const TrayCatalog = () => {
       }
 
       // Gọi API filter
+      console.log('Applying filters with params:', filterParams);
       const response = await trayService.filterTrays(filterParams);
-      console.log('Filter response content:', response?.data?.content);
+      console.log('Filter response:', response?.data);
 
       if (response.data?.content) {
         setTrays(response.data.content);
+      } else if (Array.isArray(response.data)) {
+        setTrays(response.data);
       } else {
         setTrays([]);
       }
@@ -494,37 +503,64 @@ const TrayCatalog = () => {
                       {/* Tags theo vùng miền */}
                       <div className="flex flex-wrap gap-2 mb-4">
                         {tray.regionName == 'Miền Bắc' && (
-                          // <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-green text-xs rounded-lg font-medium">
-                          //   {tray.regionName}
-                          // </span>
                           <Tag color='blue' className="bg-vietnam-gold/20 text-vietnam-green rounded-lg font-medium">{tray.regionName}</Tag>
                         )}
 
                         {tray.regionName == 'Miền Trung' && (
-                          // <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-green text-xs rounded-lg font-medium">
-                          //   {tray.regionName}
-                          // </span>
                           <Tag color='green' className="bg-vietnam-gold/20 text-vietnam-green rounded-lg font-medium">{tray.regionName}</Tag>
                         )}
 
                         {tray.regionName == 'Miền Nam' && (
-                          // <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-green text-xs rounded-lg font-medium">
-                          //   {tray.regionName}
-                          // </span>
                           <Tag color='orange' className="bg-vietnam-gold/20 text-vietnam-green rounded-lg font-medium">{tray.regionName}</Tag>
                         )}
 
                         {tray.regionName == 'Toàn Quốc' && (
-                          // <span className="px-2 py-1 bg-vietnam-gold/20 text-vietnam-green text-xs rounded-lg font-medium">
-                          //   {tray.regionName}
-                          // </span>
                           <Tag color='purple' className="bg-vietnam-gold/20 text-vietnam-green rounded-lg font-medium">{tray.regionName}</Tag>
                         )}
-                        {/* Tags theo loại lễ */}
+                        
+                        {/* Tags theo loại lễ - Mỗi loại có màu riêng */}
                         {tray.categoryName && (
-                          <span className="px-2 py-1 bg-vietnam-green/20 text-vietnam-green text-xs rounded-lg font-medium">
-                            {tray.categoryName}
-                          </span>
+                          <>
+                            {console.log('Category name:', tray.categoryName)}
+                            {(tray.categoryName === 'Lễ Cúng Tổ Tiên' || tray.categoryName.includes('Tổ Tiên')) && (
+                              <Tag color='gold' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cúng Thần Linh' || tray.categoryName.includes('Thần Linh')) && (
+                              <Tag color='cyan' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cúng Khai Trương' || tray.categoryName.includes('Khai Trương')) && (
+                              <Tag color='red' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cúng Gia Tiên' || tray.categoryName.includes('Gia Tiên')) && (
+                              <Tag color='volcano' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cúng Rằm' || tray.categoryName.includes('Rằm')) && (
+                              <Tag color='magenta' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cúng Tết' || tray.categoryName.includes('Tết')) && (
+                              <Tag color='geekblue' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cúng Cầu An' || tray.categoryName.includes('Cầu An')) && (
+                              <Tag color='lime' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {(tray.categoryName === 'Lễ Cầu Phúc - Cầu Siêu' || tray.categoryName.includes('Cầu Phúc') || tray.categoryName.includes('Cầu Siêu')) && (
+                              <Tag color='orange' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                            {/* Mặc định cho các loại lễ khác */}
+                            {!(
+                              tray.categoryName.includes('Tổ Tiên') ||
+                              tray.categoryName.includes('Thần Linh') ||
+                              tray.categoryName.includes('Khai Trương') ||
+                              tray.categoryName.includes('Gia Tiên') ||
+                              tray.categoryName.includes('Rằm') ||
+                              tray.categoryName.includes('Tết') ||
+                              tray.categoryName.includes('Cầu An') ||
+                              tray.categoryName.includes('Cầu Phúc') ||
+                              tray.categoryName.includes('Cầu Siêu')
+                            ) && (
+                              <Tag color='default' className="rounded-lg font-medium">{tray.categoryName}</Tag>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

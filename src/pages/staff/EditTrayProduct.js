@@ -114,9 +114,8 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
                     <Col span={12}>
                     <Form.Item name="productStatus" label="Trạng thái" rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}>
                         <Select>
-                        <Option value="AVAILABLE">✅ Có sẵn</Option>
-                        <Option value="OUT_OF_STOCK">❌ Hết hàng</Option>
-                        <Option value="DISCONTINUED">🚫 Ngừng kinh doanh</Option>
+                        <Option value="AVAILABLE">Có sẵn</Option>
+                        <Option value="UNAVAILABLE">Hết hàng</Option>
                         </Select>
                     </Form.Item>
                     </Col>
@@ -151,7 +150,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
             </Form.Item>
           </Col>
           <Col xs={24} lg={8}>
-            <Card title="Hình ảnh sản phẩm" className="shadow-lg rounded-xl text-center">
+            <Card title="Hình ảnh mâm cúng" className="shadow-lg rounded-xl text-center">
               <Upload listType="picture-card" className="avatar-uploader" showUploadList={false} beforeUpload={handleFileSelect}>
                 {displayImageUrl ? <img src={displayImageUrl} alt="preview" style={{ width: '100%' }} /> : (<div><PlusOutlined /><div className="mt-2">Chọn ảnh mới</div></div>)}
               </Upload>

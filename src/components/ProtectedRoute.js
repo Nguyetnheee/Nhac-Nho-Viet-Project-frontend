@@ -25,25 +25,44 @@ const ProtectedRoute = ({ children, roles = [], allowedRoles }) => {
 
   // Lấy role từ user (đã là UPPERCASE từ database)
   const userRole = user?.role;
+  
+  // ✅ NORMALIZE: Loại bỏ prefix "ROLE_" để so sánh
+  const normalizedUserRole = userRole?.replace(/^ROLE_/, '');
+  const normalizedRequiredRoles = requiredRoles.map(role => role.replace(/^ROLE_/, ''));
+  
   console.log('🔐 ProtectedRoute check:', {
-    userRole,
-    requiredRoles,
+    originalUserRole: userRole,
+    normalizedUserRole,
+    originalRequiredRoles: requiredRoles,
+    normalizedRequiredRoles,
     isAuthenticated,
     currentPath: location.pathname
   });
   
-  // Check roles (Authorization)
-  if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(userRole)) {
-    // Redirect based on role if they try to access a page they don't have permission for
+  // Check roles (Authorization) - So sánh sau khi normalize
+  if (requiredRoles && requiredRoles.length > 0 && !normalizedRequiredRoles.includes(normalizedUserRole)) {
+    console.warn('⚠️ Access denied - Role mismatch:', {
+      userRole,
+      requiredRoles,
+      path: location.pathname
+    });
+    
+    // ✅ CHUYỂN HƯỚNG ĐÚNG THEO ROLE
     const roleRedirects = {
       'ADMIN': '/admin-dashboard',
+      'STAFF': '/staff-dashboard',
       'SHIPPER': '/shipper-dashboard', 
-      'CUSTOMER': '/',
-      'STAFF': '/staff-dashboard'
+      'CUSTOMER': '/',  // Customer về trang chủ nếu truy cập route không được phép
+      'ROLE_CUSTOMER': '/',
+      'ROLE_ADMIN': '/admin-dashboard',
+      'ROLE_STAFF': '/staff-dashboard',
+      'ROLE_SHIPPER': '/shipper-dashboard'
     };
     
-    // Chuyển hướng về dashboard tương ứng nếu truy cập route không hợp lệ
     const redirectPath = roleRedirects[userRole] || '/login';
+    
+    console.log('🔀 Redirecting to:', redirectPath, 'for role:', userRole);
+    
     return <Navigate to={redirectPath} replace />;
   }
 

@@ -44,7 +44,8 @@ import DebugChecklist from "./pages/DebugChecklist";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLogin from "./pages/staff/AdminLogin";
 
-export const router = createBrowserRouter([
+export const router = createBrowserRouter(
+  [
   {
     path: "/",
     element: <App />,
@@ -272,4 +273,10 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+],
+{
+  future: {
+    v7_startTransition: true,
+  },
+}
+);

@@ -8,7 +8,14 @@ import { checkout } from '../services/api';
 import paymentService from '../services/paymentService';
 
 const Checkout = () => {
-  const { cartItems, getTotalPrice, clearCart } = useCart();
+  const { 
+    cartItems, 
+    getTotalPrice, 
+    clearCart,
+    appliedVoucher,
+    getFinalTotal,
+    getDiscountAmount,
+  } = useCart();
   const { user } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
   const navigate = useNavigate();
@@ -24,6 +31,7 @@ const Checkout = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [checkoutResponse, setCheckoutResponse] = useState(null); // ✅ Lưu response từ backend
 
   // Hiển thị thông báo khi redirect từ payment-result
   useEffect(() => {
@@ -126,7 +134,7 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Bước 1: Gọi API checkout để tạo đơn hàng
+      // ✅ Bước 1: Gọi API checkout để tạo đơn hàng
       const checkoutData = {
         fullName: formData.customerName,
         email: formData.customerEmail,
@@ -134,12 +142,38 @@ const Checkout = () => {
         address: formData.customerAddress,
         paymentMethod: formData.paymentMethod,
         note: formData.notes,
+        // ✅ GỬI VOUCHER CODE - Backend sẽ tự validate và tính discount
+        voucherCode: appliedVoucher?.code || null,
       };
 
-      console.log('📤 Sending checkout data:', checkoutData);
+      console.log('📤 CHECKOUT REQUEST:', checkoutData);
       
       const checkoutResponse = await checkout(checkoutData);
-      console.log('✅ Checkout response:', checkoutResponse);
+      console.log('✅ CHECKOUT RESPONSE:', checkoutResponse);
+      
+      // ✅ CẬP NHẬT VOUCHER TỪ BACKEND RESPONSE
+      // Backend đã tính toán chính xác, frontend phải dùng số liệu của backend
+      if (checkoutResponse?.voucherCode && checkoutResponse?.discountAmount) {
+        const backendVoucher = {
+          code: checkoutResponse.voucherCode,
+          originalAmount: checkoutResponse.subTotal,
+          discountAmount: checkoutResponse.discountAmount,
+          finalAmount: checkoutResponse.totalAmount,
+          validated: true,
+          fromBackend: true, // Đánh dấu đã được backend confirm
+          message: `Backend confirmed: Giảm ${checkoutResponse.discountAmount.toLocaleString('vi-VN')} VNĐ`
+        };
+        
+        console.log('🎫 BACKEND CALCULATED VOUCHER:', {
+          code: backendVoucher.code,
+          subTotal: checkoutResponse.subTotal,
+          discountAmount: checkoutResponse.discountAmount,
+          totalAmount: checkoutResponse.totalAmount
+        });
+        
+        // Không cần update context vì đang redirect
+        // Nhưng log để verify
+      }
       
       // Kiểm tra response và lấy orderId
       const orderId = checkoutResponse?.orderId || checkoutResponse?.data?.orderId;
@@ -148,13 +182,35 @@ const Checkout = () => {
         throw new Error('Không nhận được mã đơn hàng từ server');
       }
 
-      showSuccess(`Checkout thành công! Mã đơn hàng: ${orderId}`);
+      console.log('✅ ORDER CREATED:', {
+        orderId: orderId,
+        subTotal: checkoutResponse.subTotal,
+        discountAmount: checkoutResponse.discountAmount,
+        totalAmount: checkoutResponse.totalAmount,
+        voucherCode: checkoutResponse.voucherCode
+      });
+
+      showSuccess(`Tạo đơn hàng thành công! Mã: ${orderId}`);
       
-      // Bước 2: Gọi API tạo payment link với orderId
-      console.log('📤 Creating payment for orderId:', orderId);
+      // ✅ Bước 2: Gọi API tạo payment link với orderId
+      // Backend sẽ tự động lấy totalAmount (đã trừ voucher) từ Order table
+      console.log('� CREATING PAYMENT for Order:', orderId);
       
       const paymentResponse = await paymentService.createPayment(orderId);
-      console.log('✅ Payment response:', paymentResponse);
+      console.log('✅ PAYMENT RESPONSE:', paymentResponse);
+      
+      // ⚠️ VERIFY: Amount trong payment response phải = totalAmount
+      if (paymentResponse?.amount !== undefined && checkoutResponse?.totalAmount !== undefined) {
+        if (paymentResponse.amount === checkoutResponse.totalAmount) {
+          console.log('✅ VERIFIED: Payment amount matches order totalAmount:', paymentResponse.amount);
+        } else {
+          console.error('⚠️ WARNING: Payment amount mismatch!', {
+            paymentAmount: paymentResponse.amount,
+            orderTotalAmount: checkoutResponse.totalAmount,
+            difference: paymentResponse.amount - checkoutResponse.totalAmount
+          });
+        }
+      }
       
       // Lấy URL thanh toán từ response
       const paymentUrl = paymentResponse?.paymentUrl || 
@@ -166,17 +222,17 @@ const Checkout = () => {
         throw new Error('Không nhận được link thanh toán từ PayOS');
       }
 
-      console.log('🔗 Redirecting to payment URL:', paymentUrl);
+      console.log('🔗 REDIRECTING TO PAYMENT:', paymentUrl);
+      console.log('💰 Expected amount in PayOS:', checkoutResponse.totalAmount, 'VNĐ');
       
       // ⚠️ KHÔNG xóa giỏ hàng ở đây! 
       // Giỏ hàng chỉ được xóa KHI THANH TOÁN THÀNH CÔNG (trong OrderSuccess.js)
-      // Lý do: Nếu user hủy thanh toán, họ cần giỏ hàng để quay lại sửa đổi
       
       // Chuyển hướng đến trang thanh toán PayOS
       window.location.href = paymentUrl;
       
     } catch (error) {
-      console.error('❌ Checkout error:', error);
+      console.error('❌ CHECKOUT ERROR:', error);
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.';
@@ -382,6 +438,18 @@ const Checkout = () => {
                 <span>Tạm tính:</span>
                 <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
               </div>
+              
+              {/* ✅ Hiển thị discount ngay */}
+              {appliedVoucher && appliedVoucher.discountAmount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <span className="text-sm">🎫</span>
+                    Giảm giá ({appliedVoucher.code}):
+                  </span>
+                  <span>-{appliedVoucher.discountAmount.toLocaleString('vi-VN')} VNĐ</span>
+                </div>
+              )}
+              
               <div className="flex justify-between">
                 <span>Phí giao hàng:</span>
                 <span className="text-green-600">Miễn phí</span>
@@ -389,8 +457,17 @@ const Checkout = () => {
               <div className="border-t pt-2">
                 <div className="flex justify-between text-lg font-bold text-vietnam-green">
                   <span>Tổng cộng:</span>
-                  <span>{getTotalPrice().toLocaleString('vi-VN')} VNĐ</span>
+                  <span>
+                    {getFinalTotal().toLocaleString('vi-VN')} VNĐ
+                  </span>
                 </div>
+                
+                {/* ✅ Thông báo đã tiết kiệm */}
+                {appliedVoucher && appliedVoucher.discountAmount > 0 && (
+                  <div className="text-sm text-green-600 text-right mt-1">
+                    ✓ Đã tiết kiệm {getDiscountAmount().toLocaleString('vi-VN')} VNĐ
+                  </div>
+                )}
               </div>
             </div>
 

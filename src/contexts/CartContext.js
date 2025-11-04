@@ -24,6 +24,9 @@ export const CartProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
+  // ✅ State cho voucher
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  
   // ✅ Kiểm tra nếu đang ở trang admin/staff/shipper
   const isAdminRoute = location.pathname.startsWith('/admin-login') ||
                        location.pathname.startsWith('/admin-dashboard') ||
@@ -62,6 +65,20 @@ export const CartProvider = ({ children }) => {
       selected: i.selected ?? true
     }));
 
+    // ✅ Parse voucher info từ cart response
+    let voucherInfo = null;
+    if (apiCart?.voucherCode) {
+      voucherInfo = {
+        code: apiCart.voucherCode,
+        discountAmount: Number(apiCart.discountAmount) || 0,
+        originalAmount: Number(apiCart.subTotal) || 0,
+        finalAmount: Number(apiCart.finalAmount) || Number(apiCart.subTotal) || 0,
+        validated: true,
+        fromDatabase: true
+      };
+      console.log('📦 Voucher loaded from database:', voucherInfo);
+    }
+
     return {
       items: mapped,
       totals: {
@@ -69,6 +86,7 @@ export const CartProvider = ({ children }) => {
         subTotal: Number(apiCart?.subTotal) || 0,
         currency: apiCart?.currency || "VND",
       },
+      voucher: voucherInfo
     };
   };
 
@@ -123,9 +141,17 @@ export const CartProvider = ({ children }) => {
     try {
       const data = await cartService.getCart();
       if (data) {
-        const { items, totals } = adaptCartFromApi(data);
+        const { items, totals, voucher } = adaptCartFromApi(data);
         setCartItems(items);
         setTotals(totals);
+        
+        // ✅ Sync voucher từ database
+        if (voucher) {
+          setAppliedVoucher(voucher);
+        } else {
+          setAppliedVoucher(null);
+        }
+        
         setServerSynced(true);
         setError(null);
       }
@@ -252,12 +278,13 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     // Chỉ chạy fetchCart nếu là Customer
     if (isAuthenticated && isCustomer) {
-      fetchCart();
+      fetchCart(); // ✅ fetchCart sẽ tự động load voucher từ database
     } else {
       setCartItems([]);
       setTotals({ totalItems: 0, subTotal: 0, currency: "" });
       setServerSynced(false);
       setError(null);
+      setAppliedVoucher(null); // ✅ Clear voucher khi logout
     }
   }, [isAuthenticated, user?.role]); // Thêm user?.role vào dependency
 
@@ -265,6 +292,34 @@ export const CartProvider = ({ children }) => {
   const getTotalPrice = () => totals.subTotal;
   const getDistinctProductCount = () => {
     return cartItems.length; 
+  };
+
+  // ✅ Hàm áp dụng voucher - CHỈ LƯU VÀO STATE (database sẽ lưu qua API)
+  const applyVoucher = (voucherData) => {
+    console.log('💾 Saving voucher to context (from database):', voucherData);
+    setAppliedVoucher(voucherData);
+  };
+
+  // ✅ Hàm xóa voucher - CHỈ XÓA KHỎI STATE (database sẽ xóa qua API)
+  const removeVoucher = () => {
+    console.log('🗑️ Removing voucher from context');
+    setAppliedVoucher(null);
+  };
+
+  // ✅ Hàm tính tổng tiền sau giảm giá
+  const getFinalTotal = () => {
+    if (appliedVoucher?.finalAmount) {
+      return appliedVoucher.finalAmount;
+    }
+    return getTotalPrice();
+  };
+
+  // ✅ Hàm lấy số tiền giảm giá
+  const getDiscountAmount = () => {
+    if (appliedVoucher?.discountAmount) {
+      return appliedVoucher.discountAmount;
+    }
+    return 0;
   };
 
   const value = {
@@ -283,6 +338,12 @@ export const CartProvider = ({ children }) => {
     getDistinctProductCount,
     error,
     loading,
+    // ✅ Thêm các hàm và state voucher
+    appliedVoucher,
+    applyVoucher,
+    removeVoucher,
+    getFinalTotal,
+    getDiscountAmount,
   };
 
   return (
