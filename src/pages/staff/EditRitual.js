@@ -1,7 +1,9 @@
 // src/pages/admin/components/EditRitual.js
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Card, Space, Upload, Tag, message, Spin, Typography, Divider } from 'antd';
+import { Form, Input, Select, Button, Card, Space, Upload, message, Spin, Typography, Row, Col } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, BookOutlined } from '@ant-design/icons';
+import { ritualService } from '../../services/ritualService';
+import regionService from '../../services/regionService';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -11,69 +13,85 @@ const EditRitual = ({ ritualId, onBack, onSave }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [traditions, setTraditions] = useState([]);
-  const [offerings, setOfferings] = useState([]);
-  const [newTradition, setNewTradition] = useState('');
-  const [newOffering, setNewOffering] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [currentImageUrl, setCurrentImageUrl] = useState('');
+  const [regions, setRegions] = useState([]);
+  const [ritualData, setRitualData] = useState(null);
 
   // NOTE: Logic fetching MOCK DATA is kept as is.
   useEffect(() => {
-    const fetchRitualDetail = () => {
+    const fetchRitualDetail = async () => {
       setLoading(true);
-      setTimeout(() => {
-        const mockRitual = {
-          id: ritualId,
-          name: ritualId === 1 ? 'Tết Nguyên Đán' : 'Lễ hội Chọi trâu Đồ Sơn',
-          region: 'Toàn quốc', status: 'active',
-          description: 'Mô tả chi tiết...',
-          traditions: ['Dọn dẹp nhà cửa', 'Cúng ông Táo'],
-          offerings: ['Bánh chưng', 'Bánh tét']
-        };
-        form.setFieldsValue(mockRitual);
-        setTraditions(mockRitual.traditions);
-        setOfferings(mockRitual.offerings);
+      try {
+        const [ritualRes, regionsRes] = await Promise.all([
+          ritualService.getRitualById(ritualId),
+          regionService.getAllRegions()
+        ]);
+        
+        setRitualData(ritualRes);
+        setRegions(regionsRes || []);
+        setCurrentImageUrl(ritualRes.imageUrl || '');
+        
+        form.setFieldsValue({
+          ritualName: ritualRes.ritualName,
+          regionId: ritualRes.regionId,
+          dateLunar: ritualRes.dateLunar,
+          dateSolar: ritualRes.dateSolar,
+          description: ritualRes.description,
+          meaning: ritualRes.meaning
+        });
+        
         setLoading(false);
-      }, 500);
+      } catch (error) {
+        message.error('Không thể tải dữ liệu lễ hội!');
+        setLoading(false);
+      }
     };
+    
     if (ritualId) fetchRitualDetail();
   }, [ritualId, form]);
+
+  const handleFileSelect = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Chỉ có thể tải lên file ảnh!');
+      return false;
+    }
+    
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('Ảnh phải nhỏ hơn 5MB!');
+      return false;
+    }
+
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPreviewUrl(e.target.result);
+    reader.readAsDataURL(file);
+    message.success('Đã chọn hình ảnh mới!');
+    return false;
+  };
 
   const handleSave = async (values) => {
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const updatedRitual = { ...values, traditions, offerings, id: ritualId };
-      console.log('Cập nhật lễ hội:', updatedRitual);
+      const response = await ritualService.updateRitual(ritualId, values, selectedFile);
       message.success('Cập nhật lễ hội thành công!');
-      if (onSave) onSave(updatedRitual);
+      if (onSave) onSave(response);
     } catch (error) {
-      message.error('Có lỗi xảy ra khi cập nhật!');
+      const errorMessage = error.response?.data?.message || 'Cập nhật lễ hội thất bại!';
+      message.error(errorMessage);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const addTag = (type) => {
-    if (type === 'tradition' && newTradition && !traditions.includes(newTradition)) {
-      setTraditions([...traditions, newTradition]);
-      setNewTradition('');
-    } else if (type === 'offering' && newOffering && !offerings.includes(newOffering)) {
-      setOfferings([...offerings, newOffering]);
-      setNewOffering('');
-    }
-  };
-
-  const removeTag = (type, tagToRemove) => {
-    if (type === 'tradition') {
-      setTraditions(traditions.filter(tag => tag !== tagToRemove));
-    } else if (type === 'offering') {
-      setOfferings(offerings.filter(tag => tag !== tagToRemove));
     }
   };
 
   if (loading) {
      return <div className="flex justify-center items-center h-96"><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
   }
+
+  const displayImageUrl = previewUrl || currentImageUrl;
 
   return (
     <div className="font-sans">
@@ -90,46 +108,75 @@ const EditRitual = ({ ritualId, onBack, onSave }) => {
       </Card>
       
       <Form form={form} layout="vertical" onFinish={handleSave}>
-        <Card className="shadow-lg rounded-xl mb-6">
-            <Title level={4} className="font-serif !text-vietnam-green">Thông tin cơ bản</Title>
-            <Form.Item name="name" label="Tên lễ hội" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
-                <Input />
-            </Form.Item>
-            <Form.Item name="region" label="Vùng miền" rules={[{ required: true, message: 'Vui lòng chọn vùng miền!' }]}>
-                <Select>
-                    <Option value="Toàn quốc">Toàn quốc</Option>
-                    <Option value="Miền Bắc">Miền Bắc</Option>
-                    <Option value="Miền Trung">Miền Trung</Option>
-                    <Option value="Miền Nam">Miền Nam</Option>
-                </Select>
-            </Form.Item>
-             <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}>
-                <TextArea rows={4} />
-            </Form.Item>
-        </Card>
+        <Row gutter={24}>
+          <Col xs={24} lg={16}>
+            <Card className="shadow-lg rounded-xl mb-6">
+                <Title level={4} className="font-serif !text-vietnam-green">Thông tin cơ bản</Title>
+                <Form.Item name="ritualName" label="Tên lễ hội" rules={[{ required: true, message: 'Vui lòng nhập tên lễ hội!' }]}>
+                    <Input />
+                </Form.Item>
+                
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item name="regionId" label="Vùng miền" rules={[{ required: true, message: 'Vui lòng chọn vùng miền!' }]}>
+                        <Select placeholder="Chọn vùng miền" loading={regions.length === 0}>
+                          {regions.map(r => <Option key={r.regionId} value={r.regionId}>{r.regionName}</Option>)}
+                        </Select>
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name="dateLunar" label="Ngày Âm lịch">
+                        <Input placeholder="VD: 1/1" />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-        <Card className="shadow-lg rounded-xl mb-6">
-            <Title level={4} className="font-serif !text-vietnam-green">Truyền thống & Vật phẩm</Title>
-             <div className="mb-4">
-                <Text strong>Hoạt động truyền thống</Text>
-                <div className="my-2">{traditions.map(tag => <Tag closable onClose={() => removeTag('tradition', tag)} key={tag} color="geekblue">{tag}</Tag>)}</div>
-                <Space.Compact className="w-full"><Input value={newTradition} onChange={e => setNewTradition(e.target.value)} /><Button onClick={() => addTag('tradition')}>Thêm</Button></Space.Compact>
-            </div>
-            <div>
-                <Text strong>Vật phẩm cúng</Text>
-                <div className="my-2">{offerings.map(tag => <Tag closable onClose={() => removeTag('offering', tag)} key={tag} color="gold">{tag}</Tag>)}</div>
-                <Space.Compact className="w-full"><Input value={newOffering} onChange={e => setNewOffering(e.target.value)} /><Button onClick={() => addTag('offering')}>Thêm</Button></Space.Compact>
-            </div>
-        </Card>
-        
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large" className="bg-vietnam-green hover:!bg-emerald-800">
-              {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-            </Button>
-            <Button size="large" onClick={onBack}>Hủy</Button>
-          </Space>
-        </Form.Item>
+                <Form.Item name="dateSolar" label="Ngày Dương lịch">
+                    <Input placeholder="VD: 01/01" />
+                </Form.Item>
+
+                <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}>
+                    <TextArea rows={4} showCount maxLength={1000} />
+                </Form.Item>
+
+                <Form.Item name="meaning" label="Ý nghĩa">
+                    <TextArea rows={3} showCount maxLength={500} />
+                </Form.Item>
+            </Card>
+
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large" className="bg-vietnam-green hover:!bg-emerald-800">
+                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </Button>
+                <Button size="large" onClick={onBack}>Hủy</Button>
+              </Space>
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} lg={8}>
+            <Card title="Hình ảnh lễ hội" className="shadow-lg rounded-xl text-center">
+              <Upload listType="picture-card" className="avatar-uploader" showUploadList={false} beforeUpload={handleFileSelect}>
+                {displayImageUrl ? (
+                  <img src={displayImageUrl} alt="preview" style={{ width: '100%' }} />
+                ) : (
+                  <div>
+                    <PlusOutlined />
+                    <div className="mt-2">Chọn ảnh</div>
+                  </div>
+                )}
+              </Upload>
+              {previewUrl && (
+                <Button size="small" className="mt-2" onClick={() => { setSelectedFile(null); setPreviewUrl(''); }}>
+                  Hủy ảnh mới
+                </Button>
+              )}
+              <Text type="secondary" className="block mt-2 text-xs">
+                {previewUrl ? `Đang sử dụng ảnh mới` : currentImageUrl ? `Đang sử dụng ảnh hiện tại` : 'Chưa có ảnh'}
+              </Text>
+            </Card>
+          </Col>
+        </Row>
       </Form>
     </div>
   );

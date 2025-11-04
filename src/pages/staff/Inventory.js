@@ -553,6 +553,7 @@ const Inventory = () => {
               showQuickJumper: true,
               showTotal: (total) => `Tổng ${total} sản phẩm`,
               pageSizeOptions: ['10', '20', '50', '100'],
+              locale: { items_per_page: '/ trang' },
             }}
             scroll={{ x: 1000 }}
             bordered

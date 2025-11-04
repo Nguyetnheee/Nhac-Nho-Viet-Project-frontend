@@ -180,7 +180,7 @@ const Navbar = () => {
                 className="text-white hover:text-vietnam-gold block px-3 py-2 rounded-md text-base font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Checklist
+                Danh mục
               </Link>
             )}
             {isAuthenticated && (

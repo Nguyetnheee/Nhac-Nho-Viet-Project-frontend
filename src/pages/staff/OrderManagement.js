@@ -209,8 +209,31 @@ const OrderManagement = () => {
       setOrders(mappedOrders);
       message.success(`Tải ${mappedOrders.length} đơn hàng thành công`);
     } catch (error) {
-      message.error('Không thể tải danh sách đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('❌ Error fetching orders:', error);
+      
+      // Thông báo lỗi dễ hiểu cho người dùng
+      let errorMessage = 'Không thể tải danh sách đơn hàng. ';
+      
+      if (error.response) {
+        // Lỗi từ server
+        if (error.response.status === 404) {
+          errorMessage += 'Không tìm thấy dữ liệu.';
+        } else if (error.response.status === 401 || error.response.status === 403) {
+          errorMessage += 'Bạn không có quyền xem thông tin này.';
+        } else if (error.response.status >= 500) {
+          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+        } else {
+          errorMessage += 'Vui lòng thử lại.';
+        }
+      } else if (error.request) {
+        // Không nhận được phản hồi từ server
+        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
+      } else {
+        // Lỗi khác
+        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+      }
+      
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -238,7 +261,29 @@ const OrderManagement = () => {
       console.log('📋 Shipper list:', mappedShippers);
       return mappedShippers; // Return để có thể await
     } catch (error) {
-      message.error('Không thể tải danh sách shipper: ' + (error.response?.data?.message || error.message));
+      // Thông báo lỗi dễ hiểu cho người dùng
+      let errorMessage = 'Không thể tải danh sách người giao hàng. ';
+      
+      if (error.response) {
+        // Lỗi từ server
+        if (error.response.status === 404) {
+          errorMessage += 'Không tìm thấy dữ liệu.';
+        } else if (error.response.status === 401 || error.response.status === 403) {
+          errorMessage += 'Bạn không có quyền xem thông tin này.';
+        } else if (error.response.status >= 500) {
+          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+        } else {
+          errorMessage += 'Vui lòng thử lại.';
+        }
+      } else if (error.request) {
+        // Không nhận được phản hồi từ server
+        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
+      } else {
+        // Lỗi khác
+        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+      }
+      
+      message.error(errorMessage);
       console.error('❌ Error fetching shippers:', error);
       return []; // Return empty array nếu lỗi
     }
@@ -251,8 +296,20 @@ const OrderManagement = () => {
       message.success('Xác nhận đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
-      message.error('Không thể xác nhận đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('Error confirming order:', error);
+      
+      // Thông báo lỗi dễ hiểu
+      let errorMessage = 'Không thể xác nhận đơn hàng. ';
+      if (error.response?.status === 400) {
+        errorMessage += 'Đơn hàng không hợp lệ hoặc đã được xác nhận.';
+      } else if (error.response?.status === 404) {
+        errorMessage += 'Không tìm thấy đơn hàng.';
+      } else if (error.response?.status >= 500) {
+        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+      } else {
+        errorMessage += 'Vui lòng thử lại.';
+      }
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -265,8 +322,20 @@ const OrderManagement = () => {
       message.success('Hủy đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
-      message.error('Không thể hủy đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('Error canceling order:', error);
+      
+      // Thông báo lỗi dễ hiểu
+      let errorMessage = 'Không thể hủy đơn hàng. ';
+      if (error.response?.status === 400) {
+        errorMessage += 'Đơn hàng không thể hủy ở trạng thái hiện tại.';
+      } else if (error.response?.status === 404) {
+        errorMessage += 'Không tìm thấy đơn hàng.';
+      } else if (error.response?.status >= 500) {
+        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+      } else {
+        errorMessage += 'Vui lòng thử lại.';
+      }
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -323,7 +392,20 @@ const OrderManagement = () => {
         })
         .catch((error) => {
           console.error('❌ Error saving to backend:', error);
-          message.error('Lỗi khi lưu vào database: ' + (error.response?.data?.message || error.message));
+          
+          // Thông báo lỗi dễ hiểu
+          let errorMessage = 'Lỗi khi lưu vào hệ thống: ';
+          if (error.response?.status === 400) {
+            errorMessage += 'Đơn hàng không thể gán người giao hàng ở trạng thái hiện tại.';
+          } else if (error.response?.status === 404) {
+            errorMessage += 'Không tìm thấy đơn hàng hoặc người giao hàng.';
+          } else if (error.response?.status >= 500) {
+            errorMessage += 'Hệ thống đang gặp sự cố.';
+          } else {
+            errorMessage += 'Vui lòng thử lại.';
+          }
+          message.error(errorMessage);
+          
           // Rollback nếu lỗi (xóa khỏi localStorage và fetch lại)
           localStorage.removeItem(`${SHIPPER_MAPPING_KEY}_${orderId}`);
           fetchOrders();
@@ -331,7 +413,7 @@ const OrderManagement = () => {
       
     } catch (error) {
       console.error('❌ Error in handleQuickAssign:', error);
-      message.error('Không thể gán shipper');
+      message.error('Không thể gán người giao hàng. Vui lòng thử lại.');
     }
   };
 
@@ -396,8 +478,21 @@ const OrderManagement = () => {
       message.success(`Đã gán shipper "${shipperName}" cho đơn hàng #${orderId}`);
       
     } catch (error) {
-      message.error('Không thể gán đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('❌ Error assigning order:', error);
+      
+      // Thông báo lỗi dễ hiểu
+      let errorMessage = 'Không thể gán người giao hàng. ';
+      if (error.response?.status === 400) {
+        errorMessage += 'Đơn hàng không thể gán người giao hàng ở trạng thái hiện tại.';
+      } else if (error.response?.status === 404) {
+        errorMessage += 'Không tìm thấy đơn hàng hoặc người giao hàng.';
+      } else if (error.response?.status >= 500) {
+        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+      } else {
+        errorMessage += 'Vui lòng thử lại.';
+      }
+      message.error(errorMessage);
+      
       // Rollback nếu lỗi
       fetchOrders();
     } finally {
@@ -784,6 +879,7 @@ const OrderManagement = () => {
             pageSize: 10,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} đơn hàng`,
+            locale: { items_per_page: '/ trang' },
           }}
           bordered
         />

@@ -19,6 +19,7 @@ import RitualManagement from './staff/RitualManagement';
 import TrayManagement from './staff/TrayManagement';
 import ChecklistManagement from './staff/ChecklistManagement';
 import ShipperManagement from './staff/ShipperManagement';
+import CustomerManagement from './staff/CustomerManagement';
 import OrderManagement from './staff/OrderManagement';
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -74,7 +75,7 @@ const StaffDashboard = () => {
       case '6':
         return <ShipperManagement />;
       case '8':
-        return <div><h2>Khách hàng</h2><p>Quản lý khách hàng...</p></div>;
+        return <CustomerManagement />;
       case '9':
         return <OrderManagement />;
       default:
