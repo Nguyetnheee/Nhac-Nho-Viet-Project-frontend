@@ -14,6 +14,19 @@ const shipperService = {
     }
   },
 
+  // Cập nhật profile của shipper
+  updateProfile: async (profileData) => {
+    try {
+      console.log('Updating shipper profile:', profileData);
+      const response = await api.put('/api/shipper/profile', profileData);
+      console.log('Shipper profile updated successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating shipper profile:', error);
+      throw error;
+    }
+  },
+
   // Tạo tài khoản shipper mới
   createShipper: async (shipperData) => {
     try {
