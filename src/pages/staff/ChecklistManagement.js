@@ -19,7 +19,7 @@ const ChecklistManagement = () => {
     fetchAllChecklists();
     fetchRituals();
   }, []);
-  
+
   const fetchAllChecklists = async () => {
     setLoading(true);
     try {
@@ -44,7 +44,7 @@ const ChecklistManagement = () => {
   const handleRitualChange = (ritualId) => {
     setSelectedRitualId(ritualId);
   };
-  
+
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
   };
@@ -68,7 +68,7 @@ const ChecklistManagement = () => {
   });
 
   const columns = [
-    { title: 'ID', dataIndex: 'checklistId', key: 'checklistId', width: 80, sorter: (a, b) => a.checklistId - b.checklistId },
+    { title: 'STT', dataIndex: 'checklistId', key: 'checklistId', width: 80, sorter: (a, b) => a.checklistId - b.checklistId },
     { title: 'Tên Lễ Hội', dataIndex: 'ritualName', key: 'ritualName', sorter: (a, b) => a.ritualName.localeCompare(b.ritualName), render: (text) => <Tag color="gold">{text}</Tag> },
     { title: 'Vật Phẩm', dataIndex: 'itemName', key: 'itemName', sorter: (a, b) => a.itemName.localeCompare(b.itemName), render: (text) => <Text strong>{text}</Text> },
     { title: 'Số Lượng', dataIndex: 'quantity', key: 'quantity', width: 120, sorter: (a, b) => a.quantity - b.quantity, render: (qty, record) => `${qty} ${record.unit}` },
@@ -88,18 +88,24 @@ const ChecklistManagement = () => {
   ];
 
   return (
-    <div className="bg-vietnam-cream min-h-screen p-6 font-sans">
+    <div className="font-sans">
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div className="mb-4 md:mb-0">
-                <Title level={2} className="font-serif !text-vietnam-green !mb-1">
-                    <Space><CheckSquareOutlined /> Quản Lý Checklist</Space>
-                </Title>
-                <Text type="secondary">Danh sách vật phẩm cần chuẩn bị cho các lễ hội.</Text>
-            </div>
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>
+                {/* <CheckSquareOutlined />  */}
+                Quản Lý Checklist</Space>
+            </Title>
+            <Text type="secondary">Danh sách vật phẩm cần chuẩn bị cho các lễ hội.</Text>
+          </div>
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={fetchAllChecklists} loading={loading}>Tải lại</Button>
+          {/* <Button onClick={handleReset}>Reset</Button> */}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAction('Tạo', {})} className="bg-vietnam-green hover:!bg-emerald-800">
-                Thêm Checklist
+              Thêm Checklist
             </Button>
+          </Space>
         </div>
       </Card>
 
@@ -120,7 +126,7 @@ const ChecklistManagement = () => {
             </Select>
           </Col>
           <Col xs={24} md={10}>
-             <Text strong>Tìm kiếm</Text>
+            <Text strong>Tìm kiếm</Text>
             <Input
               placeholder="Tìm vật phẩm, lễ hội, ghi chú..."
               prefix={<SearchOutlined className="text-gray-400" />}
@@ -129,15 +135,15 @@ const ChecklistManagement = () => {
               className="w-full mt-1"
             />
           </Col>
-          <Col xs={24} md={4}>
+          {/* <Col xs={24} md={4}>
             <Space>
               <Button icon={<ReloadOutlined />} onClick={fetchAllChecklists} loading={loading}>Tải lại</Button>
               <Button onClick={handleReset}>Reset</Button>
             </Space>
-          </Col>
+          </Col> */}
         </Row>
       </Card>
-      
+
       {selectedRitualId && (
         <Alert
           message={`Đang lọc checklist cho lễ hội: ${rituals.find(r => r.ritualId === selectedRitualId)?.ritualName}`}
@@ -150,18 +156,15 @@ const ChecklistManagement = () => {
       <Card className="shadow-lg rounded-xl">
         <Spin spinning={loading}>
           <div className="mb-4">
-              <Text strong>Kết quả: </Text>
+            <Title level={5} strong>Danh sách Checklist vật phẩm: {" "}
               <Tag color="blue" className="text-sm">{filteredData.length} vật phẩm</Tag>
+            </Title>
           </div>
           <Table
             columns={columns}
             dataSource={filteredData}
             rowKey="checklistId"
-            pagination={{ 
-              pageSize: 10, 
-              showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} vật phẩm`,
-              locale: { items_per_page: '/ trang' },
-            }}
+            pagination={{ pageSize: 10, showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} vật phẩm` }}
             scroll={{ x: 1000 }}
           />
         </Spin>

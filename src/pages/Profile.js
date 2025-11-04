@@ -154,12 +154,6 @@ const Profile = () => {
                 <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
                   <i className="fa-solid fa-bell mr-3 text-[#0b3d3c]"></i>Thông báo
                 </button>
-                <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
-                  <i className="fa-solid fa-credit-card mr-3 text-[#0b3d3c]"></i>Thanh toán
-                </button>
-                <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
-                  <i className="fa-solid fa-chart-line mr-3 text-[#0b3d3c]"></i>Hoạt động
-                </button>
               </div>
 
             </div>

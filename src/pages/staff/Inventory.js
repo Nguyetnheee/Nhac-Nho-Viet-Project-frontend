@@ -46,7 +46,7 @@ const Inventory = () => {
   const [units, setUnits] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState(null);
-  
+
   // Modal states
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -84,11 +84,11 @@ const Inventory = () => {
     setLoading(true);
     try {
       const response = await checklistService.getChecklistItems();
-      console.log('✅ Dữ liệu kho hàng:', response);
+      console.log('Dữ liệu kho hàng:', response);
       setData(response || []);
       message.success('Tải dữ liệu kho hàng thành công!');
     } catch (error) {
-      console.error('❌ Lỗi khi tải kho hàng:', error);
+      console.error(' Lỗi khi tải kho hàng:', error);
       message.error('Không thể tải dữ liệu kho hàng!');
     } finally {
       setLoading(false);
@@ -98,7 +98,7 @@ const Inventory = () => {
   const fetchUnits = async () => {
     try {
       const response = await checklistService.getUnits();
-      console.log('✅ Dữ liệu đơn vị:', response);
+      console.log('Dữ liệu đơn vị:', response);
       // API trả về object với key-value pairs
       if (response && typeof response === 'object') {
         const unitArray = Object.entries(response).map(([key, value]) => ({
@@ -108,8 +108,8 @@ const Inventory = () => {
         setUnits(unitArray);
       }
     } catch (error) {
-      console.error('❌ Lỗi khi tải đơn vị:', error);
-      message.error('Không thể tải danh sách đơn vị!');
+      console.error(' Lỗi khi tải đơn vị:', error);
+      // message.error('Không thể tải danh sách đơn vị!');
     }
   };
 
@@ -158,39 +158,39 @@ const Inventory = () => {
   const handleDelete = async (itemId, itemName) => {
     setDeleteLoading(itemId);
     try {
-      console.log(`🗑️ Đang xóa sản phẩm ID: ${itemId}, Tên: ${itemName}`);
+      console.log(`Đang xóa sản phẩm ID: ${itemId}, Tên: ${itemName}`);
       const response = await checklistService.deleteChecklistItem(itemId);
-      console.log('✅ Xóa thành công:', response);
-      
+      console.log('Xóa thành công:', response);
+
       message.success({
         content: (
           <span>
-            ✅ Đã xóa sản phẩm <strong>"{itemName}"</strong> khỏi kho!
+            Đã xóa sản phẩm <strong>"{itemName}"</strong> khỏi kho!
           </span>
         ),
         duration: 3,
       });
-      
+
       // Reload data
       await fetchInventoryData();
-      
+
       // Nếu đang xem chi tiết sản phẩm vừa xóa, đóng drawer
       if (viewingItem && viewingItem.itemId === itemId) {
         setIsDetailDrawerVisible(false);
         setViewingItem(null);
       }
     } catch (error) {
-      console.error('❌ Lỗi khi xóa sản phẩm:', error);
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Không thể xóa sản phẩm! Vui lòng thử lại.';
-      
+      console.error(' Lỗi khi xóa sản phẩm:', error);
+
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Không thể xóa sản phẩm! Vui lòng thử lại.';
+
       message.error({
         content: (
           <div>
             <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
-              ❌ Xóa sản phẩm thất bại!
+              Xóa sản phẩm thất bại!
             </div>
             <div style={{ fontSize: 13 }}>{errorMessage}</div>
           </div>
@@ -206,15 +206,15 @@ const Inventory = () => {
     setIsDetailDrawerVisible(true);
     setDetailLoading(true);
     setViewingItem(null); // Clear previous data
-    
+
     try {
       // Fetch chi tiết từ API
       const detailData = await checklistService.getChecklistItemById(record.itemId);
-      console.log('✅ Chi tiết sản phẩm:', detailData);
+      console.log('Chi tiết sản phẩm:', detailData);
       setViewingItem(detailData);
       message.success('Tải chi tiết sản phẩm thành công!');
     } catch (error) {
-      console.error('❌ Lỗi khi tải chi tiết:', error);
+      console.error(' Lỗi khi tải chi tiết:', error);
       message.error('Không thể tải chi tiết sản phẩm!');
       // Fallback to record data if API fails
       setViewingItem(record);
@@ -227,11 +227,11 @@ const Inventory = () => {
     try {
       const values = await form.validateFields();
       setSaveLoading(true);
-      
+
       if (editingItem) {
         // Cập nhật sản phẩm hiện có
         const response = await checklistService.updateChecklistItem(editingItem.itemId, values);
-        console.log('✅ Cập nhật thành công:', response);
+        console.log('Cập nhật thành công:', response);
         message.success({
           content: `Đã cập nhật sản phẩm "${values.itemName}" thành công!`,
           duration: 3,
@@ -239,13 +239,13 @@ const Inventory = () => {
       } else {
         // Tạo sản phẩm mới
         const response = await checklistService.createChecklistItem(values);
-        console.log('✅ Tạo mới thành công:', response);
+        console.log('Tạo mới thành công:', response);
         message.success({
           content: `Đã thêm sản phẩm "${values.itemName}" vào kho!`,
           duration: 3,
         });
       }
-      
+
       setIsModalVisible(false);
       form.resetFields();
       setEditingItem(null);
@@ -255,7 +255,7 @@ const Inventory = () => {
         // Validation error from form
         message.warning('Vui lòng kiểm tra lại thông tin!');
       } else {
-        console.error('❌ Lỗi khi lưu sản phẩm:', error);
+        console.error(' Lỗi khi lưu sản phẩm:', error);
         const errorMessage = error.response?.data?.message || 'Không thể lưu sản phẩm!';
         message.error({
           content: errorMessage,
@@ -288,7 +288,7 @@ const Inventory = () => {
       title: 'Mã SP',
       dataIndex: 'itemId',
       key: 'itemId',
-      width: 80,
+      width: 100,
       align: 'center',
       sorter: (a, b) => a.itemId - b.itemId,
     },
@@ -310,7 +310,7 @@ const Inventory = () => {
       width: 120,
       align: 'center',
       render: (unit) => (
-        <Tag color="blue" icon={<InboxOutlined />}>
+        <Tag color="blue">
           {unit}
         </Tag>
       ),
@@ -375,7 +375,7 @@ const Inventory = () => {
             <Button
               type="default"
               icon={<EyeOutlined />}
-              size="small"
+              // size="small"
               onClick={() => handleViewDetail(record)}
               disabled={deleteLoading === record.itemId}
             />
@@ -384,7 +384,7 @@ const Inventory = () => {
             <Button
               type="primary"
               icon={<EditOutlined />}
-              size="small"
+              // size="small"
               onClick={() => handleEdit(record)}
               disabled={deleteLoading === record.itemId}
             />
@@ -394,7 +394,7 @@ const Inventory = () => {
               title={
                 <div style={{ maxWidth: 300 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: 8, fontSize: 15 }}>
-                    🗑️ Xác nhận xóa sản phẩm
+                    Xác nhận xóa sản phẩm
                   </div>
                   <div style={{ color: '#666' }}>
                     Bạn có chắc chắn muốn xóa sản phẩm này khỏi kho?
@@ -402,33 +402,33 @@ const Inventory = () => {
                 </div>
               }
               description={
-                <div style={{ 
-                  padding: '8px 12px', 
-                  background: '#fff7e6', 
+                <div style={{
+                  padding: '8px 12px',
+                  background: '#fff7e6',
                   borderRadius: 6,
                   border: '1px solid #ffd591',
                   marginTop: 8
                 }}>
                   <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                    📦 {record.itemName}
+                    {record.itemName}
                   </div>
                   <div style={{ fontSize: 12, color: '#666' }}>
                     Mã: #{record.itemId} | Đơn vị: {record.unit} | Số lượng: {record.stockQuantity}
                   </div>
-                  <div style={{ 
-                    marginTop: 8, 
-                    fontSize: 12, 
+                  <div style={{
+                    marginTop: 8,
+                    fontSize: 12,
                     color: '#d46b08',
                     fontWeight: 500
                   }}>
-                    ⚠️ Hành động này không thể hoàn tác!
+                    Hành động này không thể hoàn tác!
                   </div>
                 </div>
               }
               onConfirm={() => handleDelete(record.itemId, record.itemName)}
-              okText="🗑️ Xóa ngay"
-              cancelText="❌ Hủy bỏ"
-              okButtonProps={{ 
+              okText=" Xóa ngay"
+              cancelText="Hủy bỏ"
+              okButtonProps={{
                 danger: true,
                 loading: deleteLoading === record.itemId,
                 size: 'middle'
@@ -439,11 +439,11 @@ const Inventory = () => {
               }}
               icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
             >
-              <Button 
-                type="primary" 
-                danger 
-                icon={<DeleteOutlined />} 
-                size="small"
+              <Button
+                type="primary"
+                danger
+                icon={<DeleteOutlined />}
+                // size="small"
                 loading={deleteLoading === record.itemId}
                 disabled={deleteLoading !== null && deleteLoading !== record.itemId}
               />
@@ -456,7 +456,7 @@ const Inventory = () => {
 
   return (
     <ConfigProvider locale={viVN}>
-      <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
+      <div style={{ minHeight: '100vh' }}>
         {/* Statistics Cards */}
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col span={8}>
@@ -495,16 +495,18 @@ const Inventory = () => {
         <Card
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <InboxOutlined style={{ fontSize: 20 }} />
+              {/* <InboxOutlined style={{ fontSize: 20 }} /> */}
               <span>Quản lý kho hàng</span>
             </div>
           }
           extra={
             <Space>
               <Tooltip title="Làm mới">
-                <Button icon={<ReloadOutlined />} onClick={fetchInventoryData} loading={loading} />
+                <Button icon={<ReloadOutlined />} onClick={fetchInventoryData} loading={loading} >
+                  Tải lại
+                </Button>
               </Tooltip>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="bg-vietnam-green hover:!bg-emerald-800">
                 Thêm sản phẩm
               </Button>
             </Space>
@@ -548,16 +550,15 @@ const Inventory = () => {
             rowKey="itemId"
             loading={loading}
             pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
+              // pageSize: 10,
+              // showSizeChanger: true,
+              // showQuickJumper: true,
               showTotal: (total) => `Tổng ${total} sản phẩm`,
               pageSizeOptions: ['10', '20', '50', '100'],
-              locale: { items_per_page: '/ trang' },
             }}
             scroll={{ x: 1000 }}
             bordered
-            size="middle"
+          // size="middle"
           />
         </Card>
 
@@ -593,10 +594,10 @@ const Inventory = () => {
           }}
         >
           {editingItem && (
-            <div style={{ 
-              padding: '12px 16px', 
-              background: '#e6f7ff', 
-              borderRadius: 8, 
+            <div style={{
+              padding: '12px 16px',
+              background: '#e6f7ff',
+              borderRadius: 8,
               marginBottom: 20,
               border: '1px solid #91d5ff'
             }}>
@@ -622,15 +623,15 @@ const Inventory = () => {
                 </span>
               }
               rules={[
-                { required: true, message: '⚠️ Vui lòng nhập tên sản phẩm!' },
-                { min: 3, message: '⚠️ Tên sản phẩm phải có ít nhất 3 ký tự!' },
-                { max: 100, message: '⚠️ Tên sản phẩm không được vượt quá 100 ký tự!' },
-                { whitespace: true, message: '⚠️ Tên sản phẩm không được chỉ chứa khoảng trắng!' },
+                { required: true, message: 'Vui lòng nhập tên sản phẩm!' },
+                { min: 3, message: 'Tên sản phẩm phải có ít nhất 3 ký tự!' },
+                { max: 100, message: 'Tên sản phẩm không được vượt quá 100 ký tự!' },
+                { whitespace: true, message: 'Tên sản phẩm không được chỉ chứa khoảng trắng!' },
               ]}
               tooltip="Nhập tên đầy đủ và rõ ràng của sản phẩm"
             >
-              <Input 
-                placeholder="Ví dụ: Gạo tẻ Hương Việt, Trái cây tươi..." 
+              <Input
+                placeholder="Ví dụ: Gạo tẻ Hương Việt, Trái cây tươi..."
                 prefix={<InboxOutlined style={{ color: '#bfbfbf' }} />}
                 showCount
                 maxLength={100}
@@ -647,11 +648,11 @@ const Inventory = () => {
                 </span>
               }
               rules={[
-                { required: true, message: '⚠️ Vui lòng chọn đơn vị tính!' },
+                { required: true, message: 'Vui lòng chọn đơn vị tính!' },
               ]}
               tooltip="Chọn đơn vị phù hợp với sản phẩm"
             >
-              <Select 
+              <Select
                 placeholder="Chọn đơn vị tính (kg, gói, hộp, ...)"
                 disabled={saveLoading}
                 showSearch
@@ -704,8 +705,8 @@ const Inventory = () => {
           </Form>
 
           {saveLoading && (
-            <div style={{ 
-              textAlign: 'center', 
+            <div style={{
+              textAlign: 'center',
               padding: '12px',
               background: '#f0f0f0',
               borderRadius: 8,
@@ -723,7 +724,7 @@ const Inventory = () => {
         <Drawer
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <EyeOutlined />
+              {/* <EyeOutlined /> */}
               <span>Chi tiết sản phẩm</span>
             </div>
           }
@@ -753,7 +754,7 @@ const Inventory = () => {
                     title={
                       <div style={{ maxWidth: 280 }}>
                         <div style={{ fontWeight: 'bold', marginBottom: 8, fontSize: 15 }}>
-                          🗑️ Xóa sản phẩm
+                          Xóa sản phẩm
                         </div>
                         <div style={{ color: '#666' }}>
                           Xóa sản phẩm này khỏi kho?
@@ -761,9 +762,9 @@ const Inventory = () => {
                       </div>
                     }
                     description={
-                      <div style={{ 
-                        padding: '8px 12px', 
-                        background: '#fff1f0', 
+                      <div style={{
+                        padding: '8px 12px',
+                        background: '#fff1f0',
                         borderRadius: 6,
                         border: '1px solid #ffa39e',
                         marginTop: 8
@@ -774,9 +775,9 @@ const Inventory = () => {
                         <div style={{ fontSize: 12, color: '#666' }}>
                           Mã: #{viewingItem.itemId}
                         </div>
-                        <div style={{ 
-                          marginTop: 8, 
-                          fontSize: 12, 
+                        <div style={{
+                          marginTop: 8,
+                          fontSize: 12,
                           color: '#cf1322',
                           fontWeight: 500
                         }}>
@@ -787,7 +788,7 @@ const Inventory = () => {
                     onConfirm={() => handleDelete(viewingItem.itemId, viewingItem.itemName)}
                     okText="🗑️ Xóa"
                     cancelText="❌ Hủy"
-                    okButtonProps={{ 
+                    okButtonProps={{
                       danger: true,
                       loading: deleteLoading === viewingItem.itemId,
                     }}
@@ -816,52 +817,52 @@ const Inventory = () => {
           ) : viewingItem ? (
             <>
               <Descriptions bordered column={1} size="middle">
-                <Descriptions.Item 
+                <Descriptions.Item
                   label={
                     <span style={{ fontWeight: 'bold' }}>
-                      <InboxOutlined style={{ marginRight: 8 }} />
+                      {/* <InboxOutlined style={{ marginRight: 8 }} /> */}
                       Mã sản phẩm
                     </span>
                   }
                 >
-                  <Tag color="cyan" style={{ fontSize: '14px', padding: '4px 12px' }}>
+                  <Tag color="cyan">
                     #{viewingItem.itemId}
                   </Tag>
                 </Descriptions.Item>
-                
-                <Descriptions.Item 
+
+                <Descriptions.Item
                   label={
                     <span style={{ fontWeight: 'bold' }}>
-                      <InboxOutlined style={{ marginRight: 8 }} />
+                      {/* <InboxOutlined style={{ marginRight: 8 }} /> */}
                       Tên sản phẩm
                     </span>
                   }
                 >
-                  <strong style={{ fontSize: '15px' }}>{viewingItem.itemName}</strong>
+                  <strong>{viewingItem.itemName}</strong>
                 </Descriptions.Item>
-                
-                <Descriptions.Item 
+
+                <Descriptions.Item
                   label={
                     <span style={{ fontWeight: 'bold' }}>
-                      <InboxOutlined style={{ marginRight: 8 }} />
+                      {/* <InboxOutlined style={{ marginRight: 8 }} /> */}
                       Đơn vị tính
                     </span>
                   }
                 >
-                  <Tag color="blue" icon={<InboxOutlined />} style={{ fontSize: '14px', padding: '4px 12px' }}>
+                  <Tag color="blue">
                     {viewingItem.unit}
                   </Tag>
                 </Descriptions.Item>
-                
-                <Descriptions.Item 
+
+                <Descriptions.Item
                   label={
                     <span style={{ fontWeight: 'bold' }}>
-                      <InboxOutlined style={{ marginRight: 8 }} />
+                      {/* <InboxOutlined style={{ marginRight: 8 }} /> */}
                       Số lượng trong kho
                     </span>
                   }
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div >
                     <Badge
                       count={viewingItem.stockQuantity}
                       showZero
@@ -871,20 +872,20 @@ const Inventory = () => {
                           viewingItem.stockQuantity === 0
                             ? '#ff4d4f'
                             : viewingItem.stockQuantity <= 10
-                            ? '#faad14'
-                            : '#52c41a',
-                        fontSize: '16px',
-                        padding: '8px 16px',
+                              ? '#faad14'
+                              : '#52c41a',
+                        // fontSize: '16px',
+                        // padding: '8px 16px',
                         height: 'auto',
                       }}
                     />
                   </div>
                 </Descriptions.Item>
-                
-                <Descriptions.Item 
+
+                <Descriptions.Item
                   label={
                     <span style={{ fontWeight: 'bold' }}>
-                      <CheckCircleOutlined style={{ marginRight: 8 }} />
+                      {/* <CheckCircleOutlined style={{ marginRight: 8 }} /> */}
                       Trạng thái
                     </span>
                   }
@@ -892,10 +893,10 @@ const Inventory = () => {
                   {(() => {
                     const status = getStockStatus(viewingItem.stockQuantity);
                     return (
-                      <Tag 
-                        color={status.color} 
-                        icon={status.icon}
-                        style={{ fontSize: '14px', padding: '6px 16px' }}
+                      <Tag
+                        color={status.color}
+                        // icon={status.icon}
+                        // style={{ fontSize: '14px', padding: '6px 16px' }}
                       >
                         {status.text}
                       </Tag>
@@ -905,8 +906,8 @@ const Inventory = () => {
               </Descriptions>
 
               {/* Additional Info Card */}
-              <Card 
-                style={{ marginTop: 24 }} 
+              <Card
+                style={{ marginTop: 24 }}
                 title={
                   <span>
                     <WarningOutlined style={{ marginRight: 8 }} />
