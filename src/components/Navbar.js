@@ -9,7 +9,7 @@ import * as cartService from "../services/cartService";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
-  const { cart, loading } = useCart();
+  const { cartItems, loading, getTotalItems } = useCart(); // ✅ Lấy getTotalItems từ context
   const [cartCount, setCartCount] = useState(0);
 
   const handleLogout = () => {
@@ -17,19 +17,16 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
-  const fetchCartCount = async () => {
-    try {
-      const data = await cartService.getCart();
-      setCartCount(data.totalItems || 0);
-    } catch (error) {
-      console.error("Lỗi khi lấy giỏ hàng:", error);
+  // ✅ Không cần fetch nữa, lấy trực tiếp từ context
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'CUSTOMER') {
+      // Lấy số lượng từ context thay vì gọi API
+      const count = getTotalItems ? getTotalItems() : cartItems?.length || 0;
+      setCartCount(count);
+    } else {
       setCartCount(0);
     }
-  };
-
-  useEffect(() => {
-    fetchCartCount();
-  }, [cart, loading]); // cập nhật khi cart hoặc loading thay đổi
+  }, [cartItems, loading, isAuthenticated, user, getTotalItems]); // ✅ Thêm dependencies
 
   return (
     <nav className="bg-vietnam-green shadow-lg relative z-50">

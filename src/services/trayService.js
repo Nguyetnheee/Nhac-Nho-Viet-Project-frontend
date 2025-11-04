@@ -13,15 +13,18 @@ export const trayService = {
     params: { q: searchQuery } 
   }),
   
-  // Filter products
-  filterTrays: (params) => api.get('/api/products/filter', { 
-    params: {
-      regionId: params.regionId || '',
-      categoryId: params.categoryId || '',
-      minPrice: params.minPrice || '',
-      maxPrice: params.maxPrice || ''
-    }
-  }),
+  // Filter products - Chỉ gửi các tham số có giá trị
+  filterTrays: (params) => {
+    const queryParams = {};
+    
+    // Chỉ thêm các tham số nếu chúng có giá trị thực sự
+    if (params.regionId) queryParams.regionId = params.regionId;
+    if (params.categoryId) queryParams.categoryId = params.categoryId;
+    if (params.minPrice) queryParams.minPrice = params.minPrice;
+    if (params.maxPrice) queryParams.maxPrice = params.maxPrice;
+    
+    return api.get('/api/products/filter', { params: queryParams });
+  },
   
   // Get regions
   getRegions: () => api.get('/api/regions'),

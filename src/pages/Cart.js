@@ -7,6 +7,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { decreaseCartItem, increaseCartItem } from "../services/apiAuth";
 import api from "../services/api";
 import { useToast } from "../components/ToastContainer";
+// ✅ UNCOMMENT DÒNG NÀY ĐỂ BẬT DEBUG PANEL
+// import VoucherDebugPanel from "../components/VoucherDebugPanel";
 
 // Làm sạch baseURL tương tự api.js
 const resolveApiBase = () => {
@@ -35,15 +37,22 @@ const Cart = () => {
     loading,
     increaseLocalItem,
     decreaseLocalItem,
+    applyVoucher,
+    removeVoucher,
+    appliedVoucher,
+    getFinalTotal,
+    getDiscountAmount,
   } = useCart();
   const { isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
 
-  // State cho mã giảm giá
+  // State cho mã giảm giá - Local state cho UI
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  // ✅ Sync local state với context khi component mount
+  const appliedCoupon = appliedVoucher;
 
   const currency = totals?.currency || "VNĐ";
 
@@ -68,178 +77,263 @@ const Cart = () => {
     setCouponError("");
 
     try {
-      // Gọi API áp dụng voucher
-      const response = await api.post('/api/vouchers/apply', {
-        voucherCode: couponCode.toUpperCase(),
-        orderAmount: getTotalPrice()
-      });
-
-      console.log("🔍 API Response:", response);
-
-      // Xử lý response từ backend
-      if (response.data?.success && response.data?.data) {
-        const apiData = response.data.data;
-        
-        console.log("📦 API Data:", apiData);
-        console.log("📦 voucherCode:", apiData.voucherCode);
-        console.log("📦 discountAmount:", apiData.discountAmount);
-        console.log("📦 finalAmount:", apiData.finalAmount);
-        
-        // ✅ MAPPING THEO RESPONSE THỰC TẾ TỪ BACKEND
-        const mappedCoupon = {
-          code: apiData.voucherCode || couponCode.toUpperCase(),
-          originalAmount: apiData.originalAmount,
-          discountAmount: apiData.discountAmount, // Backend đã tính sẵn số tiền giảm
-          finalAmount: apiData.finalAmount, // Backend đã tính sẵn tổng sau giảm
-          message: apiData.message,
-          rawData: apiData
-        };
-        
-        console.log("Mapped coupon:", mappedCoupon);
-        
-        setAppliedCoupon(mappedCoupon);
-        setCouponError("");
-        showSuccess(`Áp dụng mã giảm giá "${mappedCoupon.code}" thành công!`);
-      } else {
-        throw new Error("Không nhận được dữ liệu từ server");
+      const currentTotal = getTotalPrice();
+      
+      // ✅ Kiểm tra giỏ hàng có sản phẩm không
+      if (currentTotal <= 0) {
+        throw new Error("Giỏ hàng của bạn đang trống");
       }
       
-    } catch (error) {
-      console.error("Lỗi áp dụng voucher:", error);
+      // ✅ BƯỚC 1: Validate voucher (kiểm tra hợp lệ)
+      console.log("🔍 STEP 1: Validating voucher /api/vouchers/apply:", {
+        code: couponCode.toUpperCase(),
+        orderAmount: currentTotal
+      });
       
-      // Xử lý các loại lỗi
-      let errorMessage = "Mã giảm giá không hợp lệ hoặc đã hết hạn";
+      const validateResponse = await api.post('/api/vouchers/apply', {
+        voucherCode: couponCode.toUpperCase(),
+        orderAmount: currentTotal
+      });
       
-      if (error.response?.data?.message) {
-        const msg = error.response.data.message;
+      console.log("✅ STEP 1 SUCCESS: Voucher is valid:", validateResponse.data);
+      
+      // ✅ BƯỚC 2: Áp dụng voucher vào cart (cập nhật database)
+      const token = localStorage.getItem('token');
+      console.log("📝 STEP 2: Applying voucher to cart /api/cart/apply-voucher:", {
+        code: couponCode.toUpperCase(),
+        hasToken: !!token,
+        tokenLength: token ? token.length : 0,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : 'NO TOKEN'
+      });
+      
+      let applyResponse;
+      try {
+        // ✅ Đảm bảo gửi đúng format body và headers
+        const requestBody = {
+          voucherCode: couponCode.toUpperCase()
+        };
         
-        // Xử lý thông báo minimum order amount
-        if (msg.includes("Minimum order amount is") || msg.includes("minimum")) {
-          // Extract số tiền từ message (ví dụ: "Minimum order amount is 300000.00")
-          const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
-          if (amountMatch) {
-            const minAmount = parseFloat(amountMatch[1]);
-            errorMessage = `Giá trị đơn hàng tối thiểu là ${minAmount.toLocaleString('vi-VN')} VNĐ`;
-          } else {
-            errorMessage = "Đơn hàng chưa đủ giá trị tối thiểu";
+        console.log("📤 Request to /api/cart/apply-voucher:", requestBody);
+        
+        applyResponse = await api.post('/api/cart/apply-voucher', requestBody, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
-        } else if (msg.includes("not yet active")) {
-          errorMessage = "Mã giảm giá chưa đến thời gian sử dụng";
-        } else if (msg.includes("expired")) {
-          errorMessage = "Mã giảm giá đã hết hạn";
-        } else if (msg.includes("not found") || msg.includes("invalid")) {
-          errorMessage = "Mã giảm giá không tồn tại";
-        } else if (msg.includes("usage limit")) {
-          errorMessage = "Mã giảm giá đã hết lượt sử dụng";
-        } else {
-          errorMessage = msg;
-        }
-      } else if (error.response?.data?.error) {
-        const errMsg = error.response.data.error;
-        // Cũng xử lý error field nếu có minimum amount
-        if (errMsg.includes("Minimum order amount is")) {
-          const amountMatch = errMsg.match(/(\d+(?:\.\d+)?)/);
-          if (amountMatch) {
-            const minAmount = parseFloat(amountMatch[1]);
-            errorMessage = `Giá trị đơn hàng tối thiểu là ${minAmount.toLocaleString('vi-VN')} VNĐ`;
-          } else {
-            errorMessage = "Đơn hàng chưa đủ giá trị tối thiểu";
+        });
+        
+        console.log("✅ STEP 2 SUCCESS: Cart updated with voucher:", applyResponse.data);
+      } catch (applyError) {
+        console.error("❌ STEP 2 FAILED: API /api/cart/apply-voucher error:", {
+          status: applyError.response?.status,
+          statusText: applyError.response?.statusText,
+          message: applyError.response?.data?.message || applyError.message,
+          data: applyError.response?.data,
+          requestSent: {
+            url: '/api/cart/apply-voucher',
+            body: { voucherCode: couponCode.toUpperCase() },
+            hasToken: !!token
           }
-        } else {
-          errorMessage = errMsg;
+        });
+        
+        // 🔄 FALLBACK: Nếu API chưa sẵn sàng, dùng response từ BƯỚC 1
+        console.log("🔄 FALLBACK: Using validation response data");
+        applyResponse = { data: validateResponse.data };
+        
+        // Tính toán discount amount từ validation response
+        const currentTotal = getTotalPrice();
+        let discountAmount = 0;
+        
+        if (validateResponse.data.discountType === 'PERCENTAGE') {
+          discountAmount = (currentTotal * (validateResponse.data.discountValue || 0)) / 100;
+          if (validateResponse.data.maxDiscountAmount && discountAmount > validateResponse.data.maxDiscountAmount) {
+            discountAmount = validateResponse.data.maxDiscountAmount;
+          }
+        } else if (validateResponse.data.discountType === 'FIXED_AMOUNT') {
+          discountAmount = validateResponse.data.discountValue || 0;
         }
-      } else if (error.message) {
+        
+        if (discountAmount > currentTotal) {
+          discountAmount = currentTotal;
+        }
+        
+        // Tạo response giả lập theo format của /api/cart/apply-voucher
+        applyResponse.data = {
+          subTotal: currentTotal,
+          voucherCode: validateResponse.data.code || couponCode.toUpperCase(),
+          discountAmount: discountAmount,
+          finalAmount: currentTotal - discountAmount
+        };
+        
+        console.log("📦 Fallback response data:", applyResponse.data);
+      }
+      
+      // ✅ Lấy data từ response của BƯỚC 2 (hoặc fallback)
+      const responseData = applyResponse.data;
+      
+      console.log("📦 Cart response data:", responseData);
+      
+      // ✅ Kiểm tra response có hợp lệ không
+      if (!responseData) {
+        throw new Error("Không nhận được thông tin từ server");
+      }
+      
+      // ✅ Parse thông tin từ response của /api/cart/apply-voucher
+      // Response format:
+      // {
+      //   subTotal: number,        // Tổng tiền gốc
+      //   voucherCode: string,     // Mã voucher
+      //   discountAmount: number,  // Số tiền giảm
+      //   finalAmount: number,     // Tổng tiền sau giảm
+      //   ...
+      // }
+      
+      const discountAmount = Number(responseData.discountAmount) || 0;
+      const finalAmount = Number(responseData.finalAmount) || 0;
+      const subTotal = Number(responseData.subTotal) || currentTotal;
+      
+      // ✅ KIỂM TRA LOGIC: finalAmount PHẢI BẰNG subTotal - discountAmount
+      const calculatedFinalAmount = subTotal - discountAmount;
+      if (Math.abs(finalAmount - calculatedFinalAmount) > 1) {
+        console.warn("⚠️ WARNING: finalAmount mismatch!", {
+          fromBackend: finalAmount,
+          calculated: calculatedFinalAmount,
+          subTotal: subTotal,
+          discountAmount: discountAmount,
+          difference: finalAmount - calculatedFinalAmount
+        });
+      }
+      
+      // ✅ Tạo voucherInfo từ cart response - SỬ DỤNG GIÁ TRỊ TÍNH TOÁN ĐỂ ĐẢM BẢO ĐÚNG
+      const voucherInfo = {
+        code: responseData.voucherCode || couponCode.toUpperCase(),
+        discountAmount: Math.round(discountAmount),
+        originalAmount: Math.round(subTotal),
+        finalAmount: Math.round(calculatedFinalAmount), // ✅ Dùng giá trị tính toán thay vì từ backend
+        validated: true,
+        message: `Giảm ${Math.round(discountAmount).toLocaleString('vi-VN')} VNĐ`
+      };
+      
+      console.log("💰 Voucher applied:", voucherInfo);
+      console.log("📊 Calculation details:", {
+        subTotal: Math.round(subTotal),
+        discountAmount: Math.round(discountAmount),
+        finalAmount: Math.round(calculatedFinalAmount),
+        verification: `${Math.round(subTotal)} - ${Math.round(discountAmount)} = ${Math.round(calculatedFinalAmount)}`
+      });
+      
+      console.log("✅ Voucher info:", voucherInfo);
+      
+      // ✅ Lưu vào context
+      applyVoucher(voucherInfo);
+      setCouponError("");
+      showSuccess(`Áp dụng mã giảm giá "${voucherInfo.code}" thành công! Giảm ${Math.round(discountAmount).toLocaleString('vi-VN')} VNĐ`);
+      
+      // ✅ QUAN TRỌNG: Refresh cart để đồng bộ với database
+      console.log("🔄 Refreshing cart to sync with database...");
+      await fetchCart();
+      
+    } catch (error) {
+      console.error("❌ Lỗi áp dụng voucher:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+        fullError: error
+      });
+      
+      // ✅ Xử lý các loại lỗi rõ ràng cho customer
+      let errorMessage = "Không thể áp dụng mã giảm giá";
+      
+      // Ưu tiên sử dụng message từ Error object nếu có
+      if (error.message && !error.message.includes('Request failed') && !error.message.includes('AxiosError')) {
         errorMessage = error.message;
+      } 
+      // Nếu không, check response từ backend
+      else if (error.response) {
+        const backendMsg = error.response.data?.message || 
+                          error.response.data?.error || 
+                          error.response.data;
+        
+        if (backendMsg && typeof backendMsg === 'string') {
+          errorMessage = backendMsg;
+        } else {
+          // Mapping theo HTTP status code
+          switch (error.response.status) {
+            case 400:
+              errorMessage = "Mã giảm giá không hợp lệ hoặc không đủ điều kiện sử dụng";
+              break;
+            case 404:
+              errorMessage = "Mã giảm giá không tồn tại";
+              break;
+            case 410:
+              errorMessage = "Mã giảm giá đã hết hạn";
+              break;
+            case 403:
+              errorMessage = "Mã giảm giá đã hết lượt sử dụng";
+              break;
+            default:
+              errorMessage = "Không thể áp dụng mã giảm giá. Vui lòng thử lại";
+          }
+        }
       }
       
       setCouponError(errorMessage);
-      setAppliedCoupon(null);
-      showError(`${errorMessage}`);
+      removeVoucher();
+      showError(errorMessage);
     } finally {
       setIsApplyingCoupon(false);
     }
   };
 
-  // Hàm phụ trợ: Xác định loại giảm giá từ response
-  const determineDiscountType = (voucherData) => {
-    // Kiểm tra các field phổ biến từ backend
-    if (voucherData.discountType) {
-      const type = voucherData.discountType.toLowerCase();
-      if (type.includes('percent') || type.includes('percentage')) return "percent";
-      if (type.includes('fixed') || type.includes('amount')) return "fixed";
-      if (type.includes('ship') || type.includes('freeship')) return "freeship";
-    }
-    
-    if (voucherData.isPercentage || voucherData.discountPercent || voucherData.discountPercentage) {
-      return "percent";
-    }
-    
-    if (voucherData.isFreeShip || voucherData.freeShipping) {
-      return "freeship";
-    }
-    
-    // Mặc định là fixed amount
-    return "fixed";
-  };
-
-  // Hàm phụ trợ: Tạo mô tả giảm giá
-  const formatDiscountDescription = (voucherData) => {
-    if (voucherData.discountPercent || voucherData.discountPercentage) {
-      const percent = voucherData.discountPercent || voucherData.discountPercentage;
-      return `Giảm ${percent}%`;
-    }
-    
-    if (voucherData.discountAmount || voucherData.discount) {
-      const amount = voucherData.discountAmount || voucherData.discount;
-      return `Giảm ${formatMoney(amount)}`;
-    }
-    
-    if (voucherData.isFreeShip || voucherData.freeShipping) {
-      return "Miễn phí vận chuyển";
-    }
-    
-    return "Mã giảm giá";
-  };
-
   // Hàm xóa mã giảm giá
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponError("");
-    showSuccess("Đã xóa mã giảm giá");
-  };
-
-  // ✅ Tính toán giảm giá - SỬ DỤNG GIÁ TRỊ TỪ BACKEND
-  const calculateDiscount = () => {
-    if (!appliedCoupon) {
-      console.log("No coupon applied");
-      return 0;
+  const handleRemoveCoupon = async () => {
+    try {
+      console.log("🗑️ Removing voucher from cart...");
+      
+      // ✅ TODO: GỌI API XÓA VOUCHER TỪ DATABASE
+      // Cần backend cung cấp endpoint: DELETE /api/cart/remove-voucher hoặc POST /api/cart/remove-voucher
+      const token = localStorage.getItem('token');
+      
+      try {
+        await api.delete('/api/cart/remove-voucher', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.log("✅ Voucher removed from database");
+      } catch (apiError) {
+        console.warn("⚠️ API remove voucher not available, trying POST method:", apiError.message);
+        
+        // Fallback: thử POST method
+        try {
+          await api.post('/api/cart/remove-voucher', {}, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          console.log("✅ Voucher removed from database (POST method)");
+        } catch (postError) {
+          console.warn("⚠️ Backend API /api/cart/remove-voucher not available:", postError.message);
+          console.log("📝 Please ask backend to implement: DELETE or POST /api/cart/remove-voucher");
+        }
+      }
+      
+      // ✅ Xóa voucher khỏi Context (UI sẽ update ngay)
+      removeVoucher();
+      setCouponCode("");
+      setCouponError("");
+      
+      // ✅ Refresh cart để sync với database
+      await fetchCart();
+      
+      showSuccess("Đã xóa mã giảm giá");
+    } catch (error) {
+      console.error("❌ Error removing voucher:", error);
+      showError("Không thể xóa mã giảm giá. Vui lòng thử lại.");
     }
-    
-    // Backend đã tính sẵn discountAmount, chúng ta chỉ cần lấy ra
-    const discount = appliedCoupon.discountAmount || 0;
-    
-    console.log('Discount from backend:', discount);
-    
-    return discount;
-  };
-
-  // Tính tổng sau giảm giá - SỬ DỤNG GIÁ TRỊ TỪ BACKEND
-  const getFinalTotal = () => {
-    // Nếu có coupon và backend đã tính sẵn finalAmount, dùng luôn
-    if (appliedCoupon?.finalAmount) {
-      console.log('💵 Using finalAmount from backend:', appliedCoupon.finalAmount);
-      return appliedCoupon.finalAmount;
-    }
-    
-    // Nếu không có, tính thủ công
-    const total = getTotalPrice() - calculateDiscount();
-    console.log('💵 Calculated total:', {
-      original: getTotalPrice(),
-      discount: calculateDiscount(),
-      final: total
-    });
-    return total;
   };
 
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
@@ -430,34 +524,32 @@ const Cart = () => {
                   <span className="font-medium">{formatMoney(getTotalPrice())}</span>
                 </div>
                 
-                {appliedCoupon && calculateDiscount() > 0 && (
-                  <div className="flex justify-between text-green-600">
+                {appliedCoupon && appliedCoupon.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600 font-medium">
                     <span className="flex items-center gap-1">
                       <TagOutlined className="text-base" />
                       Giảm giá ({appliedCoupon.code}):
                     </span>
-                    <span className="font-semibold">-{formatMoney(calculateDiscount())}</span>
+                    <span>-{formatMoney(appliedCoupon.discountAmount)}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between text-gray-700">
                   <span>Phí giao hàng:</span>
-                  <span>{appliedCoupon?.discountType === 'FREE_SHIP' ? (
-                    <span className="text-green-600 font-semibold">Miễn phí</span>
-                  ) : (
-                    <span className="font-medium">Miễn phí</span>
-                  )}</span>
+                  <span className="font-medium">Miễn phí</span>
                 </div>
                 
                 <div className="border-t-2 border-gray-200 pt-4 mt-4">
                   <div className="flex justify-between text-xl font-bold text-vietnam-green">
                     <span>Tổng cộng:</span>
-                    <span>{formatMoney(getFinalTotal())}</span>
+                    <span>
+                      {formatMoney(getFinalTotal())}
+                    </span>
                   </div>
-                  {appliedCoupon && calculateDiscount() > 0 && (
+                  {appliedCoupon && appliedCoupon.discountAmount > 0 && (
                     <div className="flex items-center justify-end gap-1 text-sm text-green-600 mt-2">
                       <CheckCircleOutlined className="text-base" />
-                      <span>Tiết kiệm được {formatMoney(calculateDiscount())}</span>
+                      <span>Đã tiết kiệm {formatMoney(getDiscountAmount())}!</span>
                     </div>
                   )}
                 </div>
@@ -487,8 +579,12 @@ const Cart = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ UNCOMMENT ĐỂ BẬT DEBUG PANEL - Hiển thị chi tiết request/response */}
+      {/* <VoucherDebugPanel /> */}
     </div>
   );
 };
 
 export default Cart;
+

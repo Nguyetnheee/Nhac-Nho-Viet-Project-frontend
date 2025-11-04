@@ -114,9 +114,8 @@ const CreateTrayProduct = ({ onBack, onSuccess }) => {
                     <Col span={12}>
                     <Form.Item name="productStatus" label="Trạng thái" rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}>
                         <Select>
-                        <Option value="AVAILABLE">✅ Có sẵn</Option>
-                        <Option value="OUT_OF_STOCK">❌ Hết hàng</Option>
-                        <Option value="DISCONTINUED">🚫 Ngừng kinh doanh</Option>
+                        <Option value="AVAILABLE">Có sẵn</Option>
+                        <Option value="UNAVAILABLE">Hết hàng</Option>
                         </Select>
                     </Form.Item>
                     </Col>
@@ -157,7 +156,7 @@ const CreateTrayProduct = ({ onBack, onSuccess }) => {
           </Col>
 
           <Col xs={24} lg={8}>
-            <Card title="Hình ảnh đại diện" className="shadow-lg rounded-xl text-center">
+            <Card title="Hình ảnh mâm cúng" className="shadow-lg rounded-xl text-center">
               <Upload name="file" listType="picture-card" className="avatar-uploader" showUploadList={false} beforeUpload={handleFileSelect}>
                 {previewUrl ? <img src={previewUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
               </Upload>

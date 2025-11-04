@@ -8,10 +8,32 @@ export const paymentService = {
    */
   createPayment: async (orderId) => {
     try {
+      console.log('💳 CREATING PAYMENT:', {
+        orderId: orderId,
+        url: `/api/payments/create/${orderId}`,
+        note: 'Backend phải lấy totalAmount (đã giảm voucher) từ Order table'
+      });
+      
       const response = await api.post(`/api/payments/create/${orderId}`);
+      
+      console.log('✅ PAYMENT CREATED:', {
+        status: response.status,
+        data: response.data
+      });
+      
+      // ⚠️ CRITICAL: Kiểm tra amount trong payment response
+      if (response.data?.amount !== undefined) {
+        console.log('💰 Payment amount:', response.data.amount, 'VNĐ');
+        console.log('⚠️ Backend phải đảm bảo amount này = Order.totalAmount (đã trừ voucher)');
+      }
+      
       return response.data;
     } catch (error) {
-      console.error('Create payment error:', error);
+      console.error('❌ CREATE PAYMENT ERROR:', {
+        orderId: orderId,
+        error: error.message,
+        response: error.response?.data
+      });
       throw error;
     }
   },

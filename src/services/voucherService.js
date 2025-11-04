@@ -2,70 +2,93 @@
 import api from "./api";
 
 /**
- * Áp dụng mã giảm giá cho đơn hàng
+ * ✅ BƯỚC 1: Validate mã giảm giá (chỉ kiểm tra)
  * @param {string} voucherCode - Mã voucher
  * @param {number} orderAmount - Tổng tiền đơn hàng
  * @returns {Promise} Response data từ backend
+ * 
+ * Backend endpoint: POST /api/vouchers/apply
+ * Request body: { voucherCode: string, orderAmount: number }
  */
-export const applyVoucher = async (voucherCode, orderAmount) => {
+export const validateVoucher = async (voucherCode, orderAmount) => {
   try {
+    console.log('📤 Validating voucher /api/vouchers/apply:', { voucherCode, orderAmount });
+    
     const response = await api.post('/api/vouchers/apply', {
       voucherCode: voucherCode.toUpperCase(),
       orderAmount: orderAmount
     });
+    
+    console.log('✅ Voucher validation response:', response.data);
+    
     return response.data;
   } catch (error) {
-    // Xử lý lỗi từ backend
     const errorMessage = 
       error.response?.data?.message || 
       error.response?.data?.error ||
       error.message || 
       "Không thể áp dụng mã giảm giá. Vui lòng thử lại.";
     
+    console.error('❌ Voucher validation error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
     throw new Error(errorMessage);
   }
 };
 
 /**
- * Lấy danh sách voucher hợp lệ
- * @returns {Promise} Danh sách voucher
+ * ✅ BƯỚC 2: Áp dụng voucher vào cart (cập nhật database)
+ * @param {string} voucherCode - Mã voucher
+ * @returns {Promise} Cart đã cập nhật với voucher
+ * 
+ * Backend endpoint: POST /api/cart/apply-voucher
+ * Request body: { voucherCode: string }
+ * 
+ * Response format:
+ * {
+ *   cartId: number,
+ *   cartStatus: string,
+ *   customerId: number,
+ *   customerName: string,
+ *   items: [...],
+ *   totalItems: number,
+ *   subTotal: number,        // Tổng tiền gốc
+ *   voucherCode: string,     // Mã voucher đã áp dụng
+ *   discountAmount: number,  // Số tiền giảm
+ *   finalAmount: number,     // Tổng tiền sau giảm ✅
+ *   currency: string
+ * }
  */
-export const getValidVouchers = async () => {
+export const applyVoucherToCart = async (voucherCode) => {
   try {
-    const response = await api.get('/api/vouchers/valid');
+    console.log('📤 Applying voucher to cart /api/cart/apply-voucher:', { voucherCode });
+    
+    const response = await api.post('/api/cart/apply-voucher', {
+      voucherCode: voucherCode.toUpperCase()
+    });
+    
+    console.log('✅ Cart updated with voucher:', response.data);
+    
     return response.data;
   } catch (error) {
-    console.error("Error fetching valid vouchers:", error);
-    throw error;
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể áp dụng voucher vào giỏ hàng. Vui lòng thử lại.";
+    
+    console.error('❌ Apply voucher to cart error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    throw new Error(errorMessage);
   }
 };
 
-/**
- * Lấy thông tin chi tiết voucher theo mã
- * @param {string} code - Mã voucher
- * @returns {Promise} Thông tin voucher
- */
-export const getVoucherByCode = async (code) => {
-  try {
-    const response = await api.get(`/api/vouchers/code/${code}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching voucher by code:", error);
-    throw error;
-  }
-};
-
-/**
- * Xác nhận sử dụng voucher
- * @param {string} code - Mã voucher
- * @returns {Promise} Response từ backend
- */
-export const confirmVoucher = async (code) => {
-  try {
-    const response = await api.post(`/api/vouchers/confirm/${code}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error confirming voucher:", error);
-    throw error;
-  }
-};
+// Giữ lại alias cho backward compatibility
+export const applyVoucher = validateVoucher;

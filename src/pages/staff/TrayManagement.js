@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Image, Modal, message, Input } from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  SearchOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
   ReloadOutlined,
-  ExclamationCircleOutlined 
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
 
 // Import components
@@ -53,21 +53,21 @@ const TrayManagement = () => {
   // Xử lý delete sản phẩm với confirm modal
   const handleDelete = (record) => {
     const { productId, productName } = record;
-    
+
     Modal.confirm({
       title: 'Xác nhận xóa sản phẩm',
-      icon: <ExclamationCircleOutlined />,
+      icon: <DeleteOutlined />,
       content: (
         <div>
           <p>Bạn có chắc chắn muốn xóa sản phẩm này không?</p>
           <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '4px', marginTop: '10px' }}>
-            <strong>ID:</strong> {productId}<br />
+            {/* <strong>ID:</strong> {productId}<br /> */}
             <strong>Tên:</strong> {productName}<br />
             <strong>Giá:</strong> {record.price?.toLocaleString()} VNĐ
           </div>
-          <p style={{ color: '#ff4d4f', marginTop: '10px', fontSize: '14px' }}>
+          {/* <p style={{ color: '#ff4d4f', marginTop: '10px', fontSize: '14px' }}>
             ⚠️ <strong>Cảnh báo:</strong> Hành động này không thể hoàn tác!
-          </p>
+          </p> */}
         </div>
       ),
       okText: 'Xóa',
@@ -85,26 +85,26 @@ const TrayManagement = () => {
 
           // Gọi API xóa
           await productService.deleteProduct(productId);
-          
+
           // Ẩn loading
           hide();
-          
+
           console.log('=== DELETE SUCCESS ===');
           message.success(`Đã xóa sản phẩm "${productName}" thành công!`);
-          
+
           // Reload danh sách
           loadProducts();
-          
+
         } catch (error) {
           console.error('=== DELETE ERROR ===');
           console.error('Error object:', error);
           console.error('Error response:', error.response);
-          
+
           // Xử lý các loại lỗi
           if (error.response) {
             const { status, data } = error.response;
             console.error(`Delete API Error ${status}:`, data);
-            
+
             switch (status) {
               case 400:
                 message.error('Không thể xóa sản phẩm này!');
@@ -174,10 +174,10 @@ const TrayManagement = () => {
 
   const columns = [
     {
-      title: 'ID',
+      title: 'STT',
       dataIndex: 'productId',
       key: 'productId',
-      width: 60,
+      width: 80,
       sorter: (a, b) => a.productId - b.productId,
     },
     {
@@ -215,60 +215,80 @@ const TrayManagement = () => {
       title: 'Vùng miền',
       dataIndex: 'regionName',
       key: 'regionName',
-      render: (regionName) => (
-        <Tag color="blue">{regionName || 'N/A'}</Tag>
-      ),
+      width: 120,
+      render: (regionName) => { 
+        if (regionName === 'Miền Bắc') {
+          return <Tag color="blue">Miền Bắc</Tag>;
+        } else if (regionName === 'Miền Trung') {
+          return <Tag color="green">Miền Trung</Tag>;
+        } else if (regionName === 'Miền Nam') {
+          return <Tag color="orange">Miền Nam</Tag>;
+        } else {
+          return <Tag color="purple">Toàn Quốc</Tag>;
+        }
+
+      },
+
+      filters: [
+        { text: 'Miền Bắc', value: 'Miền Bắc' },
+        { text: 'Miền Trung', value: 'Miền Trung' },
+        { text: 'Miền Nam', value: 'Miền Nam' },
+        { text: 'Toàn Quốc', value: 'Toàn Quốc' },
+      ],
+      onFilter: (value, record) => record.regionName === value,
     },
     {
       title: 'Giá',
       dataIndex: 'price',
       key: 'price',
+      // width: 120,
       render: (price) => (
         <span style={{ fontWeight: 'bold', color: '#1890ff' }}>
           {price?.toLocaleString()} VNĐ
         </span>
       ),
       sorter: (a, b) => a.price - b.price,
+      
     },
     {
       title: 'Trạng thái',
       dataIndex: 'productStatus',
       key: 'productStatus',
+      width: 120,
       render: (status) => {
         const statusConfig = {
           'AVAILABLE': { color: 'green', text: 'Có sẵn' },
-          'OUT_OF_STOCK': { color: 'red', text: 'Hết hàng' },
-          'DISCONTINUED': { color: 'gray', text: 'Ngừng kinh doanh' }
+          'UNAVAILABLE': { color: 'red', text: 'Hết hàng' },
+          // 'DISCONTINUED': { color: 'gray', text: 'Ngừng kinh doanh' }
         };
         const config = statusConfig[status] || { color: 'default', text: status };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
       filters: [
         { text: 'Có sẵn', value: 'AVAILABLE' },
-        { text: 'Hết hàng', value: 'OUT_OF_STOCK' },
-        { text: 'Ngừng kinh doanh', value: 'DISCONTINUED' },
+        { text: 'Hết hàng', value: 'UNAVAILABLE' },
       ],
       onFilter: (value, record) => record.productStatus === value,
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       key: 'action',
-      width: 150,
+      width: 260,
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
-            size="small"
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            // size="small"
             onClick={() => handleEdit(record.productId)}
           >
             Sửa
           </Button>
-          <Button 
-            type="primary" 
-            danger 
-            icon={<DeleteOutlined />} 
-            size="small"
+          <Button
+            type="primary"
+            danger
+            icon={<DeleteOutlined />}
+            // size="small"
             onClick={() => handleDelete(record)}
           >
             Xóa
@@ -304,18 +324,18 @@ const TrayManagement = () => {
     <div>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>Quản lý mâm cúng</h2>
+        <h1 className='text-2xl font-bold text-vietnam-green'>Quản lý mâm cúng</h1>
         <Space>
-          <Button 
-            icon={<ReloadOutlined />} 
+          <Button
+            icon={<ReloadOutlined />}
             onClick={loadProducts}
             loading={loading}
           >
             Tải lại
           </Button>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
             onClick={() => setCurrentView('create')}
           >
             Thêm mâm cúng
@@ -343,22 +363,22 @@ const TrayManagement = () => {
             Có sẵn: {filteredProducts.filter(p => p.productStatus === 'AVAILABLE').length}
           </Tag>
           <Tag color="red">
-            Hết hàng: {filteredProducts.filter(p => p.productStatus === 'OUT_OF_STOCK').length}
+            Hết hàng: {filteredProducts.filter(p => p.productStatus === 'UNAVAILABLE').length}
           </Tag>
         </Space>
       </div>
 
       {/* Table */}
-      <Table 
-        columns={columns} 
+      <Table
+        columns={columns}
         dataSource={filteredProducts}
         rowKey="productId"
         loading={loading}
         pagination={{
-          pageSize: 10,
+          // pageSize: 10,
           showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => 
+          // showQuickJumper: true,
+          showTotal: (total, range) =>
             `${range[0]}-${range[1]} của ${total} sản phẩm`,
         }}
         scroll={{ x: 1200 }}
