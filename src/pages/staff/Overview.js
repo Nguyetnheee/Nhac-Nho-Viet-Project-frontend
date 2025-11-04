@@ -990,7 +990,8 @@ const Overview = () => {
                 dataSource={recentUsers}
                 pagination={{
                   pageSize: 5,
-                  showTotal: (total) => `Tổng ${total} khách hàng`
+                  showTotal: (total) => `Tổng ${total} khách hàng`,
+                  locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
               />
@@ -1013,7 +1014,8 @@ const Overview = () => {
                 dataSource={shippers}
                 pagination={{
                   pageSize: 5,
-                  showTotal: (total) => `Tổng ${total} shipper`
+                  showTotal: (total) => `Tổng ${total} shipper`,
+                  locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
                 scroll={{ x: true }}
@@ -1040,7 +1042,8 @@ const Overview = () => {
                 pagination={{
                   pageSize: 5,
                   showSizeChanger: false,
-                  showTotal: (total) => `Tổng ${total} đơn hàng`
+                  showTotal: (total) => `Tổng ${total} đơn hàng`,
+                  locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
                 scroll={{ x: true }}
@@ -1065,7 +1068,8 @@ const Overview = () => {
                 pagination={{
                   pageSize: 5,
                   showSizeChanger: false,
-                  showTotal: (total) => `Tổng ${total} đơn hàng`
+                  showTotal: (total) => `Tổng ${total} đơn hàng`,
+                  locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
                 scroll={{ x: true }}
@@ -1088,7 +1092,8 @@ const Overview = () => {
             dataSource={recentVouchers}
             pagination={{
               pageSize: 5,
-              showTotal: (total) => `Tổng ${total} voucher`
+              showTotal: (total) => `Tổng ${total} voucher`,
+              locale: { items_per_page: '/ trang' },
             }}
             size="small"
             scroll={{ x: true }}

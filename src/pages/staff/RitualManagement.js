@@ -173,7 +173,11 @@ const RitualManagement = () => {
           <Table
             columns={columns}
             dataSource={rituals}
-            pagination={{ pageSize: 10, showTotal: (total) => `Tổng số ${total} lễ hội` }}
+            pagination={{ 
+              pageSize: 10, 
+              showTotal: (total) => `Tổng số ${total} lễ hội`,
+              locale: { items_per_page: '/ trang' },
+            }}
             locale={{
               emptyText: (
                 <Empty description="Chưa có lễ hội nào." image={Empty.PRESENTED_IMAGE_SIMPLE}>

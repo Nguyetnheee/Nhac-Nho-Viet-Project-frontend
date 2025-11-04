@@ -392,7 +392,20 @@ const OrderManagement = () => {
         })
         .catch((error) => {
           console.error('❌ Error saving to backend:', error);
-          message.error('Lỗi khi lưu vào database: ' + (error.response?.data?.message || error.message));
+          
+          // Thông báo lỗi dễ hiểu
+          let errorMessage = 'Lỗi khi lưu vào hệ thống: ';
+          if (error.response?.status === 400) {
+            errorMessage += 'Đơn hàng không thể gán người giao hàng ở trạng thái hiện tại.';
+          } else if (error.response?.status === 404) {
+            errorMessage += 'Không tìm thấy đơn hàng hoặc người giao hàng.';
+          } else if (error.response?.status >= 500) {
+            errorMessage += 'Hệ thống đang gặp sự cố.';
+          } else {
+            errorMessage += 'Vui lòng thử lại.';
+          }
+          message.error(errorMessage);
+          
           // Rollback nếu lỗi (xóa khỏi localStorage và fetch lại)
           localStorage.removeItem(`${SHIPPER_MAPPING_KEY}_${orderId}`);
           fetchOrders();
@@ -400,7 +413,7 @@ const OrderManagement = () => {
       
     } catch (error) {
       console.error('❌ Error in handleQuickAssign:', error);
-      message.error('Không thể gán shipper');
+      message.error('Không thể gán người giao hàng. Vui lòng thử lại.');
     }
   };
 
@@ -465,8 +478,21 @@ const OrderManagement = () => {
       message.success(`Đã gán shipper "${shipperName}" cho đơn hàng #${orderId}`);
       
     } catch (error) {
-      message.error('Không thể gán đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('❌ Error assigning order:', error);
+      
+      // Thông báo lỗi dễ hiểu
+      let errorMessage = 'Không thể gán người giao hàng. ';
+      if (error.response?.status === 400) {
+        errorMessage += 'Đơn hàng không thể gán người giao hàng ở trạng thái hiện tại.';
+      } else if (error.response?.status === 404) {
+        errorMessage += 'Không tìm thấy đơn hàng hoặc người giao hàng.';
+      } else if (error.response?.status >= 500) {
+        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+      } else {
+        errorMessage += 'Vui lòng thử lại.';
+      }
+      message.error(errorMessage);
+      
       // Rollback nếu lỗi
       fetchOrders();
     } finally {
@@ -853,6 +879,7 @@ const OrderManagement = () => {
             pageSize: 10,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} đơn hàng`,
+            locale: { items_per_page: '/ trang' },
           }}
           bordered
         />

@@ -284,6 +284,7 @@ const ShipperManagement = () => {
             pageSize: 10,
             showSizeChanger: true,
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} shipper`,
+            locale: { items_per_page: '/ trang' },
           }}
           scroll={{ x: 1000 }}
           locale={{

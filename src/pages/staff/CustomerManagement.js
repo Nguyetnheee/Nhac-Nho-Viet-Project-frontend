@@ -1,11 +1,10 @@
 // src/pages/staff/CustomerManagement.js
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Card, message, Tag, Space, Typography, Dropdown, Modal } from 'antd';
+import { Table, Button, Input, Card, message, Tag, Typography, Modal } from 'antd';
 import { 
   SearchOutlined, 
   ReloadOutlined,
   TeamOutlined,
-  MoreOutlined,
   EyeOutlined,
   UserOutlined,
   MailOutlined,
@@ -137,7 +136,7 @@ const CustomerManagement = () => {
 
   const columns = [
     {
-      title: 'ID',
+      title: 'STT',
       dataIndex: 'id',
       key: 'id',
       width: 80,
@@ -148,12 +147,7 @@ const CustomerManagement = () => {
       dataIndex: 'username',
       key: 'username',
       width: 150,
-      render: (text) => (
-        <Space>
-          <UserOutlined style={{ color: '#1890ff' }} />
-          <Text strong>{text}</Text>
-        </Space>
-      ),
+      render: (text) => <Text strong>{text}</Text>,
     },
     {
       title: 'Tên khách hàng',
@@ -167,24 +161,14 @@ const CustomerManagement = () => {
       dataIndex: 'email',
       key: 'email',
       width: 220,
-      render: (text) => (
-        <Space>
-          <MailOutlined style={{ color: '#52c41a' }} />
-          <Text copyable>{text}</Text>
-        </Space>
-      ),
+      render: (text) => <Text copyable>{text}</Text>,
     },
     {
       title: 'Số điện thoại',
       dataIndex: 'phone',
       key: 'phone',
       width: 140,
-      render: (text) => (
-        <Space>
-          <PhoneOutlined style={{ color: '#faad14' }} />
-          <Text copyable>{text}</Text>
-        </Space>
-      ),
+      render: (text) => <Text copyable>{text}</Text>,
     },
     {
       title: 'Giới tính',
@@ -198,6 +182,7 @@ const CustomerManagement = () => {
         { text: 'Nữ', value: 'FEMALE' },
         { text: 'Khác', value: 'OTHER' },
       ],
+      filterResetText: 'Đặt lại',
       onFilter: (value, record) => record.gender?.toUpperCase() === value,
     },
     {
@@ -215,32 +200,15 @@ const CustomerManagement = () => {
       align: 'center',
       fixed: 'right',
       render: (_, record) => {
-        const menuItems = [
-          {
-            key: 'view',
-            label: 'Xem chi tiết',
-            icon: <EyeOutlined />,
-            onClick: () => handleViewDetail(record),
-          },
-        ];
-
         return (
-          <Space size="small">
-            <Button
-              type="primary"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetail(record)}
-            >
-              Chi tiết
-            </Button>
-            <Dropdown
-              menu={{ items: menuItems }}
-              trigger={['click']}
-            >
-              <Button size="small" icon={<MoreOutlined />} />
-            </Dropdown>
-          </Space>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            Chi tiết
+          </Button>
         );
       },
     },
@@ -312,10 +280,13 @@ const CustomerManagement = () => {
             showSizeChanger: true,
             showTotal: (total) => `Tổng cộng ${total} khách hàng`,
             pageSizeOptions: ['10', '20', '50', '100'],
+            locale: { items_per_page: '/ trang' },
           }}
           scroll={{ x: 1400 }}
           locale={{
             emptyText: searchText ? 'Không tìm thấy khách hàng nào' : 'Không có khách hàng nào',
+            filterReset: 'Đặt lại',
+            filterConfirm: 'OK',
           }}
         />
       </Card>
