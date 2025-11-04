@@ -63,7 +63,7 @@ const Checklist = () => {
 
         {/* ⚠️ CHỖ CẦN CHỈNH: Điều chỉnh giới hạn chiều rộng cho nội dung hero */}
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-white"> 
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 drop-shadow-lg">Checklist Lễ Hội</h1>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 drop-shadow-lg">Danh Mục Lễ Hội</h1>
           <p 
             className="text-base md:text-lg text-green-100 drop-shadow-md"
             // Giữ nguyên max-w-full để đảm bảo dòng chữ trắng vẫn giới hạn trong max-w-3xl
@@ -105,10 +105,10 @@ const Checklist = () => {
             <div className="max-w-md mx-auto">
               <div className="text-6xl mb-4">📋</div>
               <h3 className="text-2xl font-bold text-vietnam-green mb-4">
-                Chưa có checklist nào
+                Chưa có danh mục nào
               </h3>
               <p className="text-gray-600 mb-6">
-                Hiện tại chưa có danh sách checklist nào trong hệ thống. 
+                Hiện tại chưa có danh sách danh mục nào trong hệ thống. 
                 Vui lòng thử lại sau hoặc liên hệ quản trị viên.
               </p>
               <button
