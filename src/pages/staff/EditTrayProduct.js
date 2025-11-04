@@ -43,7 +43,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
     };
     if (productId) loadInitialData();
   }, [productId, form]);
-  
+
   const handleFileSelect = (file) => {
     // Validation logic is preserved from original file
     setSelectedFile(file);
@@ -62,8 +62,8 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
       message.success('Cập nhật mâm cúng thành công!');
       if (onSuccess) onSuccess(response);
     } catch (error) {
-        const errorMessage = error.response?.data?.message || 'Cập nhật mâm cúng thất bại!';
-        message.error(errorMessage);
+      const errorMessage = error.response?.data?.message || 'Cập nhật mâm cúng thất bại!';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -80,74 +80,79 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
   if (!productData) {
     return <Alert message="Lỗi" description="Không tìm thấy sản phẩm." type="error" showIcon action={<Button onClick={onBack}>Quay lại</Button>} />;
   }
-  
+
   const displayImageUrl = previewUrl || currentImageUrl;
-  
+
   return (
     <div className="font-sans">
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div className="mb-4 md:mb-0">
-                  <Title level={2} className="font-serif !text-vietnam-green !mb-1">
-                      <Space><EditOutlined /> Chỉnh sửa mâm cúng</Space>
-                  </Title>
-                  <Text type="secondary">Cập nhật thông tin cho sản phẩm: <span className="font-semibold">{productData.productName}</span></Text>
-              </div>
-              <Button icon={<ArrowLeftOutlined />} onClick={onBack}>Quay lại danh sách</Button>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>
+                {/* <EditOutlined />  */}
+                Chỉnh sửa mâm cúng</Space>
+            </Title>
+            <Text type="secondary">Cập nhật thông tin cho sản phẩm: <span className="font-semibold">{productData.productName}</span></Text>
           </div>
+          <Button icon={<ArrowLeftOutlined />} onClick={onBack}>Quay lại danh sách</Button>
+        </div>
       </Card>
 
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Row gutter={24}>
           <Col xs={24} lg={16}>
             <Card className="shadow-lg rounded-xl mb-6">
-                <Title level={4} className="font-serif !text-vietnam-green">Thông tin sản phẩm</Title>
-                <Form.Item name="productName" label="Tên mâm cúng" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
-                    <Input />
-                </Form.Item>
-                <Row gutter={16}>
-                    <Col span={12}>
-                    <Form.Item name="price" label="Giá (VNĐ)" rules={[{ required: true, message: 'Vui lòng nhập giá!' }]}>
-                        <InputNumber className="w-full" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={v => v.replace(/\$\s?|(,*)/g, '')} />
-                    </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                    <Form.Item name="productStatus" label="Trạng thái" rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}>
-                        <Select>
-                        <Option value="AVAILABLE">Có sẵn</Option>
-                        <Option value="UNAVAILABLE">Hết hàng</Option>
-                        </Select>
-                    </Form.Item>
-                    </Col>
-                </Row>
-                <Row gutter={16}>
-                    <Col span={12}>
-                    <Form.Item name="categoryId" label="Danh mục" rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}>
-                        <Select placeholder="Chọn danh mục" loading={categories.length === 0}>
-                        {categories.map(c => <Option key={c.categoryId} value={c.categoryId}>{c.categoryName}</Option>)}
-                        </Select>
-                    </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                    <Form.Item name="regionId" label="Vùng miền" rules={[{ required: true, message: 'Vui lòng chọn vùng miền!' }]}>
-                        <Select placeholder="Chọn vùng miền" loading={regions.length === 0}>
-                        {regions.map(r => <Option key={r.regionId} value={r.regionId}>{r.regionName}</Option>)}
-                        </Select>
-                    </Form.Item>
-                    </Col>
-                </Row>
-                <Form.Item name="productDescription" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}>
-                    <TextArea rows={5} showCount maxLength={1000} />
-                </Form.Item>
-            </Card>
-             <Form.Item>
+              <Title level={4} className="font-serif !text-vietnam-green">Thông tin sản phẩm</Title>
+              <Form.Item name="productName" label="Tên mâm cúng" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
+                <Input />
+              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="price" label="Giá (VNĐ)" rules={[{ required: true, message: 'Vui lòng nhập giá!' }]}>
+                    <InputNumber className="w-full" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={v => v.replace(/\$\s?|(,*)/g, '')} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="productStatus" label="Trạng thái" rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}>
+                    <Select>
+                      <Option value="AVAILABLE">Có sẵn</Option>
+                      <Option value="UNAVAILABLE">Hết hàng</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="categoryId" label="Danh mục" rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}>
+                    <Select placeholder="Chọn danh mục" loading={categories.length === 0}>
+                      {categories.map(c => <Option key={c.categoryId} value={c.categoryId}>{c.categoryName}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="regionId" label="Vùng miền" rules={[{ required: true, message: 'Vui lòng chọn vùng miền!' }]}>
+                    <Select placeholder="Chọn vùng miền" loading={regions.length === 0}>
+                      {regions.map(r => <Option key={r.regionId} value={r.regionId}>{r.regionName}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item name="productDescription" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}>
+                <TextArea rows={5} showCount maxLength={1000} />
+              </Form.Item>
+              <Form.Item>
                 <Space>
-                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large" className="bg-vietnam-green hover:!bg-emerald-800">
+                  <Button type="primary" htmlType="submit"
+                    // icon={<SaveOutlined />}
+                    loading={loading} className="bg-vietnam-green hover:!bg-emerald-800">
                     {loading ? 'Đang cập nhật...' : 'Cập nhật'}
-                    </Button>
-                    <Button size="large" onClick={onBack}>Hủy</Button>
+                  </Button>
+                  <Button onClick={onBack}>Hủy</Button>
                 </Space>
-            </Form.Item>
+              </Form.Item>
+            </Card>
+
           </Col>
           <Col xs={24} lg={8}>
             <Card title="Hình ảnh mâm cúng" className="shadow-lg rounded-xl text-center">
@@ -155,7 +160,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
                 {displayImageUrl ? <img src={displayImageUrl} alt="preview" style={{ width: '100%' }} /> : (<div><PlusOutlined /><div className="mt-2">Chọn ảnh mới</div></div>)}
               </Upload>
               {previewUrl && (
-                  <Button size="small" className="mt-2" onClick={() => { setSelectedFile(null); setPreviewUrl(''); }}>Hủy ảnh mới</Button>
+                <Button size="small" className="mt-2" onClick={() => { setSelectedFile(null); setPreviewUrl(''); }}>Hủy ảnh mới</Button>
               )}
               <Text type="secondary" className="block mt-2 text-xs">
                 {previewUrl ? `Đang sử dụng ảnh mới` : `Đang sử dụng ảnh hiện tại`}

@@ -44,33 +44,10 @@ const ShipperManagement = () => {
       }));
       
       setShippers(mappedShippers);
-      message.success(`Đã tải ${mappedShippers.length} người giao hàng thành công`);
+      message.success(`Đã tải ${mappedShippers.length} shipper thành công`);
     } catch (error) {
       console.error('Error loading shippers:', error);
-      
-      // Thông báo lỗi dễ hiểu cho người dùng
-      let errorMessage = 'Không thể tải danh sách người giao hàng. ';
-      
-      if (error.response) {
-        // Lỗi từ server
-        if (error.response.status === 404) {
-          errorMessage += 'Không tìm thấy dữ liệu.';
-        } else if (error.response.status === 401 || error.response.status === 403) {
-          errorMessage += 'Bạn không có quyền xem thông tin này.';
-        } else if (error.response.status >= 500) {
-          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-        } else {
-          errorMessage += 'Vui lòng thử lại.';
-        }
-      } else if (error.request) {
-        // Không nhận được phản hồi từ server
-        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
-      } else {
-        // Lỗi khác
-        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
-      }
-      
-      message.error(errorMessage);
+      message.error('Tải danh sách shipper thất bại: ' + (error.response?.data?.message || error.message));
       setShippers([]);
     } finally {
       setLoading(false);
@@ -140,7 +117,7 @@ const ShipperManagement = () => {
   );
 
   const columns = [
-    { title: 'ID', dataIndex: 'shipperId', key: 'shipperId', width: 80, sorter: (a, b) => a.shipperId - b.shipperId },
+    { title: 'STT', dataIndex: 'shipperId', key: 'shipperId', width: 80, sorter: (a, b) => a.shipperId - b.shipperId },
     {
       title: 'Tên shipper',
       dataIndex: 'shipperName',
@@ -157,7 +134,7 @@ const ShipperManagement = () => {
       title: 'Giới tính',
       dataIndex: 'gender',
       key: 'gender',
-      width: 100,
+      width: 120,
       render: (gender) => {
         const genderConfig = {
           'MALE': { color: 'geekblue', text: 'Nam' },
@@ -241,12 +218,14 @@ const ShipperManagement = () => {
   }
 
   return (
-    <div className="bg-vietnam-cream min-h-screen p-6 font-sans">
+    <div className="font-sans">
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div className="mb-4 md:mb-0">
             <Title level={2} className="font-serif !text-vietnam-green !mb-1">
-              <Space><TeamOutlined /> Quản lý Shipper</Space>
+              <Space>
+                {/* <TeamOutlined />  */}
+                Quản lý Shipper</Space>
             </Title>
             <Text type="secondary">Quản lý và cấp tài khoản cho người giao hàng.</Text>
           </div>
@@ -284,7 +263,6 @@ const ShipperManagement = () => {
             pageSize: 10,
             showSizeChanger: true,
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} shipper`,
-            locale: { items_per_page: '/ trang' },
           }}
           scroll={{ x: 1000 }}
           locale={{

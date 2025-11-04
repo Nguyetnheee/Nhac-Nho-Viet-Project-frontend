@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Image, Modal, message, Input } from 'antd';
+import { Table, Button, Space, Tag, Image, Modal, message, Input, ConfigProvider, Card, Typography, Row, Col, Select } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
   ReloadOutlined,
-  ExclamationCircleOutlined
+  // ExclamationCircleOutlined
 } from '@ant-design/icons';
-
+import viVN from 'antd/locale/vi_VN';
 // Import components
 import CreateTrayProduct from './CreateTrayProduct';
 import EditTrayProduct from './EditTrayProduct';
@@ -22,6 +22,8 @@ const TrayManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const { Title, Text } = Typography;
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   // Load danh sách sản phẩm
   const loadProducts = async () => {
@@ -81,13 +83,13 @@ const TrayManagement = () => {
           console.log('Product Name:', productName);
 
           // Hiển thị loading
-          const hide = message.loading('Đang xóa sản phẩm...', 0);
+          // const hide = message.loading('Đang xóa sản phẩm...', 0);
 
           // Gọi API xóa
           await productService.deleteProduct(productId);
 
           // Ẩn loading
-          hide();
+          // hide();
 
           console.log('=== DELETE SUCCESS ===');
           message.success(`Đã xóa sản phẩm "${productName}" thành công!`);
@@ -216,7 +218,7 @@ const TrayManagement = () => {
       dataIndex: 'regionName',
       key: 'regionName',
       width: 120,
-      render: (regionName) => { 
+      render: (regionName) => {
         if (regionName === 'Miền Bắc') {
           return <Tag color="blue">Miền Bắc</Tag>;
         } else if (regionName === 'Miền Trung') {
@@ -248,7 +250,7 @@ const TrayManagement = () => {
         </span>
       ),
       sorter: (a, b) => a.price - b.price,
-      
+
     },
     {
       title: 'Trạng thái',
@@ -277,15 +279,15 @@ const TrayManagement = () => {
       render: (_, record) => (
         <Space size="small">
           <Button
-            type="primary"
+            // type="primary"
             icon={<EditOutlined />}
-            // size="small"
+            // size="middle"
             onClick={() => handleEdit(record.productId)}
           >
             Sửa
           </Button>
           <Button
-            type="primary"
+            // type="primary"
             danger
             icon={<DeleteOutlined />}
             // size="small"
@@ -321,52 +323,73 @@ const TrayManagement = () => {
 
   // Default list view
   return (
-    <div>
+    <ConfigProvider locale={viVN}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center' }}>
-        <h1 className='text-2xl font-bold text-vietnam-green'>Quản lý mâm cúng</h1>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadProducts}
-            loading={loading}
-          >
-            Tải lại
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCurrentView('create')}
-          >
-            Thêm mâm cúng
-          </Button>
-        </Space>
-      </div>
+      {/* <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center' }}> */}
+      <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>
+                {/* <BookOutlined />  */}
+                Quản lý mâm cúng</Space>
+            </Title>
+            <Text type="secondary">Thêm, xóa, sửa và quản lý các mâm cúng.</Text>
+          </div>
+          {/* <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)} className="bg-vietnam-green hover:!bg-emerald-800">
+                Thêm lễ hội
+              </Button> */}
+          <Space>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={loadProducts}
+              loading={loading}
+            >
+              Tải lại
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCurrentView('create')}
+              className="bg-vietnam-green hover:!bg-emerald-800"
+            >
+              Thêm mâm cúng
+            </Button>
+          </Space>
+        </div>
+      </Card>
 
-      {/* Search */}
-      <div style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Tìm kiếm theo tên, danh mục, vùng miền..."
-          prefix={<SearchOutlined />}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 400 }}
-          allowClear
-        />
-      </div>
+      <Card className="shadow-lg rounded-xl mb-6">
+        {/* Search */}
+        <div style={{ marginBottom: 16 }}>
+          <Input
+            placeholder="Tìm kiếm theo tên, danh mục, vùng miền..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 400 }}
+            allowClear
+          />
+        </div>
 
-      {/* Stats */}
-      <div style={{ marginBottom: 16 }}>
-        <Space>
-          <Tag color="blue">Tổng: {filteredProducts.length} sản phẩm</Tag>
-          <Tag color="green">
-            Có sẵn: {filteredProducts.filter(p => p.productStatus === 'AVAILABLE').length}
-          </Tag>
-          <Tag color="red">
-            Hết hàng: {filteredProducts.filter(p => p.productStatus === 'UNAVAILABLE').length}
-          </Tag>
-        </Space>
-      </div>
+        {/* Stats */}
+        <div >
+          <Space>
+            <Tag color="blue">Tổng: {filteredProducts.length} sản phẩm</Tag>
+            <Tag color="green">
+              Có sẵn: {filteredProducts.filter(p => p.productStatus === 'AVAILABLE').length}
+            </Tag>
+            <Tag color="red">
+              Hết hàng: {filteredProducts.filter(p => p.productStatus === 'UNAVAILABLE').length}
+            </Tag>
+          </Space>
+        </div>
+      </Card>
+
+
+
+
+
 
       {/* Table */}
       <Table
@@ -383,7 +406,8 @@ const TrayManagement = () => {
         }}
         scroll={{ x: 1200 }}
       />
-    </div>
+      {/* </div> */}
+    </ConfigProvider>
   );
 };
 
