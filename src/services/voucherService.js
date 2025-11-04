@@ -1,5 +1,38 @@
 // src/services/voucherService.js
-import api from "./api";
+import { api } from "./api";
+
+/**
+ * 📋 QUẢN LÝ VOUCHER - Lấy danh sách tất cả vouchers
+ * GET /api/vouchers (Requires STAFF authentication)
+ * @param {Object} params - Query parameters (code, discountType, isActive, startDate, endDate, page, size, sortBy, direction)
+ * @returns {Promise} Response data từ backend
+ */
+export const getAllVouchers = async (params = {}) => {
+  try {
+    console.log('📤 [STAFF AUTH REQUIRED] Fetching all vouchers with params:', params);
+    
+    // Đảm bảo sử dụng api instance (có gửi token)
+    const response = await api.get('/api/vouchers', { params });
+    
+    console.log('✅ Vouchers fetched successfully:', response.data);
+    
+    return response.data;
+  } catch (error) {
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể tải danh sách vouchers. Vui lòng thử lại.";
+    
+    console.error('❌ Fetch vouchers error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    throw new Error(errorMessage);
+  }
+};
 
 /**
  * ✅ BƯỚC 1: Validate mã giảm giá (chỉ kiểm tra)

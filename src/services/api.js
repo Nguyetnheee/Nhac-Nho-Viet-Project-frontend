@@ -34,13 +34,13 @@ api.interceptors.request.use(
       '/api/customer/verify-reset-otp',
       '/api/customer/reset-password',
       '/csrf',
-      '/'
     ];
     
-    // Kiểm tra xem endpoint có phải là public không
-    const isPublicEndpoint = publicEndpoints.some(endpoint => 
-      config.url?.includes(endpoint)
-    );
+    // Kiểm tra xem endpoint có phải là public không (exact match hoặc startsWith)
+    const isPublicEndpoint = publicEndpoints.some(endpoint => {
+      // Exact match hoặc startsWith để tránh false positive
+      return config.url === endpoint || config.url?.startsWith(endpoint);
+    });
     
     // Nếu là public endpoint, không gắn token
     if (isPublicEndpoint) {

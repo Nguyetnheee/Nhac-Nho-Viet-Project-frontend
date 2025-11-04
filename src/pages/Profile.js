@@ -126,7 +126,6 @@ const Profile = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4">
             {/* Sidebar */}
             <div className="bg-gradient-to-b from-vietnam-green to-vietnam-gold text-white p-6 space-y-2">
-              <h3 className="font-semibold mb-4 text-lg">Menu</h3>
               <div className="bg-white rounded-2xl p-6 space-y-2 shadow-sm">
                 <button 
                   onClick={() => setActiveTab('profile')}

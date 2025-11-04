@@ -8,6 +8,7 @@ import {
   CarOutlined,
   UserOutlined,
   LogoutOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import { Breadcrumb, Layout, Menu, theme, Button } from 'antd';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +22,7 @@ import ChecklistManagement from './staff/ChecklistManagement';
 import ShipperManagement from './staff/ShipperManagement';
 import CustomerManagement from './staff/CustomerManagement';
 import OrderManagement from './staff/OrderManagement';
+import VoucherManagement from './staff/VoucherManagement';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -41,6 +43,7 @@ const items = [
     getItem('Mâm cúng', '4'),
     getItem('Checklist', '5'),
   ]),
+  getItem('Ưu đãi', '10', <GiftOutlined />),
   getItem('Vai trò', 'sub2', <TeamOutlined />, [getItem('Shipper', '6', <CarOutlined />), getItem('Khách hàng', '8', <UserOutlined />)]),
   getItem('Đơn hàng', '9', <FileOutlined />),
 ];
@@ -78,6 +81,8 @@ const StaffDashboard = () => {
         return <CustomerManagement />;
       case '9':
         return <OrderManagement />;
+      case '10':
+        return <VoucherManagement />;
       default:
         return <Overview />;
     }
@@ -93,6 +98,7 @@ const StaffDashboard = () => {
       '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }],
       '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
       '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],
+      '10': [{ title: 'Dashboard' }, { title: 'Ưu đãi' }],
     };
     return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
   };
