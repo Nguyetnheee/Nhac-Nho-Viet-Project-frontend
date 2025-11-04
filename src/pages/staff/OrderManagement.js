@@ -322,8 +322,20 @@ const OrderManagement = () => {
       message.success('Hủy đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
-      message.error('Không thể hủy đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('Error canceling order:', error);
+      
+      // Thông báo lỗi dễ hiểu
+      let errorMessage = 'Không thể hủy đơn hàng. ';
+      if (error.response?.status === 400) {
+        errorMessage += 'Đơn hàng không thể hủy ở trạng thái hiện tại.';
+      } else if (error.response?.status === 404) {
+        errorMessage += 'Không tìm thấy đơn hàng.';
+      } else if (error.response?.status >= 500) {
+        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+      } else {
+        errorMessage += 'Vui lòng thử lại.';
+      }
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
