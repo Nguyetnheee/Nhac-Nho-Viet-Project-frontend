@@ -35,7 +35,6 @@ const ShipperPanel = () => {
   const [shipperProfile, setShipperProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [form] = Form.useForm();
   
   const shipperUsername = shipperProfile?.shipperName || user?.username || "Shipper";
 
@@ -49,13 +48,6 @@ const ShipperPanel = () => {
     try {
       const response = await shipperService.getProfile();
       setShipperProfile(response);
-      // Set form values cho modal edit
-      form.setFieldsValue({
-        shipperName: response.shipperName,
-        email: response.email,
-        phone: response.phone,
-        gender: response.gender,
-      });
     } catch (error) {
       console.error('Error fetching shipper profile:', error);
       message.error('Không thể tải thông tin cá nhân');
@@ -222,77 +214,105 @@ const ShipperPanel = () => {
       </Layout>
 
       {/* Modal chỉnh sửa thông tin */}
-      <Modal
-        title="Chỉnh sửa thông tin cá nhân"
-        open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleUpdateProfile}
-        >
-          <Form.Item
-            label="Tên shipper"
-            name="shipperName"
-            rules={[
-              { required: true, message: 'Vui lòng nhập tên!' },
-              { min: 2, message: 'Tên phải có ít nhất 2 ký tự!' },
-            ]}
-          >
-            <Input placeholder="Nhập tên shipper" />
-          </Form.Item>
-
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: 'Vui lòng nhập email!' },
-              { type: 'email', message: 'Email không hợp lệ!' },
-            ]}
-          >
-            <Input placeholder="Nhập email" />
-          </Form.Item>
-
-          <Form.Item
-            label="Số điện thoại"
-            name="phone"
-            rules={[
-              { required: true, message: 'Vui lòng nhập số điện thoại!' },
-              { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' },
-            ]}
-          >
-            <Input placeholder="Nhập số điện thoại" />
-          </Form.Item>
-
-          <Form.Item
-            label="Giới tính"
-            name="gender"
-            rules={[{ required: true, message: 'Vui lòng chọn giới tính!' }]}
-          >
-            <Select placeholder="Chọn giới tính">
-              <Option value="MALE">Nam</Option>
-              <Option value="FEMALE">Nữ</Option>
-              <Option value="OTHER">Khác</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              loading={loading}
-              icon={<SaveOutlined />}
-              block
-            >
-              Lưu thay đổi
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
+      {editModalVisible && (
+        <EditProfileModal
+          visible={editModalVisible}
+          onCancel={() => setEditModalVisible(false)}
+          onSubmit={handleUpdateProfile}
+          initialValues={shipperProfile}
+          loading={loading}
+        />
+      )}
     </Layout>
+  );
+};
+
+// Component riêng cho Modal Edit
+const EditProfileModal = ({ visible, onCancel, onSubmit, initialValues, loading }) => {
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (visible && initialValues) {
+      form.setFieldsValue({
+        shipperName: initialValues.shipperName,
+        email: initialValues.email,
+        phone: initialValues.phone,
+        gender: initialValues.gender,
+      });
+    }
+  }, [visible, initialValues, form]);
+
+  return (
+    <Modal
+      title="Chỉnh sửa thông tin cá nhân"
+      open={visible}
+      onCancel={onCancel}
+      footer={null}
+      width={600}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onSubmit}
+      >
+        <Form.Item
+          label="Tên shipper"
+          name="shipperName"
+          rules={[
+            { required: true, message: 'Vui lòng nhập tên!' },
+            { min: 2, message: 'Tên phải có ít nhất 2 ký tự!' },
+          ]}
+        >
+          <Input placeholder="Nhập tên shipper" />
+        </Form.Item>
+
+        <Form.Item
+          label="Email"
+          name="email"
+          rules={[
+            { required: true, message: 'Vui lòng nhập email!' },
+            { type: 'email', message: 'Email không hợp lệ!' },
+          ]}
+        >
+          <Input placeholder="Nhập email" />
+        </Form.Item>
+
+        <Form.Item
+          label="Số điện thoại"
+          name="phone"
+          rules={[
+            { required: true, message: 'Vui lòng nhập số điện thoại!' },
+            { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' },
+          ]}
+        >
+          <Input placeholder="Nhập số điện thoại" />
+        </Form.Item>
+
+        <Form.Item
+          label="Giới tính"
+          name="gender"
+          rules={[{ required: true, message: 'Vui lòng chọn giới tính!' }]}
+        >
+          <Select placeholder="Chọn giới tính">
+            <Option value="MALE">Nam</Option>
+            <Option value="FEMALE">Nữ</Option>
+            <Option value="OTHER">Khác</Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item>
+          <Button 
+            type="primary" 
+            htmlType="submit" 
+            loading={loading}
+            icon={<SaveOutlined />}
+            block
+          >
+            Lưu thay đổi
+          </Button>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 
