@@ -113,6 +113,21 @@ const Overview = () => {
       setRecentUsers([]);
       // 即使出错也要确保 stats 被更新
       setStats(prev => ({ ...prev, totalCustomers: 0 }));
+      
+      // Thông báo lỗi dễ hiểu cho người dùng (tùy chọn - có thể bỏ comment nếu muốn hiển thị)
+      // let errorMessage = 'Không thể tải danh sách khách hàng. ';
+      // if (error.response) {
+      //   if (error.response.status === 404) {
+      //     errorMessage += 'Không tìm thấy dữ liệu.';
+      //   } else if (error.response.status === 401 || error.response.status === 403) {
+      //     errorMessage += 'Bạn không có quyền xem thông tin này.';
+      //   } else if (error.response.status >= 500) {
+      //     errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+      //   }
+      // } else if (error.request) {
+      //   errorMessage += 'Không thể kết nối với hệ thống.';
+      // }
+      // message.warning(errorMessage);
     }
   };
 
@@ -174,6 +189,9 @@ const Overview = () => {
     } catch (error) {
       console.error('Error fetching shippers:', error);
       setShippers([]);
+      // Không hiển thị message error ở đây vì đây là component tổng quan
+      // Nếu cần thiết có thể bỏ comment dòng dưới
+      // message.warning('Không thể tải danh sách người giao hàng');
     }
   };
 

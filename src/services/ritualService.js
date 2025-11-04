@@ -58,20 +58,42 @@ export const ritualService = {
   },
 
   // Thêm lễ hội mới (cho staff)
-  createRitual: async (ritualData) => {
+  createRitual: async (ritualData, file = null) => {
     try {
-      // Format dữ liệu theo đúng cấu trúc backend yêu cầu
-      const formattedData = {
-        ritualName: ritualData.ritualName,
-        dateLunar: ritualData.dateLunar || null,
-        regionId: ritualData.regionId,
-        dateSolar: ritualData.dateSolar || null,
-        description: ritualData.description || null,
-        meaning: ritualData.meaning || null,
-        imageUrl: ritualData.imageUrl || null
-      };
+      const formData = new FormData();
 
-      const response = await axiosInstance.post('/api/rituals', formattedData);
+      // Thêm các thông tin lễ hội
+      formData.append('ritualName', ritualData.ritualName);
+      formData.append('regionId', ritualData.regionId);
+      
+      if (ritualData.dateLunar) {
+        formData.append('dateLunar', ritualData.dateLunar);
+      }
+      
+      if (ritualData.dateSolar) {
+        formData.append('dateSolar', ritualData.dateSolar);
+      }
+      
+      if (ritualData.description) {
+        formData.append('description', ritualData.description);
+      }
+      
+      if (ritualData.meaning) {
+        formData.append('meaning', ritualData.meaning);
+      }
+
+      // Thêm file nếu có
+      if (file) {
+        formData.append('file', file);
+      }
+
+      console.log('Creating ritual with FormData...');
+      const response = await axiosInstance.post('/api/rituals', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       return response.data;
     } catch (error) {
       console.error('Error creating ritual:', error);
@@ -80,19 +102,42 @@ export const ritualService = {
   },
 
   // Cập nhật lễ hội (cho staff)
-  updateRitual: async (id, ritualData) => {
+  updateRitual: async (id, ritualData, file = null) => {
     try {
-      const formattedData = {
-        ritualName: ritualData.ritualName,
-        dateLunar: ritualData.dateLunar || null,
-        regionId: ritualData.regionId,
-        dateSolar: ritualData.dateSolar || null,
-        description: ritualData.description || null,
-        meaning: ritualData.meaning || null,
-        imageUrl: ritualData.imageUrl || null
-      };
+      const formData = new FormData();
 
-      const response = await axiosInstance.put(`/api/rituals/${id}`, formattedData);
+      // Thêm các thông tin lễ hội
+      formData.append('ritualName', ritualData.ritualName);
+      formData.append('regionId', ritualData.regionId);
+      
+      if (ritualData.dateLunar) {
+        formData.append('dateLunar', ritualData.dateLunar);
+      }
+      
+      if (ritualData.dateSolar) {
+        formData.append('dateSolar', ritualData.dateSolar);
+      }
+      
+      if (ritualData.description) {
+        formData.append('description', ritualData.description);
+      }
+      
+      if (ritualData.meaning) {
+        formData.append('meaning', ritualData.meaning);
+      }
+
+      // Thêm file mới nếu có (không bắt buộc khi edit)
+      if (file) {
+        formData.append('file', file);
+      }
+
+      console.log('Updating ritual with FormData...', { id, ritualData, hasFile: !!file });
+      const response = await axiosInstance.put(`/api/rituals/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       return response.data;
     } catch (error) {
       console.error('Error updating ritual:', error);

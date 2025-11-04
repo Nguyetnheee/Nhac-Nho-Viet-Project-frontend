@@ -44,10 +44,33 @@ const ShipperManagement = () => {
       }));
       
       setShippers(mappedShippers);
-      message.success(`Đã tải ${mappedShippers.length} shipper thành công`);
+      message.success(`Đã tải ${mappedShippers.length} người giao hàng thành công`);
     } catch (error) {
       console.error('Error loading shippers:', error);
-      message.error('Tải danh sách shipper thất bại: ' + (error.response?.data?.message || error.message));
+      
+      // Thông báo lỗi dễ hiểu cho người dùng
+      let errorMessage = 'Không thể tải danh sách người giao hàng. ';
+      
+      if (error.response) {
+        // Lỗi từ server
+        if (error.response.status === 404) {
+          errorMessage += 'Không tìm thấy dữ liệu.';
+        } else if (error.response.status === 401 || error.response.status === 403) {
+          errorMessage += 'Bạn không có quyền xem thông tin này.';
+        } else if (error.response.status >= 500) {
+          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+        } else {
+          errorMessage += 'Vui lòng thử lại.';
+        }
+      } else if (error.request) {
+        // Không nhận được phản hồi từ server
+        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
+      } else {
+        // Lỗi khác
+        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+      }
+      
+      message.error(errorMessage);
       setShippers([]);
     } finally {
       setLoading(false);

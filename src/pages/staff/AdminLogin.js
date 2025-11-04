@@ -136,8 +136,8 @@ const AdminLogin = () => {
                         }}>
                             Đăng nhập Admin
                         </h2>
-                        <p className="text-center text-sm text-gray-200 mb-8">
-                            Dành cho Admin, Staff và Shipper
+                        <p className="text-center text-sm text-gray-200 mb-6">
+                            Dành cho Staff và Shipper
                         </p>
 
                         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -190,13 +190,13 @@ const AdminLogin = () => {
                                     />
                                     <span className="text-sm text-white group-hover:text-vietnam-gold-900 transition-colors">Ghi nhớ tài khoản</span>
                                 </label>
-                                <Link
+                                {/* <Link
                                     to="/forgot-password"
                                     className="text-sm font-medium hover:text-yellow-700 transition-colors"
                                     style={{ color: '#B8860B' }}
                                 >
                                     Quên mật khẩu?
-                                </Link>
+                                </Link> */}
                             </div>
 
                             {/* Submit */}
@@ -214,7 +214,7 @@ const AdminLogin = () => {
                             </div>
 
                             {/* Customer login link */}
-                            <div className="pt-4 border-t border-white/20 text-center">
+                            {/* <div className="pt-4 border-t border-white/20 text-center">
                                 <p className="text-sm text-gray-200">
                                     Bạn là khách hàng?{' '}
                                     <Link
@@ -224,7 +224,7 @@ const AdminLogin = () => {
                                         Đăng nhập tại đây
                                     </Link>
                                 </p>
-                            </div>
+                            </div> */}
 
                         </form>
                     </div>
