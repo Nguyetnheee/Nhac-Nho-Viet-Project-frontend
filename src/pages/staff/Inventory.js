@@ -21,6 +21,7 @@ import {
   Col,
   Statistic,
   ConfigProvider,
+  Typography,
 } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import {
@@ -56,7 +57,7 @@ const Inventory = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null); // Track which item is being deleted
   const [form] = Form.useForm();
-
+  const { Title, Text } = Typography;
   // Statistics
   const [stats, setStats] = useState({
     total: 0,
@@ -457,6 +458,30 @@ const Inventory = () => {
   return (
     <ConfigProvider locale={viVN}>
       <div style={{ minHeight: '100vh' }}>
+
+        <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="mb-4 md:mb-0">
+              <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+                <Space>
+                  {/* <BookOutlined />  */}
+                  Quản lý kho hàng</Space>
+              </Title>
+              <Text type="secondary">Thêm, xóa, sửa và quản lý các sản phẩm trong kho</Text>
+            </div>
+            <Space>
+              <Tooltip title="Làm mới">
+                <Button icon={<ReloadOutlined />} onClick={fetchInventoryData} loading={loading} >
+                  Tải lại
+                </Button>
+              </Tooltip>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="bg-vietnam-green hover:!bg-emerald-800">
+                Thêm sản phẩm
+              </Button>
+            </Space>
+          </div>
+          
+        </Card>
         {/* Statistics Cards */}
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col span={8}>
@@ -493,24 +518,24 @@ const Inventory = () => {
 
         {/* Main Content Card */}
         <Card
-          title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* <InboxOutlined style={{ fontSize: 20 }} /> */}
-              <span>Quản lý kho hàng</span>
-            </div>
-          }
-          extra={
-            <Space>
-              <Tooltip title="Làm mới">
-                <Button icon={<ReloadOutlined />} onClick={fetchInventoryData} loading={loading} >
-                  Tải lại
-                </Button>
-              </Tooltip>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="bg-vietnam-green hover:!bg-emerald-800">
-                Thêm sản phẩm
-              </Button>
-            </Space>
-          }
+          // title={
+          //   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          //     {/* <InboxOutlined style={{ fontSize: 20 }} /> */}
+          //     <span>Quản lý kho hàng</span>
+          //   </div>
+          // }
+          // extra={
+          //   <Space>
+          //     <Tooltip title="Làm mới">
+          //       <Button icon={<ReloadOutlined />} onClick={fetchInventoryData} loading={loading} >
+          //         Tải lại
+          //       </Button>
+          //     </Tooltip>
+          //     <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="bg-vietnam-green hover:!bg-emerald-800">
+          //       Thêm sản phẩm
+          //     </Button>
+          //   </Space>
+          // }
         >
           {/* Search and Filter Bar */}
           <div style={{ marginBottom: 16 }}>
@@ -895,8 +920,8 @@ const Inventory = () => {
                     return (
                       <Tag
                         color={status.color}
-                        // icon={status.icon}
-                        // style={{ fontSize: '14px', padding: '6px 16px' }}
+                      // icon={status.icon}
+                      // style={{ fontSize: '14px', padding: '6px 16px' }}
                       >
                         {status.text}
                       </Tag>

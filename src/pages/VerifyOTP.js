@@ -75,28 +75,46 @@ const VerifyOTP = () => {
     setError('');
 
     try {
+      console.log('🔐 Verifying OTP for email:', email);
+      
       // Xác thực OTP đăng ký
       const response = await api.post('/api/customer/verify-email', { email, otp: otpCode });
+      
+      console.log('✅ Verify OTP response:', response);
 
-      const ok =
-        String(response?.data?.status || '').toLowerCase() === 'success' ||
-        response?.data?.verified === true ||
-        response?.data?.email === email;
-
-      if (ok) {
+      // Kiểm tra response status từ backend
+      // Backend trả về status 200 nếu thành công
+      if (response.status === 200 || response.data?.status === 'success') {
+        console.log('✅ OTP verified successfully, redirecting to login...');
+        
         // ✅ Thành công → chuyển thẳng về Login
         navigate('/login', {
           replace: true,
           state: {
             emailJustVerified: email,
-            message: 'Xác thực tài khoản thành công. Vui lòng đăng nhập.',
+            message: 'Xác thực tài khoản thành công! Vui lòng đăng nhập.',
           },
         });
       } else {
+        // Nếu backend trả về response nhưng không phải success
+        console.log('⚠️ OTP verification failed:', response.data);
         setError(response?.data?.message || 'Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng thử lại.');
       }
     } catch (err) {
-      setError('Không thể xác thực tài khoản. Vui lòng thử lại sau.');
+      console.error('❌ OTP verification error:', err);
+      
+      // Chỉ hiển thị lỗi nếu backend trả về lỗi rõ ràng
+      const errorMessage = err.response?.data?.message || err.response?.data?.error;
+      
+      if (errorMessage) {
+        setError(errorMessage);
+      } else if (err.response?.status === 400) {
+        setError('Mã OTP không đúng. Vui lòng kiểm tra lại.');
+      } else if (err.response?.status === 404) {
+        setError('Không tìm thấy yêu cầu xác thực. Vui lòng đăng ký lại.');
+      } else {
+        setError('Không thể xác thực tài khoản. Vui lòng thử lại sau.');
+      }
     } finally {
       setLoading(false);
     }
@@ -107,17 +125,28 @@ const VerifyOTP = () => {
     setResendMessage('');
     setError('');
 
-    const result = await resendOTP(email); // giữ nguyên hàm resend từ AuthContext
+    try {
+      console.log('📧 Resending OTP to:', email);
+      const result = await resendOTP(email);
 
-    if (result?.success) {
-      setResendMessage('Mã xác nhận mới đã được gửi đến email của bạn');
-      setOtp(['', '', '', '', '', '']);
-      inputRefs[0].current.focus();
-    } else {
-      setError(result?.error || 'Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.');
+      if (result?.success) {
+        console.log('✅ OTP resent successfully');
+        setResendMessage('Mã xác nhận mới đã được gửi đến email của bạn');
+        setOtp(['', '', '', '', '', '']);
+        inputRefs[0].current.focus();
+        
+        // Tự động ẩn thông báo sau 5 giây
+        setTimeout(() => setResendMessage(''), 5000);
+      } else {
+        console.log('❌ Failed to resend OTP:', result?.error);
+        setError(result?.error || 'Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.');
+      }
+    } catch (err) {
+      console.error('❌ Resend OTP error:', err);
+      setError('Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.');
+    } finally {
+      setResendLoading(false);
     }
-
-    setResendLoading(false);
   };
 
   const handleCancel = () => {
@@ -163,18 +192,6 @@ const VerifyOTP = () => {
               />
             ))}
           </div>
-
-          {/* Resend Link */}
-          <p className="text-center text-gray-600 mb-6">
-            Didn't get the code?{' '}
-            <button
-              onClick={handleResend}
-              disabled={resendLoading}
-              className="text-[#28a745] hover:text-[#218838] font-medium underline disabled:opacity-50"
-            >
-              {resendLoading ? 'Đang gửi...' : 'Click to resend.'}
-            </button>
-          </p>
 
           {/* Error */}
           {error && (
