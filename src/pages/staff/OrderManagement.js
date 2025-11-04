@@ -17,6 +17,8 @@ import {
   Col,
   Statistic,
   Dropdown,
+  Typography,
+  ConfigProvider,
 } from 'antd';
 import {
   CheckCircleOutlined,
@@ -32,7 +34,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import staffService from '../../services/staffService';
-
+import viVN from 'antd/locale/vi_VN';
 const { Option } = Select;
 
 const OrderManagement = () => {
@@ -50,6 +52,7 @@ const OrderManagement = () => {
     confirmed: 0,
     shipping: 0,
   });
+  const { Title, Text } = Typography;
 
   // ⭐ LOCAL STORAGE KEY cho shipper mapping
   const SHIPPER_MAPPING_KEY = 'order_shipper_mapping';
@@ -96,7 +99,7 @@ const OrderManagement = () => {
   // Tự động cập nhật tên shipper cho orders khi danh sách shippers thay đổi
   useEffect(() => {
     if (shippers.length > 0 && orders.length > 0) {
-      setOrders(prevOrders => 
+      setOrders(prevOrders =>
         prevOrders.map(order => {
           // Nếu có shipperId nhưng chưa có shipperName
           if (order.shipperId && !order.shipperName) {
@@ -136,16 +139,16 @@ const OrderManagement = () => {
     try {
       setLoading(true);
       const response = await staffService.getAllOrders();
-      
+
       console.log('📦 Raw orders from backend:', response);
       console.log('📦 First order sample:', response[0]);
-      
+
       // Map backend response to frontend format
       const mappedOrders = response.map(order => {
         let shipperName = order.shipperName || order.shipper?.name || null;
         const shipperId = order.shipperId || order.shipper?.shipperId || null;
         let shipperPhone = order.shipperPhone || order.shipper?.phone || null;
-        
+
         // ⭐ BƯỚC 1: Nếu backend không trả về shipperName, tìm từ localStorage
         if (shipperId && !shipperName) {
           const savedMapping = getShipperMapping(order.orderId);
@@ -155,7 +158,7 @@ const OrderManagement = () => {
             console.log(`💾 Restored from localStorage - Order #${order.orderId}: ${shipperName}`);
           }
         }
-        
+
         // ⭐ BƯỚC 2: Nếu vẫn chưa có shipperName, tìm từ danh sách shippers
         if (shipperId && !shipperName && shippers.length > 0) {
           const foundShipper = shippers.find(s => s.shipperId === shipperId);
@@ -163,7 +166,7 @@ const OrderManagement = () => {
             shipperName = foundShipper.name || foundShipper.shipperName || foundShipper.username;
             shipperPhone = foundShipper.phoneNumber || foundShipper.phone;
             console.log(`🔍 Found from shippers list - Order #${order.orderId}: ${shipperName}`);
-            
+
             // Lưu vào localStorage để lần sau dùng
             saveShipperMapping(order.orderId, {
               shipperId,
@@ -172,7 +175,7 @@ const OrderManagement = () => {
             });
           }
         }
-        
+
         const mapped = {
           orderId: order.orderId,
           customerName: order.receiverName,
@@ -190,7 +193,7 @@ const OrderManagement = () => {
           note: order.note,
           items: order.items || [],
         };
-        
+
         // Log để debug
         if (mapped.shipperId) {
           console.log(`📌 Order #${mapped.orderId} has shipper:`, {
@@ -199,41 +202,18 @@ const OrderManagement = () => {
             shipperPhone: mapped.shipperPhone
           });
         }
-        
+
         return mapped;
       });
-      
+
       console.log('✅ Mapped orders:', mappedOrders);
       console.log(`✅ Total orders: ${mappedOrders.length}`);
-      
+
       setOrders(mappedOrders);
       message.success(`Tải ${mappedOrders.length} đơn hàng thành công`);
     } catch (error) {
+      message.error('Không thể tải danh sách đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('❌ Error fetching orders:', error);
-      
-      // Thông báo lỗi dễ hiểu cho người dùng
-      let errorMessage = 'Không thể tải danh sách đơn hàng. ';
-      
-      if (error.response) {
-        // Lỗi từ server
-        if (error.response.status === 404) {
-          errorMessage += 'Không tìm thấy dữ liệu.';
-        } else if (error.response.status === 401 || error.response.status === 403) {
-          errorMessage += 'Bạn không có quyền xem thông tin này.';
-        } else if (error.response.status >= 500) {
-          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-        } else {
-          errorMessage += 'Vui lòng thử lại.';
-        }
-      } else if (error.request) {
-        // Không nhận được phản hồi từ server
-        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
-      } else {
-        // Lỗi khác
-        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
-      }
-      
-      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -243,7 +223,7 @@ const OrderManagement = () => {
     try {
       console.log('🚚 Loading shippers...');
       const response = await staffService.getAllShippers();
-      
+
       // Map backend response to frontend format
       const mappedShippers = response.map(shipper => ({
         shipperId: shipper.shipperId,
@@ -255,35 +235,13 @@ const OrderManagement = () => {
         email: shipper.email,
         gender: shipper.gender,
       }));
-      
+
       setShippers(mappedShippers);
       console.log('✅ Shippers loaded:', mappedShippers.length, 'shippers');
       console.log('📋 Shipper list:', mappedShippers);
       return mappedShippers; // Return để có thể await
     } catch (error) {
-      // Thông báo lỗi dễ hiểu cho người dùng
-      let errorMessage = 'Không thể tải danh sách người giao hàng. ';
-      
-      if (error.response) {
-        // Lỗi từ server
-        if (error.response.status === 404) {
-          errorMessage += 'Không tìm thấy dữ liệu.';
-        } else if (error.response.status === 401 || error.response.status === 403) {
-          errorMessage += 'Bạn không có quyền xem thông tin này.';
-        } else if (error.response.status >= 500) {
-          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-        } else {
-          errorMessage += 'Vui lòng thử lại.';
-        }
-      } else if (error.request) {
-        // Không nhận được phản hồi từ server
-        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
-      } else {
-        // Lỗi khác
-        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
-      }
-      
-      message.error(errorMessage);
+      message.error('Không thể tải danh sách shipper: ' + (error.response?.data?.message || error.message));
       console.error('❌ Error fetching shippers:', error);
       return []; // Return empty array nếu lỗi
     }
@@ -296,20 +254,8 @@ const OrderManagement = () => {
       message.success('Xác nhận đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
+      message.error('Không thể xác nhận đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('Error confirming order:', error);
-      
-      // Thông báo lỗi dễ hiểu
-      let errorMessage = 'Không thể xác nhận đơn hàng. ';
-      if (error.response?.status === 400) {
-        errorMessage += 'Đơn hàng không hợp lệ hoặc đã được xác nhận.';
-      } else if (error.response?.status === 404) {
-        errorMessage += 'Không tìm thấy đơn hàng.';
-      } else if (error.response?.status >= 500) {
-        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-      } else {
-        errorMessage += 'Vui lòng thử lại.';
-      }
-      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -322,20 +268,8 @@ const OrderManagement = () => {
       message.success('Hủy đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
+      message.error('Không thể hủy đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('Error canceling order:', error);
-      
-      // Thông báo lỗi dễ hiểu
-      let errorMessage = 'Không thể hủy đơn hàng. ';
-      if (error.response?.status === 400) {
-        errorMessage += 'Đơn hàng không thể hủy ở trạng thái hiện tại.';
-      } else if (error.response?.status === 404) {
-        errorMessage += 'Không tìm thấy đơn hàng.';
-      } else if (error.response?.status >= 500) {
-        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-      } else {
-        errorMessage += 'Vui lòng thử lại.';
-      }
-      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -345,21 +279,21 @@ const OrderManagement = () => {
   const handleQuickAssign = async (orderId, shipperId) => {
     // Tìm thông tin shipper từ danh sách TRƯỚC khi gọi API
     const selectedShipper = shippers.find(s => s.shipperId === shipperId);
-    
+
     if (!selectedShipper) {
       message.error('Không tìm thấy thông tin shipper');
       return;
     }
-    
+
     const shipperName = selectedShipper.name || selectedShipper.shipperName || selectedShipper.username;
     const shipperPhone = selectedShipper.phoneNumber || selectedShipper.phone;
-    
-    console.log('🚀 Assigning shipper:', { 
-      orderId, 
+
+    console.log('🚀 Assigning shipper:', {
+      orderId,
       shipperId,
       shipperName
     });
-    
+
     try {
       // ⭐ BƯỚC 1: LƯU VÀO LOCALSTORAGE NGAY LẬP TỨC
       saveShipperMapping(orderId, {
@@ -367,23 +301,23 @@ const OrderManagement = () => {
         shipperName,
         shipperPhone
       });
-      
+
       // ⭐ BƯỚC 2: Cập nhật state UI NGAY LẬP TỨC
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.orderId === orderId 
-            ? { 
-                ...order, 
-                shipperName: shipperName,
-                shipperId: shipperId,
-                shipperPhone: shipperPhone
-              } 
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.orderId === orderId
+            ? {
+              ...order,
+              shipperName: shipperName,
+              shipperId: shipperId,
+              shipperPhone: shipperPhone
+            }
             : order
         )
       );
-      
+
       console.log(`✅ UI updated + Saved to localStorage: Order #${orderId} → ${shipperName}`);
-      
+
       // ⭐ BƯỚC 3: Gọi API để lưu vào database (background)
       staffService.assignOrderToShipper(orderId, shipperId)
         .then(() => {
@@ -392,28 +326,15 @@ const OrderManagement = () => {
         })
         .catch((error) => {
           console.error('❌ Error saving to backend:', error);
-          
-          // Thông báo lỗi dễ hiểu
-          let errorMessage = 'Lỗi khi lưu vào hệ thống: ';
-          if (error.response?.status === 400) {
-            errorMessage += 'Đơn hàng không thể gán người giao hàng ở trạng thái hiện tại.';
-          } else if (error.response?.status === 404) {
-            errorMessage += 'Không tìm thấy đơn hàng hoặc người giao hàng.';
-          } else if (error.response?.status >= 500) {
-            errorMessage += 'Hệ thống đang gặp sự cố.';
-          } else {
-            errorMessage += 'Vui lòng thử lại.';
-          }
-          message.error(errorMessage);
-          
+          message.error('Lỗi khi lưu vào database: ' + (error.response?.data?.message || error.message));
           // Rollback nếu lỗi (xóa khỏi localStorage và fetch lại)
           localStorage.removeItem(`${SHIPPER_MAPPING_KEY}_${orderId}`);
           fetchOrders();
         });
-      
+
     } catch (error) {
       console.error('❌ Error in handleQuickAssign:', error);
-      message.error('Không thể gán người giao hàng. Vui lòng thử lại.');
+      message.error('Không thể gán shipper');
     }
   };
 
@@ -425,7 +346,7 @@ const OrderManagement = () => {
 
     // Tìm thông tin shipper TRƯỚC khi gọi API
     const shipper = shippers.find(s => s.shipperId === selectedShipper || s.id === selectedShipper);
-    
+
     if (!shipper) {
       message.error('Không tìm thấy thông tin shipper');
       return;
@@ -435,64 +356,51 @@ const OrderManagement = () => {
     const shipperName = shipper.name || shipper.username || shipper.shipperName;
     const shipperPhone = shipper.phoneNumber || shipper.phone;
 
-    console.log('🚀 Assigning shipper via modal:', { 
-      orderId, 
+    console.log('🚀 Assigning shipper via modal:', {
+      orderId,
       shipperId: selectedShipper,
-      shipperName 
+      shipperName
     });
-    
+
     try {
       setLoading(true);
-      
+
       // ⭐ BƯỚC 1: LƯU VÀO LOCALSTORAGE NGAY
       saveShipperMapping(orderId, {
         shipperId: selectedShipper,
         shipperName,
         shipperPhone
       });
-      
+
       // ⭐ BƯỚC 2: Cập nhật state NGAY LẬP TỨC
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.orderId === orderId 
-            ? { 
-                ...order, 
-                shipperName: shipperName,
-                shipperId: selectedShipper,
-                shipperPhone: shipperPhone
-              } 
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.orderId === orderId
+            ? {
+              ...order,
+              shipperName: shipperName,
+              shipperId: selectedShipper,
+              shipperPhone: shipperPhone
+            }
             : order
         )
       );
-      
+
       console.log(`✅ UI updated + Saved to localStorage: Order #${orderId} → ${shipperName}`);
-      
+
       // Đóng modal và clear state
       setAssignModalVisible(false);
       setSelectedShipper(null);
-      
+
       // ⭐ BƯỚC 3: Gọi API để lưu vào database
       await staffService.assignOrderToShipper(orderId, selectedShipper);
-      
+
       console.log(`✅ Backend saved: Order #${orderId} assigned to shipper ${selectedShipper}`);
       message.success(`Đã gán shipper "${shipperName}" cho đơn hàng #${orderId}`);
-      
+
     } catch (error) {
+      message.error('Không thể gán đơn hàng: ' + (error.response?.data?.message || error.message));
       console.error('❌ Error assigning order:', error);
-      
-      // Thông báo lỗi dễ hiểu
-      let errorMessage = 'Không thể gán người giao hàng. ';
-      if (error.response?.status === 400) {
-        errorMessage += 'Đơn hàng không thể gán người giao hàng ở trạng thái hiện tại.';
-      } else if (error.response?.status === 404) {
-        errorMessage += 'Không tìm thấy đơn hàng hoặc người giao hàng.';
-      } else if (error.response?.status >= 500) {
-        errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-      } else {
-        errorMessage += 'Vui lòng thử lại.';
-      }
-      message.error(errorMessage);
-      
       // Rollback nếu lỗi
       fetchOrders();
     } finally {
@@ -623,11 +531,11 @@ const OrderManagement = () => {
       width: 200,
       render: (_, record) => {
         // Debug - log để kiểm tra backend response
-        console.log('🚚 Shipper column - Order:', record.orderId, 
+        console.log('🚚 Shipper column - Order:', record.orderId,
           '| Status:', record.status,
-          '| shipperName:', record.shipperName, 
+          '| shipperName:', record.shipperName,
           '| shipperId:', record.shipperId);
-        
+
         // ✅ Nếu đã có tên shipper => LUÔN hiển thị Tag (giữ nguyên)
         if (record.shipperName) {
           return (
@@ -636,7 +544,7 @@ const OrderManagement = () => {
             </Tag>
           );
         }
-        
+
         // ⚠️ Nếu có shipperId nhưng không có tên (edge case)
         if (record.shipperId) {
           // Tìm tên shipper từ danh sách shippers
@@ -677,8 +585,8 @@ const OrderManagement = () => {
             }
           >
             {shippers.map((shipper) => (
-              <Option 
-                key={shipper.shipperId} 
+              <Option
+                key={shipper.shipperId}
                 value={shipper.shipperId}
                 label={shipper.name}
               >
@@ -709,7 +617,7 @@ const OrderManagement = () => {
       render: (_, record) => {
         // Debug: Kiểm tra status của record
         console.log('Order ID:', record.orderId, '| Status:', record.status);
-        
+
         const menuItems = [
           {
             key: 'view',
@@ -783,8 +691,8 @@ const OrderManagement = () => {
             trigger={['click']}
             placement="bottomRight"
           >
-            <Button 
-              type="text" 
+            <Button
+              type="text"
               icon={<MoreOutlined style={{ fontSize: '18px' }} />}
               className="hover:bg-gray-100"
             />
@@ -795,95 +703,98 @@ const OrderManagement = () => {
   ];
 
   return (
+    <ConfigProvider locale={viVN}>  
     <div>
-      <Card
-        title={
+      <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>
+                {/* <BookOutlined />  */}
+                Quản lý đơn hàng</Space>
+            </Title>
+            <Text type="secondary">Quản lý đơn hàng</Text>
+          </div>
           <Space>
-            <ShoppingCartOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-            <span style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý đơn hàng</span>
+            <Tooltip title="Làm mới">
+              <Button icon={<ReloadOutlined />} onClick={fetchOrders} loading={loading} >
+                Tải lại
+              </Button>
+            </Tooltip>
           </Space>
-        }
-        extra={
-          <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            onClick={fetchOrders}
-            loading={loading}
-          >
-            Làm mới
-          </Button>
-        }
-      >
-        {/* Statistics Cards */}
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card>
-              <Statistic
-                title="Tổng đơn hàng"
-                value={statistics.total}
-                prefix={<FileTextOutlined />}
-                valueStyle={{ color: '#3f8600' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={5}>
-            <Card>
-              <Statistic
-                title="Chờ thanh toán"
-                value={statistics.pending}
-                prefix={<ClockCircleOutlined />}
-                valueStyle={{ color: '#faad14' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={5}>
-            <Card>
-              <Statistic
-                title="Đã thanh toán"
-                value={statistics.paid}
-                prefix={<DollarOutlined />}
-                valueStyle={{ color: '#1890ff' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={12} xl={5}>
-            <Card>
-              <Statistic
-                title="Đã xác nhận"
-                value={statistics.confirmed}
-                prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: '#52c41a' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={12} xl={5}>
-            <Card>
-              <Statistic
-                title="Đang giao"
-                value={statistics.shipping}
-                prefix={<UserOutlined />}
-                valueStyle={{ color: '#fa8c16' }}
-              />
-            </Card>
-          </Col>
-        </Row>
 
-        {/* Orders Table */}
-        <Table
-          columns={columns}
-          dataSource={orders}
-          rowKey="orderId"
-          loading={loading}
-          scroll={{ x: 1500 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `Tổng ${total} đơn hàng`,
-            locale: { items_per_page: '/ trang' },
-          }}
-          bordered
-        />
+
+        </div>
       </Card>
+      {/* Statistics Cards */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={8} xl={4}>
+          <Card>
+            <Statistic
+              title="Tổng đơn hàng"
+              value={statistics.total}
+              prefix={<FileTextOutlined />}
+              valueStyle={{ color: '#3f8600' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8} xl={5}>
+          <Card>
+            <Statistic
+              title="Chờ thanh toán"
+              value={statistics.pending}
+              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8} xl={5}>
+          <Card>
+            <Statistic
+              title="Đã thanh toán"
+              value={statistics.paid}
+              prefix={<DollarOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={12} xl={5}>
+          <Card>
+            <Statistic
+              title="Đã xác nhận"
+              value={statistics.confirmed}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={12} xl={5}>
+          <Card>
+            <Statistic
+              title="Đang giao"
+              value={statistics.shipping}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#fa8c16' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Orders Table */}
+      <Table
+        columns={columns}
+        dataSource={orders}
+        rowKey="orderId"
+        loading={loading}
+        scroll={{ x: 1500 }}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showTotal: (total) => `Tổng ${total} đơn hàng`,
+        }}
+        bordered
+      />
+      {/* </Card> */}
 
       {/* Chi tiết đơn hàng Modal */}
       <Modal
@@ -1028,8 +939,8 @@ const OrderManagement = () => {
             }
           >
             {shippers.map((shipper) => (
-              <Option 
-                key={shipper.shipperId || shipper.id} 
+              <Option
+                key={shipper.shipperId || shipper.id}
                 value={shipper.shipperId || shipper.id}
                 label={shipper.name || shipper.username}
               >
@@ -1049,7 +960,8 @@ const OrderManagement = () => {
           )}
         </div>
       </Modal>
-    </div>
+    </div >
+    </ConfigProvider>
   );
 };
 

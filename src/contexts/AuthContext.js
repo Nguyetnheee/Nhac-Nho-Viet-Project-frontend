@@ -279,9 +279,21 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      await api.post('/api/customer/register', userData);
+      console.log('📝 Registering user with data:', userData);
+      
+      // Thử gọi API với publicApi (không có token/auth)
+      const response = await api.post('/api/customer/register', userData, {
+        headers: {
+          'Content-Type': 'application/json',
+          // Đảm bảo không có Authorization header
+        }
+      });
+      
+      console.log('✅ Registration successful:', response.data);
       return { success: true };
     } catch (error) {
+      console.error('❌ Registration error:', error);
+      
       // Tạo thông báo lỗi dễ hiểu
       let userMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
       
@@ -289,6 +301,47 @@ export const AuthProvider = ({ children }) => {
         userMessage = 'Tên đăng nhập hoặc email đã được sử dụng. Vui lòng chọn tên khác.';
       } else if (error.response?.status === 400) {
         userMessage = translateToVietnamese(error.response?.data?.message || 'Thông tin đăng ký không hợp lệ. Vui lòng kiểm tra lại.');
+      } else if (error.response?.status === 403) {
+        userMessage = 'Không có quyền đăng ký. Vui lòng liên hệ quản trị viên.';
+      } else if (error.response?.data?.message) {
+        userMessage = translateToVietnamese(error.response.data.message);
+      }
+      
+      return {
+        success: false,
+        error: userMessage,
+      };
+    }
+  };
+
+  const resendOTP = async (email) => {
+    try {
+      console.log('📧 Resending OTP to email:', email);
+      
+      const response = await api.post('/api/customer/resend-otp', { email });
+      
+      console.log('✅ Resend OTP response:', response);
+      
+      if (response.status === 200 || response.data?.status === 'success') {
+        return { 
+          success: true,
+          message: 'Mã xác nhận mới đã được gửi đến email của bạn'
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data?.message || 'Không thể gửi lại mã xác nhận'
+        };
+      }
+    } catch (error) {
+      console.error('❌ Resend OTP error:', error);
+      
+      let userMessage = 'Không thể gửi lại mã xác nhận. Vui lòng thử lại sau.';
+      
+      if (error.response?.status === 404) {
+        userMessage = 'Không tìm thấy yêu cầu xác thực. Vui lòng đăng ký lại.';
+      } else if (error.response?.status === 429) {
+        userMessage = 'Bạn đã yêu cầu gửi mã quá nhiều lần. Vui lòng đợi một chút.';
       } else if (error.response?.data?.message) {
         userMessage = translateToVietnamese(error.response.data.message);
       }
@@ -370,6 +423,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    resendOTP,
     logout,
     updateProfile,
     isAuthenticated: !!user,

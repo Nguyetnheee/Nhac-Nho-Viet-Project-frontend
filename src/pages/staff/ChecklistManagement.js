@@ -1,10 +1,10 @@
 // src/pages/admin/ChecklistManagement.js
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Input, Select, message, Row, Col, Typography, Tag, Alert, Spin } from 'antd';
+import { Card, Table, Button, Space, Input, Select, message, Row, Col, Typography, Tag, Alert, Spin, ConfigProvider } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, FilterOutlined, CheckSquareOutlined } from '@ant-design/icons';
 import { checklistService } from '../../services/checklistService';
 import { ritualService } from '../../services/ritualService';
-
+import viVN from 'antd/locale/vi_VN';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -88,6 +88,7 @@ const ChecklistManagement = () => {
   ];
 
   return (
+    <ConfigProvider locale={viVN}>  
     <div className="font-sans">
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -167,9 +168,10 @@ const ChecklistManagement = () => {
             pagination={{ pageSize: 10, showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} vật phẩm` }}
             scroll={{ x: 1000 }}
           />
-        </Spin>
-      </Card>
-    </div>
+          </Spin>
+        </Card>
+      </div>
+    </ConfigProvider>
   );
 };
 

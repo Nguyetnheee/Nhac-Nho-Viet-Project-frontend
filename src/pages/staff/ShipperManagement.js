@@ -1,6 +1,6 @@
 // src/pages/admin/ShipperManagement.js
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, message, Input, Card, Modal, Empty, Typography, Dropdown } from 'antd';
+import { Table, Button, Space, Tag, message, Input, Card, Modal, Empty, Typography, Dropdown, ConfigProvider } from 'antd';
 import { 
   PlusOutlined, 
   EditOutlined, 
@@ -15,7 +15,7 @@ import {
 import CreateShipperForm from './CreateShipperForm';
 import shipperService from '../../services/shipperService';
 import staffService from '../../services/staffService';
-
+import viVN from 'antd/locale/vi_VN';
 const { Title, Text } = Typography;
 
 const ShipperManagement = () => {
@@ -218,6 +218,7 @@ const ShipperManagement = () => {
   }
 
   return (
+    <ConfigProvider locale={viVN}>
     <div className="font-sans">
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -277,6 +278,7 @@ const ShipperManagement = () => {
         />
       </Card>
     </div>
+    </ConfigProvider>
   );
 };
 

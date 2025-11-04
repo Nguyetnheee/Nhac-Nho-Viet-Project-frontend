@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Space, Spin, message } from 'antd';
+import { Card, Row, Col, Statistic, Table, Tag, Space, Spin, message, Typography } from 'antd';
 import {
   ShoppingCartOutlined,
   UserOutlined,
@@ -16,6 +16,8 @@ import shipperService from '../../services/shipperService';
 import productService from '../../services/productService';
 import { staffService } from '../../services/staffService';
 import api from '../../services/api';
+
+const { Title, Text } = Typography;
 
 const Overview = () => {
   const [loading, setLoading] = useState(false);
@@ -618,7 +620,19 @@ const Overview = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>Tổng quan hệ thống</h2>
+      <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>
+                {/* <BookOutlined />  */}
+                Tổng quan hệ thống</Space>
+            </Title>
+            <Text type="secondary">Tổng quan về hệ thống</Text>
+          </div>
+
+        </div>
+      </Card>
 
       <Spin spinning={loading}>
         {/* Statistics Cards */}

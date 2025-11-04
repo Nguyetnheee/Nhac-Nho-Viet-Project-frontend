@@ -22,6 +22,32 @@ api.interceptors.request.use(
       delete config.headers['X-Skip-Auth'];
       return config; // không gắn Authorization
     }
+    
+    // ✅ Danh sách các endpoint KHÔNG CẦN token (public endpoints)
+    const publicEndpoints = [
+      '/api/customer/register',
+      '/api/customer/login',
+      '/api/staff/login',
+      '/api/customer/verify-email',
+      '/api/customer/resend-otp',
+      '/api/customer/forgot-password',
+      '/api/customer/verify-reset-otp',
+      '/api/customer/reset-password',
+      '/csrf',
+      '/'
+    ];
+    
+    // Kiểm tra xem endpoint có phải là public không
+    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+      config.url?.includes(endpoint)
+    );
+    
+    // Nếu là public endpoint, không gắn token
+    if (isPublicEndpoint) {
+      console.log('🌐 Public endpoint - No token required:', config.url);
+      return config;
+    }
+    
     const token = localStorage.getItem('token');
     
     // ✅ DEBUG: Log token để kiểm tra
@@ -48,14 +74,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    // ✅ DEBUG: Log chi tiết lỗi
+    // ✅ DEBUG: Log chi tiết lỗi với FULL response
     console.error('❌ API Response Error:', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
-      message: error.message
+      headers: error.response?.headers,
+      message: error.message,
+      fullError: error
     });
     
     if (error.response?.status === 401) {
@@ -65,7 +93,9 @@ api.interceptors.response.use(
       console.error('🚫 403 Forbidden - Access denied!', {
         url: error.config?.url,
         hasToken: !!error.config?.headers?.Authorization,
-        backendMessage: error.response?.data?.message || error.response?.data
+        backendMessage: error.response?.data?.message || error.response?.data,
+        requestHeaders: error.config?.headers,
+        responseHeaders: error.response?.headers
       });
     }
     
