@@ -1,5 +1,6 @@
 // src/pages/staff/VoucherManagement.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -15,6 +16,9 @@ import {
   Row,
   Col,
   Statistic,
+  Modal,
+  Form,
+  Switch,
 } from 'antd';
 import {
   PlusOutlined,
@@ -27,7 +31,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import { getAllVouchers } from '../../services/voucherService';
+import { getAllVouchers, createVoucher } from '../../services/voucherService';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -45,6 +49,9 @@ const formatDate = (dateString) => {
 const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [form] = Form.useForm();
+  const navigate = useNavigate();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -425,7 +432,7 @@ const VoucherManagement = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              // onClick={() => setCreateModalVisible(true)}
+              onClick={() => setCreateModalVisible(true)}
             >
               Tạo Voucher
             </Button>
@@ -480,6 +487,112 @@ const VoucherManagement = () => {
           bordered
         />
       </Card>
+
+      {/* Create Voucher Modal */}
+      <Modal
+        open={createModalVisible}
+        title={<span style={{ color: '#166534' }}>Tạo Voucher mới</span>}
+        onCancel={() => setCreateModalVisible(false)}
+        onOk={() => form.submit()}
+        okText="Tạo"
+        cancelText="Hủy"
+        width={820}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ discountType: 'PERCENTAGE', isActive: true }}
+          onFinish={async (values) => {
+            try {
+              const payload = {
+                code: values.code?.trim(),
+                description: values.description || '',
+                discountType: values.discountType,
+                discountValue: Number(values.discountValue),
+                minOrderAmount: Number(values.minOrderAmount || 0),
+                maxDiscountAmount: Number(values.maxDiscountAmount || 0),
+                usageLimit: Number(values.usageLimit || 0),
+                startDate: values.dateRange?.[0]?.toISOString?.() || values.startDate?.toISOString?.(),
+                endDate: values.dateRange?.[1]?.toISOString?.() || values.endDate?.toISOString?.(),
+                isActive: values.isActive,
+              };
+              await createVoucher(payload);
+              message.success('Tạo voucher thành công');
+              setCreateModalVisible(false);
+              form.resetFields();
+              fetchVouchers();
+            } catch (e) {
+              const msg = e?.message || 'Không thể tạo voucher';
+              message.error(msg);
+              if (e?.status === 401) {
+                // Token hết hạn: chuyển tới trang đăng nhập STAFF
+                setTimeout(() => navigate('/admin-login'), 600);
+              }
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Mã voucher" name="code" rules={[{ required: true, message: 'Nhập mã voucher' }]}>
+                <Input placeholder="Ví dụ: GIAM50K" maxLength={32} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Loại giảm giá" name="discountType" rules={[{ required: true }]}>
+                <Select>
+                  <Option value="PERCENTAGE">Phần trăm</Option>
+                  <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Giá trị giảm" name="discountValue" rules={[{ required: true, message: 'Nhập giá trị' }]}>
+                <Input type="number" min={0} step={1} placeholder="% hoặc số tiền" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Số lần sử dụng" name="usageLimit">
+                <Input type="number" min={0} step={1} placeholder="0 = không giới hạn" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Đơn tối thiểu" name="minOrderAmount">
+                <Input type="number" min={0} step={1000} placeholder="0 = không giới hạn" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Giảm tối đa" name="maxDiscountAmount">
+                <Input type="number" min={0} step={1000} placeholder="0 = không giới hạn" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Thời gian áp dụng" name="dateRange" rules={[{ required: true, message: 'Chọn thời gian' }]}>
+                <RangePicker showTime style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Mô tả" name="description">
+                <Input.TextArea rows={3} placeholder="Mô tả ngắn về voucher" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Kích hoạt" name="isActive" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 };

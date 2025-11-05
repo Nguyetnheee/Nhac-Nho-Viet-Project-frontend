@@ -35,6 +35,27 @@ export const getAllVouchers = async (params = {}) => {
 };
 
 /**
+ * Tạo voucher mới (STAFF)
+ * @param {Object} payload - dữ liệu voucher
+ * @returns {Promise<any>}
+ */
+export const createVoucher = async (payload) => {
+  try {
+    const response = await api.post('/api/vouchers', payload);
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status;
+    let message = error.response?.data?.message || error.message || 'Không thể tạo voucher.';
+    if (status === 403) {
+      message = 'Bạn không có quyền tạo voucher. Vui lòng dùng tài khoản STAFF.';
+    }
+    const err = new Error(message);
+    err.status = status;
+    throw err;
+  }
+};
+
+/**
  * ✅ BƯỚC 1: Validate mã giảm giá (chỉ kiểm tra)
  * @param {string} voucherCode - Mã voucher
  * @param {number} orderAmount - Tổng tiền đơn hàng
