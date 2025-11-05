@@ -16,7 +16,7 @@ export const api = axios.create({
 
 // Interceptor gắn token CHỈ cho `api`
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // Cho phép bỏ qua auth nếu cần
     if (config.headers && config.headers['X-Skip-Auth'] === 'true') {
       delete config.headers['X-Skip-Auth'];
@@ -66,6 +66,22 @@ api.interceptors.request.use(
       console.warn('⚠️ No token found for authenticated request!');
     }
     
+    // Attach CSRF token for state-changing requests if backend uses CSRF protection
+    try {
+      const unsafeMethods = ['post', 'put', 'patch', 'delete'];
+      const method = (config.method || 'get').toLowerCase();
+      if (unsafeMethods.includes(method)) {
+        if (!getCookie('XSRF-TOKEN')) {
+          await initCsrf();
+        }
+        const xsrf = getCookie('XSRF-TOKEN');
+        if (xsrf) {
+          config.headers['X-XSRF-TOKEN'] = xsrf;
+        }
+      }
+    } catch (_) {
+      // best-effort; do not block request
+    }
     return config;
   },
   (error) => Promise.reject(error)
