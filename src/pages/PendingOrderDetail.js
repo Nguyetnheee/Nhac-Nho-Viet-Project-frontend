@@ -67,7 +67,25 @@ const PendingOrderDetail = () => {
       console.log('📦 Order detail response:', detailResponse.data);
       
       const orderDetail = detailResponse.data.data || detailResponse.data;
-      console.log('✅ Order details:', orderDetail);
+      
+      // ✅ Map các field name từ backend
+      const mappedOrderDetail = {
+        ...orderDetail,
+        orderId: orderDetail.orderId || orderDetail.id,
+        orderCode: orderDetail.orderCode || orderDetail.orderId || orderDetail.id,
+        orderDate: orderDetail.orderDate || orderDetail.createdAt || orderDetail.createdDate,
+        status: orderDetail.status || orderDetail.orderStatus,
+        orderStatus: orderDetail.status || orderDetail.orderStatus,
+        totalPrice: orderDetail.totalPrice || orderDetail.total || orderDetail.totalAmount || 0,
+        discountAmount: orderDetail.discountAmount || orderDetail.discount || 0,
+        // Thông tin khách hàng từ detail API
+        receiverName: orderDetail.receiverName || orderDetail.customerName || orderDetail.fullName || orderDetail.name || '',
+        phone: orderDetail.phone || orderDetail.customerPhone || orderDetail.phoneNumber || '',
+        address: orderDetail.address || orderDetail.customerAddress || orderDetail.shippingAddress || '',
+        email: orderDetail.email || orderDetail.customerEmail || '',
+      };
+      
+      console.log('✅ Mapped order details:', mappedOrderDetail);
 
       // Gọi API danh sách orders để lấy thông tin khách hàng (receiverName, phone, address)
       const ordersResponse = await api.get('/api/customer/orders', {
@@ -89,21 +107,22 @@ const PendingOrderDetail = () => {
           address: foundOrder.address
         });
         
-        // Merge: lấy items từ detail API, thông tin khách hàng từ list API
+        // Merge: ưu tiên thông tin từ list API (nếu có)
         setOrderData({
-          ...orderDetail,
-          receiverName: foundOrder.receiverName,
-          phone: foundOrder.phone,
-          address: foundOrder.address
+          ...mappedOrderDetail,
+          receiverName: foundOrder.receiverName || mappedOrderDetail.receiverName,
+          phone: foundOrder.phone || mappedOrderDetail.phone,
+          address: foundOrder.address || mappedOrderDetail.address,
+          email: foundOrder.email || mappedOrderDetail.email,
         });
       } else {
         // Nếu không tìm thấy trong list (có thể do phân trang), chỉ dùng detail API
         console.log('⚠️ Order not found in list, using detail API only');
-        setOrderData(orderDetail);
+        setOrderData(mappedOrderDetail);
       }
 
       // Kiểm tra nếu đơn hàng đã thanh toán thành công -> redirect sang OrderSuccess
-      const orderStatus = orderDetail.status || orderDetail.orderStatus;
+      const orderStatus = mappedOrderDetail.status || mappedOrderDetail.orderStatus;
       if (orderStatus === 'PAID' || orderStatus === 'CONFIRMED' || 
           orderStatus === 'PROCESSING' || orderStatus === 'SHIPPING' || 
           orderStatus === 'DELIVERED' || orderStatus === 'COMPLETED') {

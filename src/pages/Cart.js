@@ -107,18 +107,48 @@ const Cart = () => {
         tokenPreview: token ? `${token.substring(0, 20)}...` : 'NO TOKEN'
       });
       
+      // Helper: Tính số tiền giảm từ dữ liệu validate với nhiều schema khác nhau
+      const computeDiscountFromValidate = (data, orderAmount) => {
+        if (!data || !orderAmount) return 0;
+        const toNum = (v) => (v === undefined || v === null ? 0 : Number(v));
+        let discount = 0;
+        // Trường phổ biến
+        if (toNum(data.discountAmount) > 0) discount = toNum(data.discountAmount);
+        if (!discount && toNum(data.discount_value) > 0) discount = toNum(data.discount_value);
+        if (!discount && toNum(data.amountOff) > 0) discount = toNum(data.amountOff);
+        if (!discount && toNum(data.fixedAmount) > 0) discount = toNum(data.fixedAmount);
+
+        // Theo type + value
+        const type = (data.discountType || data.type || '').toString().toUpperCase();
+        const value = toNum(data.discountValue ?? data.value ?? data.percentage ?? data.percentOff);
+        const maxCap = toNum(data.maxDiscountAmount ?? data.maxDiscount ?? data.maxCap);
+        if (!discount && type) {
+          if (type.includes('PERCENT')) {
+            discount = (orderAmount * value) / 100;
+          } else if (type.includes('FIX') || type.includes('AMOUNT')) {
+            discount = value;
+          }
+        }
+        // Nếu chưa có type nhưng có percentage
+        if (!discount && value > 0 && value <= 100 && (data.percentage !== undefined || data.percentOff !== undefined)) {
+          discount = (orderAmount * value) / 100;
+        }
+        // Giới hạn theo max
+        if (maxCap && discount > maxCap) discount = maxCap;
+        if (discount > orderAmount) discount = orderAmount;
+        return Math.max(0, Math.floor(discount));
+      };
+
       let applyResponse;
       try {
         // ✅ Đảm bảo gửi đúng format body và headers
-        const requestBody = {
-          voucherCode: couponCode.toUpperCase()
-        };
+        const voucherParam = couponCode.toUpperCase();
+        console.log("📤 Request to /api/cart/apply-voucher?voucherCode=", voucherParam);
         
-        console.log("📤 Request to /api/cart/apply-voucher:", requestBody);
-        
-        applyResponse = await api.post('/api/cart/apply-voucher', requestBody, {
+        // Theo spec: voucherCode là query param
+        applyResponse = await api.post('/api/cart/apply-voucher', null, {
+          params: { voucherCode: voucherParam },
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           }
         });
@@ -132,7 +162,7 @@ const Cart = () => {
           data: applyError.response?.data,
           requestSent: {
             url: '/api/cart/apply-voucher',
-            body: { voucherCode: couponCode.toUpperCase() },
+            params: { voucherCode: couponCode.toUpperCase() },
             hasToken: !!token
           }
         });
@@ -141,22 +171,9 @@ const Cart = () => {
         console.log("🔄 FALLBACK: Using validation response data");
         applyResponse = { data: validateResponse.data };
         
-        // Tính toán discount amount từ validation response
+        // Tính toán discount amount từ validation response (đa dạng schema)
         const currentTotal = getTotalPrice();
-        let discountAmount = 0;
-        
-        if (validateResponse.data.discountType === 'PERCENTAGE') {
-          discountAmount = (currentTotal * (validateResponse.data.discountValue || 0)) / 100;
-          if (validateResponse.data.maxDiscountAmount && discountAmount > validateResponse.data.maxDiscountAmount) {
-            discountAmount = validateResponse.data.maxDiscountAmount;
-          }
-        } else if (validateResponse.data.discountType === 'FIXED_AMOUNT') {
-          discountAmount = validateResponse.data.discountValue || 0;
-        }
-        
-        if (discountAmount > currentTotal) {
-          discountAmount = currentTotal;
-        }
+        const discountAmount = computeDiscountFromValidate(validateResponse.data, currentTotal);
         
         // Tạo response giả lập theo format của /api/cart/apply-voucher
         applyResponse.data = {
@@ -189,7 +206,17 @@ const Cart = () => {
       //   ...
       // }
       
-      const discountAmount = Number(responseData.discountAmount) || 0;
+      // Lấy discount từ response
+      let discountAmount = Number(responseData.discountAmount) || 0;
+      const respSubTotal = Number(responseData.subTotal) || currentTotal;
+      const respFinal = Number(responseData.finalAmount);
+      // Nếu BE không trả discount nhưng có final nhỏ hơn subtotal, suy ra từ chênh lệch
+      if (discountAmount === 0 && Number.isFinite(respFinal) && respFinal >= 0 && respSubTotal > respFinal) {
+        discountAmount = respSubTotal - respFinal;
+      }
+      if (discountAmount === 0 && validateResponse?.data) {
+        discountAmount = computeDiscountFromValidate(validateResponse.data, currentTotal);
+      }
       const finalAmount = Number(responseData.finalAmount) || 0;
       const subTotal = Number(responseData.subTotal) || currentTotal;
       

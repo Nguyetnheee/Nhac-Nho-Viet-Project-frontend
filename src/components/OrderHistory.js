@@ -255,7 +255,7 @@ const OrderHistory = () => {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-800">
-                    Đơn hàng #{order.orderId}
+                    Đơn hàng #{order.orderCode || order.orderId}
                   </h4>
                   <p className="text-sm text-gray-500 mt-1">
                     <i className="far fa-calendar-alt mr-1"></i>
