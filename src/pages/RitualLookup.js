@@ -170,8 +170,8 @@ const RitualLookup = () => {
         100
       );
 
-      // ✅ Thêm "Toàn Quốc" vào danh sách các miền được chọn
-      const selectedSet = new Set([...regionNames, "Toàn Quốc"]);
+      // Chỉ hiển thị đúng các miền đã chọn (không kèm 'Toàn Quốc')
+      const selectedSet = new Set(regionNames);
       const filtered = Array.isArray(content)
         ? content.filter((item) => selectedSet.has(item.regionName))
         : [];
