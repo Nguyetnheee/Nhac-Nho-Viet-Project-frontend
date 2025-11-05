@@ -84,7 +84,7 @@ export const CartProvider = ({ children }) => {
       totals: {
         totalItems: Number(apiCart?.totalItems) || 0,
         subTotal: Number(apiCart?.subTotal) || 0,
-        currency: apiCart?.currency || "VND",
+        currency: apiCart?.currency || "VNĐ",
       },
       voucher: voucherInfo
     };
