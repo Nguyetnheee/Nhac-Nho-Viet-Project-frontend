@@ -65,18 +65,33 @@ export const CartProvider = ({ children }) => {
       selected: i.selected ?? true
     }));
 
-    // ✅ Parse voucher info từ cart response
+    // ✅ Parse voucher info từ cart response (chỉ nhận khi có giảm giá thực sự)
     let voucherInfo = null;
     if (apiCart?.voucherCode) {
-      voucherInfo = {
-        code: apiCart.voucherCode,
-        discountAmount: Number(apiCart.discountAmount) || 0,
-        originalAmount: Number(apiCart.subTotal) || 0,
-        finalAmount: Number(apiCart.finalAmount) || Number(apiCart.subTotal) || 0,
-        validated: true,
-        fromDatabase: true
-      };
-      console.log('📦 Voucher loaded from database:', voucherInfo);
+      const parsedSubTotal = Number(apiCart.subTotal) || 0;
+      const parsedFinal = Number(apiCart.finalAmount);
+      let parsedDiscount = Number(apiCart.discountAmount) || 0;
+      // Suy ra giảm giá nếu final < subtotal
+      if (parsedDiscount === 0 && Number.isFinite(parsedFinal) && parsedFinal >= 0 && parsedSubTotal > parsedFinal) {
+        parsedDiscount = parsedSubTotal - parsedFinal;
+      }
+      const computedFinal = parsedSubTotal - parsedDiscount;
+      const finalAmount = Number.isFinite(parsedFinal) && parsedFinal >= 0 ? parsedFinal : computedFinal;
+
+      // Chỉ coi như có voucher khi có giảm giá dương và tổng sau giảm nhỏ hơn tạm tính
+      if (parsedDiscount > 0 && finalAmount < parsedSubTotal) {
+        voucherInfo = {
+          code: apiCart.voucherCode,
+          discountAmount: parsedDiscount,
+          originalAmount: parsedSubTotal,
+          finalAmount: finalAmount,
+          validated: true,
+          fromDatabase: true
+        };
+        console.log('📦 Voucher loaded from database:', voucherInfo);
+      } else {
+        console.log('ℹ️ Backend returned voucher without effective discount. Keeping local voucher.');
+      }
     }
 
     return {
@@ -154,10 +169,9 @@ export const CartProvider = ({ children }) => {
         setTotals(totals);
         
         // ✅ Sync voucher từ database
+        // Nếu backend chưa trả về voucher info, giữ nguyên voucher đang có thay vì xóa
         if (voucher) {
           setAppliedVoucher(voucher);
-        } else {
-          setAppliedVoucher(null);
         }
         
         setServerSynced(true);

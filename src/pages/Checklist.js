@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { checklistService } from '../services/checklistService';
-import { ritualService } from '../services/ritualService';
 import { scrollToTop } from '../utils/scrollUtils';
-import { Select, Pagination, Spin, Empty } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { Select, Pagination, Spin, Empty, Modal, Input, DatePicker } from 'antd';
+import { PlusCircleOutlined, InfoCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Option } = Select;
 
@@ -12,7 +12,15 @@ const Checklist = () => {
   const navigate = useNavigate(); 
   
   const [checklistsByRitual, setChecklistsByRitual] = useState([]); 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  // User-created checklists (will be loaded via GET later). For now, display created ones immediately.
+  const [userChecklists, setUserChecklists] = useState([]);
+  const [userListLoading, setUserListLoading] = useState(false);
+  const [userListPage, setUserListPage] = useState({ page: 0, size: 9, total: 0 });
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ userChecklistId: '', itemId: '', quantity: 1, note: '' });
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -37,131 +45,17 @@ const Checklist = () => {
   });
 
   useEffect(() => {
-    fetchChecklists();
+    // Temporarily disable old ritual checklist loading
+    setChecklistsByRitual([]);
+    setLoading(false);
     scrollToTop(true);
   }, [filters, pagination.current]);
 
+  // Hủy nối các API cũ cho checklist; không fetch từ server ở phiên bản này
+
   const fetchChecklists = async () => {
-    setLoading(true);
-    try {
-      console.log('🔍 Checklist page: Filtering checklists with:', filters);
-      
-      // Lấy cả 2 APIs: grouped (để hiển thị) và rituals (để lấy ritualId)
-      const [groupedData, ritualsData] = await Promise.all([
-        checklistService.getGroupedChecklists(),
-        ritualService.getAllRituals() // API rituals có {ritualId, ritualName, ...}
-      ]);
-      
-      console.log('✅ Checklist page: Grouped data received:', groupedData);
-      console.log('✅ Checklist page: Rituals data received:', ritualsData);
-
-      // Tạo mapping ritualName → ritualId từ API rituals
-      console.log('📦 Rituals data structure (first item):', ritualsData[0]);
-      
-      const ritualIdMap = {};
-      ritualsData.forEach(ritual => {
-        console.log('Processing ritual:', ritual);
-        if (ritual.ritualName) {
-          ritualIdMap[ritual.ritualName] = ritual.ritualId;
-        }
-      });
-      console.log('🗺️ RitualId mapping created:', ritualIdMap);
-      console.log('🔢 Total rituals in mapping:', Object.keys(ritualIdMap).length);
-
-      // Convert grouped object thành array
-      // groupedData format: { "RitualName1": [...items], "RitualName2": [...items] }
-      const ritualEntries = Object.entries(groupedData);
-      console.log('📋 Total rituals:', ritualEntries.length);
-
-      // Extract filter options từ grouped data (chỉ lần đầu)
-      if (filterOptions.ritualNames.length === 0) {
-        const ritualNames = ritualEntries.map(([name]) => name).sort();
-        
-        // Flatten tất cả items để lấy itemNames và units
-        const allItems = ritualEntries.flatMap(([_, items]) => items);
-        const itemNames = [...new Set(allItems.map(item => item.itemName).filter(Boolean))].sort();
-        const units = [...new Set(allItems.map(item => item.unit).filter(Boolean))].sort();
-        
-        console.log('✅ Filter options extracted:');
-        console.log('  - Rituals:', ritualNames.length);
-        console.log('  - Items:', itemNames.length);
-        console.log('  - Units:', units.length);
-        
-        setFilterOptions({ ritualNames, itemNames, units });
-      }
-
-      // Áp dụng client-side filtering
-      let filteredEntries = ritualEntries;
-
-      // Filter theo ritual name
-      if (filters.ritualName) {
-        filteredEntries = filteredEntries.filter(([ritualName]) => 
-          ritualName === filters.ritualName
-        );
-        console.log(`🔍 Filtered by ritual "${filters.ritualName}":`, filteredEntries.length, 'rituals');
-      }
-
-      // Filter theo item name hoặc unit
-      if (filters.itemName || filters.unit) {
-        filteredEntries = filteredEntries.map(([ritualName, items]) => {
-          let filteredItems = items;
-
-          if (filters.itemName) {
-            filteredItems = filteredItems.filter(item => 
-              item.itemName === filters.itemName
-            );
-          }
-
-          if (filters.unit) {
-            filteredItems = filteredItems.filter(item => 
-              item.unit === filters.unit
-            );
-          }
-
-          return [ritualName, filteredItems];
-        }).filter(([_, items]) => items.length > 0); // Loại bỏ ritual không có items sau khi filter
-        
-        console.log(`🔍 Filtered by item/unit:`, filteredEntries.length, 'rituals with matching items');
-      }
-
-      // Convert về format component cần
-      // Lấy ritualId từ mapping đã tạo
-      const formattedRituals = filteredEntries.map(([ritualName, items]) => ({
-        ritualName: ritualName,
-        ritualId: ritualIdMap[ritualName], // Lấy từ mapping ritualName → ritualId
-        items: items
-      }));
-
-      console.log('📄 Final formatted rituals:', formattedRituals.length);
-      console.log('🔍 Sample ritual with ID:', formattedRituals[0]);
-
-      // Cập nhật pagination
-      setPagination(prev => ({
-        ...prev,
-        total: formattedRituals.length,
-        totalPages: Math.ceil(formattedRituals.length / prev.pageSize)
-      }));
-
-      // Áp dụng pagination client-side
-      const startIndex = pagination.current * pagination.pageSize;
-      const endIndex = startIndex + pagination.pageSize;
-      const paginatedData = formattedRituals.slice(startIndex, endIndex);
-      
-      console.log(`📄 Showing page ${pagination.current + 1}: rituals ${startIndex + 1}-${Math.min(endIndex, formattedRituals.length)} of ${formattedRituals.length}`);
-
-      setChecklistsByRitual(paginatedData);
-      
-    } catch (error) {
-      console.error('❌ Checklist page: Error fetching checklists:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      setChecklistsByRitual([]);
-    } finally {
-      setLoading(false);
-    }
+    // Old data source removed for the new user-owned checklist experience
+    return;
   };
 
   const handleFilterChange = (filterName, value) => {
@@ -188,6 +82,46 @@ const Checklist = () => {
     navigate(`/rituals/${ritualId}`); 
   };
 
+  // Create user checklist (POST /api/user-checklists)
+  const openCreateModal = () => setCreateModalOpen(true);
+  const closeCreateModal = () => {
+    setCreateModalOpen(false);
+    setFormData({ title: '', reminderDate: null });
+  };
+
+  const handleCreate = async () => {
+    if (!user?.id && !user?.userId) {
+      Modal.warning({ title: 'Vui lòng đăng nhập', content: 'Bạn cần đăng nhập để tạo checklist.' });
+      return;
+    }
+    // Validate fields for creating user checklist item
+    if (!formData.userChecklistId || !formData.itemId) {
+      Modal.warning({ title: 'Thiếu thông tin', content: 'Cần nhập UserChecklist ID và Item ID.' });
+      return;
+    }
+
+    const payload = {
+      userChecklistId: Number(formData.userChecklistId),
+      itemId: Number(formData.itemId),
+      quantity: Number(formData.quantity || 1),
+      note: formData.note || '',
+    };
+
+    try {
+      const res = await api.post('/api/user-checklist-items', payload);
+      const created = res.data?.data || res.data || payload;
+      // Thêm vào danh sách hiển thị tạm thời
+      setUserChecklists(prev => [created, ...prev]);
+      closeCreateModal();
+      Modal.success({ title: 'Đã thêm mục', content: 'Mục checklist của bạn đã được lưu.' });
+    } catch (error) {
+      console.error('❌ Create user checklist item failed:', error);
+      console.error('Backend error payload:', error.response?.data);
+      const msg = error.response?.data?.message || error.response?.data?.error || 'Vui lòng kiểm tra lại thông tin nhập';
+      Modal.error({ title: 'Không thể thêm mục', content: msg });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-vietnam-cream font-sans transition-all duration-300">
       {/* HERO SECTION với Bộ Lọc */}
@@ -209,6 +143,25 @@ const Checklist = () => {
           <p className="text-base md:text-lg text-green-100 drop-shadow-md mb-8">
             Nơi bạn có thể tìm, tạo và lưu các danh sách lễ vật hoặc hoạt động cần chuẩn bị cho từng lễ hội.
           </p>
+
+          {/* Banner hướng dẫn tạo checklist */}
+          <div className="bg-white/15 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-left">
+              <div className="flex items-start gap-3">
+                <InfoCircleOutlined className="text-2xl text-vietnam-gold mt-1" />
+                <div>
+                  <h3 className="text-xl font-semibold">Tạo checklist cá nhân</h3>
+                  <p className="text-green-100 text-sm">Checklist sẽ được lưu vào hệ thống và chỉ hiển thị cho tài khoản của bạn.</p>
+                </div>
+              </div>
+              <button
+                onClick={openCreateModal}
+                className="inline-flex items-center justify-center gap-2 bg-vietnam-gold text-stone-900 px-5 py-3 rounded-lg font-semibold hover:bg-yellow-500 transition-colors"
+              >
+                <PlusCircleOutlined /> Thêm checklist
+              </button>
+            </div>
+          </div>
 
           {/* Bộ Lọc */}
           <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30 hover:shadow-[0_20px_50px_rgba(218,165,32,0.3)] transition-all duration-300">
@@ -277,44 +230,27 @@ const Checklist = () => {
         </div>
       </section>
 
-      {/* CHECKLIST MẪU */}
+      {/* CHECKLIST CỦA TÔI */}
       <section className="py-12 max-w-6xl mx-auto px-6">
 
-        {loading ? (
+        {loading || userListLoading ? (
           <div className="flex justify-center items-center py-10">
             <Spin size="large" />
           </div>
-        ) : checklistsByRitual.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="max-w-md mx-auto">
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={
-                  <div>
-                    <h3 className="text-2xl font-bold text-vietnam-green mb-4">
-                      Không tìm thấy kết quả
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      Thử thay đổi bộ lọc để xem các kết quả khác
-                    </p>
-                  </div>
-                }
-              />
-              <button
-                onClick={fetchChecklists}
-                className="bg-vietnam-green text-white px-6 py-3 rounded-lg hover:bg-vietnam-green/90 transition-colors inline-flex items-center gap-2"
-              >
-                <ReloadOutlined />
-                Tải lại
-              </button>
-            </div>
-          </div>
+        ) : userChecklists.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={<div>
+              <h3 className="text-2xl font-bold text-vietnam-green mb-2">Chưa có checklist nào</h3>
+              <p className="text-gray-600">Nhấn "Thêm checklist" để bắt đầu.</p>
+            </div>}
+          />
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6"> 
-            {checklistsByRitual.map((ritualChecklist) => (
+            {userChecklists.map((item) => (
               <div
-                key={ritualChecklist.ritualId} 
+                key={item.id}
                 className="relative rounded-xl overflow-hidden shadow-2xl border border-amber-300/60 transition-transform duration-300 hover:scale-[1.03] hover:shadow-3xl"
                 style={{
                   backgroundImage: "url('/checklist-background.jpg')",
@@ -327,57 +263,20 @@ const Checklist = () => {
 
                 {/* Nội dung checklist */}
                 <div className="relative z-10 p-4 md:p-5 text-stone-800 text-sm flex flex-col h-full">
-                  {/* Tiêu đề màu cam */}
+                  {/* Tiêu đề màu vàng */}
                   <h3 className="text-xl font-bold text-amber-600 drop-shadow mb-4 border-b pb-2 border-amber-300/60">
-                    {ritualChecklist.ritualName || 'Tên lễ hội'} 
-                    <span className='ml-2 text-sm font-normal text-stone-700'>
-                       ({ritualChecklist.items.length} mục)
-                    </span>
+                    Mục checklist #{item.id || item.itemId}
                   </h3>
                   
-                  {/* Danh sách mục */}
-                  <div className="space-y-3 overflow-y-auto max-h-80 pr-2 flex-grow"> 
-                      {ritualChecklist.items.map((item) => (
-                        <div
-                          key={item.checklistId} 
-                          className="bg-white/70 p-3 rounded-lg shadow-sm border border-amber-200/70 transition-all duration-300 hover:bg-amber-100/80 hover:shadow-md"
-                        >
-                          <div className="flex items-start">
-                            <input
-                              type="checkbox"
-                              id={`item-${item.checklistId}-${ritualChecklist.ritualId}`}
-                              className="mt-1 h-5 w-5 accent-amber-600 border-amber-400 rounded focus:ring-amber-600 shrink-0 cursor-pointer"
-                              readOnly
-                            />
-                            <label
-                              htmlFor={`item-${item.checklistId}-${ritualChecklist.ritualId}`}
-                              className="ml-3 text-stone-800 font-medium text-base flex-1 cursor-pointer"
-                            >
-                              {item.itemName}
-                              {item.quantity && item.unit && (
-                                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-amber-200/70 text-stone-800 border border-amber-300 whitespace-nowrap font-semibold">
-                                  {item.quantity} {item.unit}
-                                </span>
-                              )}
-                            </label>
-                          </div>
-                          {item.checkNote && (
-                            <p className="text-sm text-stone-600 italic mt-1 ml-8">
-                              {item.checkNote}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                  <div className="space-y-2 text-sm text-stone-700">
+                    <p><span className="font-semibold">UserChecklist ID:</span> {item.userChecklistId}</p>
+                    <p><span className="font-semibold">Item ID:</span> {item.itemId}</p>
+                    <p><span className="font-semibold">Số lượng:</span> {item.quantity}</p>
+                    {item.note && <p><span className="font-semibold">Ghi chú:</span> {item.note}</p>}
                   </div>
                   
-                  {/* Nút xem chi tiết lễ hội */}
-                  <div className="mt-6 pt-4 border-t border-amber-300/60 text-center mt-auto">
-                      <button
-                          onClick={() => handleViewDetails(ritualChecklist.ritualId)} 
-                          className="bg-vietnam-gold text-stone-800 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition duration-300 hover:shadow-md"
-                      >
-                          Xem chi tiết lễ hội
-                      </button>
+                  <div className="mt-6 pt-4 border-t border-amber-300/60 text-right mt-auto">
+                    <span className="text-xs text-stone-500">Mục checklist của tôi</span>
                   </div>
                 </div>
               </div>
@@ -385,20 +284,75 @@ const Checklist = () => {
           </div>
 
           {/* Pagination */}
-          {pagination.total > pagination.pageSize && (
+          {userListPage.total > userListPage.size && (
             <div className="flex justify-center mt-10">
               <Pagination
-                current={pagination.current + 1} // Convert back to 1-based for display
-                pageSize={pagination.pageSize}
-                total={pagination.total}
-                onChange={handlePageChange}
-                showTotal={(total) => `Tổng ${total} mục`}
+                current={userListPage.page + 1}
+                pageSize={userListPage.size}
+                total={userListPage.total}
+                onChange={(page, size) => setUserListPage({ page: page - 1, size, total: userListPage.total })}
+                showTotal={(total) => `Tổng ${total} checklist`}
               />
             </div>
           )}
         </>
         )}
       </section>
+      {/* Modal tạo checklist mới */}
+      <Modal
+        centered
+        open={createModalOpen}
+        onCancel={closeCreateModal}
+        onOk={handleCreate}
+        okText="Tạo checklist"
+        cancelText="Hủy"
+        className="nnv-create-checklist-modal"
+        title={<div className="flex items-center gap-2 text-vietnam-green"><PlusCircleOutlined /> <span className="font-semibold">Thêm mục checklist mới</span></div>}
+        okButtonProps={{ style: { background: '#d4af37', borderColor: '#d4af37', color: '#1f2937', fontWeight: 600 } }}
+        cancelButtonProps={{ style: { borderColor: '#065f46', color: '#065f46' } }}
+        styles={{ body: { background: 'linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.92))' } }}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-vietnam-green">UserChecklist ID</label>
+            <Input
+              value={formData.userChecklistId}
+              onChange={(e) => setFormData(prev => ({ ...prev, userChecklistId: e.target.value.replace(/[^0-9]/g, '') }))}
+              placeholder="Nhập ID danh sách của bạn"
+              inputMode="numeric"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-vietnam-green">Item ID</label>
+              <Input
+                value={formData.itemId}
+                onChange={(e) => setFormData(prev => ({ ...prev, itemId: e.target.value.replace(/[^0-9]/g, '') }))}
+                placeholder="Nhập ID vật phẩm"
+                inputMode="numeric"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-vietnam-green">Số lượng</label>
+              <Input
+                value={formData.quantity}
+                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value.replace(/[^0-9]/g, '') || 1 }))}
+                placeholder="1"
+                inputMode="numeric"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-vietnam-green">Ghi chú</label>
+            <Input.TextArea
+              rows={3}
+              value={formData.note}
+              onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
+              placeholder="Ghi chú cho mục checklist (tuỳ chọn)"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

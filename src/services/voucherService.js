@@ -99,8 +99,9 @@ export const applyVoucherToCart = async (voucherCode) => {
   try {
     console.log('📤 Applying voucher to cart /api/cart/apply-voucher:', { voucherCode });
     
-    const response = await api.post('/api/cart/apply-voucher', {
-      voucherCode: voucherCode.toUpperCase()
+    // Theo spec: voucherCode là query param
+    const response = await api.post('/api/cart/apply-voucher', null, {
+      params: { voucherCode: voucherCode.toUpperCase() }
     });
     
     console.log('✅ Cart updated with voucher:', response.data);

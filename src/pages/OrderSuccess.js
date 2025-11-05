@@ -13,7 +13,11 @@ import {
   CloseCircleOutlined,
   TagOutlined,
   ReloadOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  UserOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  EnvironmentOutlined
 } from '@ant-design/icons';
 
 // Order status mapping
@@ -154,17 +158,68 @@ const OrderSuccess = () => {
       }
       
       // Map field names để đảm bảo tương thích với backend
-      const rawData = response.data;
-      const mappedData = {
+      let rawData = response.data;
+      
+      // ✅ Kiểm tra nếu data nằm trong nested object
+      if (rawData.data) {
+        console.log('⚠️ Data is nested in .data property');
+        rawData = rawData.data;
+      }
+      
+      // ✅ Log toàn bộ raw data để debug
+      console.log('🔍 RAW DATA FROM BACKEND:', JSON.stringify(rawData, null, 2));
+      console.log('🔍 All keys in rawData:', Object.keys(rawData));
+      
+      let mappedData = {
         ...rawData,
         orderStatus: rawData.orderStatus || rawData.status, // Backend có thể dùng 'status' hoặc 'orderStatus'
         orderId: rawData.orderId || rawData.id,
+        orderCode: rawData.orderCode || rawData.orderId || rawData.id, // ✅ Lấy orderCode
         orderDate: rawData.orderDate || rawData.createdAt || rawData.createdDate,
+        // ✅ Thông tin khách hàng - thử nhiều variations
+        customerName: rawData.customerName || rawData.fullName || rawData.name || 
+                     rawData.receiverName || rawData.recipientName || 
+                     rawData.customer?.name || rawData.customer?.fullName || '',
+        customerEmail: rawData.customerEmail || rawData.email || 
+                      rawData.customer?.email || rawData.user?.email || '',
+        customerPhone: rawData.customerPhone || rawData.phone || rawData.phoneNumber || 
+                      rawData.receiverPhone || rawData.customer?.phone || 
+                      rawData.customer?.phoneNumber || '',
+        customerAddress: rawData.customerAddress || rawData.address || rawData.shippingAddress || 
+                        rawData.deliveryAddress || rawData.receiverAddress ||
+                        rawData.customer?.address || rawData.shipping?.address || '',
       };
       
       console.log('📊 Order data mapping:', {
-        raw: { status: rawData.status, orderStatus: rawData.orderStatus },
-        mapped: { orderStatus: mappedData.orderStatus }
+        raw: { 
+          status: rawData.status, 
+          orderStatus: rawData.orderStatus,
+          orderCode: rawData.orderCode,
+          orderId: rawData.orderId,
+          customerName: rawData.customerName,
+          fullName: rawData.fullName,
+          name: rawData.name,
+          receiverName: rawData.receiverName,
+          customerEmail: rawData.customerEmail,
+          email: rawData.email,
+          customerPhone: rawData.customerPhone,
+          phone: rawData.phone,
+          phoneNumber: rawData.phoneNumber,
+          receiverPhone: rawData.receiverPhone,
+          customerAddress: rawData.customerAddress,
+          address: rawData.address,
+          shippingAddress: rawData.shippingAddress,
+          deliveryAddress: rawData.deliveryAddress,
+          receiverAddress: rawData.receiverAddress,
+        },
+        mapped: { 
+          orderStatus: mappedData.orderStatus,
+          orderCode: mappedData.orderCode,
+          customerName: mappedData.customerName,
+          customerEmail: mappedData.customerEmail,
+          customerPhone: mappedData.customerPhone,
+          customerAddress: mappedData.customerAddress,
+        }
       });
       
       // ✅ KIỂM TRA: Nếu đơn hàng PENDING hoặc CANCELLED -> redirect sang PendingOrderDetail
@@ -175,6 +230,29 @@ const OrderSuccess = () => {
         return;
       }
       
+      // 🔁 Fallback: Nếu thiếu thông tin giao hàng, lấy từ danh sách đơn hàng của khách
+      const missingCustomerInfo = !mappedData.customerName || !mappedData.customerPhone || !mappedData.customerAddress;
+      if (missingCustomerInfo) {
+        try {
+          const listRes = await api.get('/api/customer/orders');
+          const listData = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.data || []);
+          const found = listData.find(o =>
+            String(o.orderId) === String(orderId) || String(o.orderCode) === String(orderId)
+          );
+          if (found) {
+            mappedData = {
+              ...mappedData,
+              customerName: mappedData.customerName || found.receiverName || found.customerName || found.fullName || found.name,
+              customerPhone: mappedData.customerPhone || found.phone || found.phoneNumber || found.customerPhone,
+              customerAddress: mappedData.customerAddress || found.address || found.customerAddress || found.shippingAddress,
+              customerEmail: mappedData.customerEmail || found.email || found.customerEmail,
+            };
+          }
+        } catch (e) {
+          console.warn('⚠️ Cannot fetch customer orders list for fallback:', e.response?.status, e.message);
+        }
+      }
+
       setOrderData(mappedData);
       setLoading(false);
     } catch (error) {
@@ -426,10 +504,76 @@ const OrderSuccess = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Mã đơn hàng</p>
-                  <p className="font-semibold text-vietnam-green">
-                    #{orderData.orderId}
+                  <p className="font-semibold text-vietnam-green text-lg">
+                    #{orderData.orderCode || orderData.orderId}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* ✅ Thông tin khách hàng */}
+            <div className="border-b-2 border-gray-100 pb-6 mb-6">
+              <h3 className="text-lg font-semibold text-vietnam-green mb-4 flex items-center">
+                <UserOutlined className="mr-2" />
+                Thông tin giao hàng
+              </h3>
+              
+              <div className="space-y-3">
+                {orderData.customerName && (
+                  <div className="flex items-start">
+                    <UserOutlined className="text-gray-500 mr-3 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600">Người nhận</p>
+                      <p className="font-semibold text-gray-800">
+                        {orderData.customerName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {orderData.customerPhone && (
+                  <div className="flex items-start">
+                    <PhoneOutlined className="text-gray-500 mr-3 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600">Số điện thoại</p>
+                      <p className="font-semibold text-gray-800">
+                        {orderData.customerPhone}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {orderData.customerEmail && (
+                  <div className="flex items-start">
+                    <MailOutlined className="text-gray-500 mr-3 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-semibold text-gray-800">
+                        {orderData.customerEmail}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {orderData.customerAddress && (
+                  <div className="flex items-start">
+                    <EnvironmentOutlined className="text-gray-500 mr-3 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600">Địa chỉ giao hàng</p>
+                      <p className="font-semibold text-gray-800">
+                        {orderData.customerAddress}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Hiển thị thông báo nếu không có thông tin */}
+                {!orderData.customerName && !orderData.customerPhone && !orderData.customerEmail && !orderData.customerAddress && (
+                  <div className="text-center py-4 text-gray-500">
+                    <InfoCircleOutlined className="mr-2" />
+                    Chưa có thông tin giao hàng
+                  </div>
+                )}
               </div>
             </div>
 
