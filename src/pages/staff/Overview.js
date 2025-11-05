@@ -34,8 +34,6 @@ const Overview = () => {
   const [allOrders, setAllOrders] = useState([]);
   // eslint-disable-next-line no-unused-vars
   const [products, setProducts] = useState([]);
-  const [paidCustomers, setPaidCustomers] = useState([]); // Khách hàng đã thanh toán thành công
-  const [shipperOrdersData, setShipperOrdersData] = useState([]); // Dữ liệu đơn hàng của tất cả shipper
 
   const fetchOverviewData = async () => {
     setLoading(true);
@@ -47,9 +45,7 @@ const Overview = () => {
         fetchRecentVouchers(),
         fetchShippers(),
         fetchAllOrders(),
-        fetchProducts(),
-        fetchPaidCustomers(), // Thêm hàm lấy khách hàng đã thanh toán
-        fetchAllShipperOrders() // Thêm hàm lấy dữ liệu đơn hàng của tất cả shipper
+        fetchProducts()
       ]);
     } catch (error) {
       message.error('Không thể tải dữ liệu tổng quan!');
@@ -75,12 +71,12 @@ const Overview = () => {
       const trays = Array.isArray(traysRes?.data) ? traysRes.data : traysRes || [];
       const ordersData = Array.isArray(ordersRes?.data) ? ordersRes.data : (ordersRes?.data || []);
 
-      // Sử dụng functional update, giữ nguyên totalCustomers (sẽ được cập nhật bởi fetchPaidCustomers)
+      // 使用函数式更新，保留 totalCustomers 的值（如果已由 fetchRecentUsers 设置）
       setStats(prev => ({
         totalRituals: rituals.length,
         totalTrays: trays.length,
         totalOrders: ordersData.length,
-        totalCustomers: prev.totalCustomers // Giữ nguyên giá trị trước đó
+        totalCustomers: prev.totalCustomers // 保留之前的值
       }));
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -112,10 +108,13 @@ const Overview = () => {
         address: user.address || 'N/A'
       })));
 
-      // Không cập nhật totalCustomers ở đây nữa, sẽ được cập nhật từ fetchPaidCustomers
+      // 更新总客户数（使用所有用户，不只是前10个）
+      setStats(prev => ({ ...prev, totalCustomers: users.length }));
     } catch (error) {
       console.error('Error fetching recent users:', error);
       setRecentUsers([]);
+      // 即使出错也要确保 stats 被更新
+      setStats(prev => ({ ...prev, totalCustomers: 0 }));
       
       // Thông báo lỗi dễ hiểu cho người dùng (tùy chọn - có thể bỏ comment nếu muốn hiển thị)
       // let errorMessage = 'Không thể tải danh sách khách hàng. ';
@@ -222,144 +221,6 @@ const Overview = () => {
     }
   };
 
-  // Hàm lấy danh sách khách hàng đã thanh toán thành công
-  const fetchPaidCustomers = async () => {
-    try {
-      const response = await staffService.getAllOrders();
-      console.log('Đã tải danh sách đơn hàng:', response);
-      
-      const orders = Array.isArray(response) ? response : response?.data || [];
-      
-      // Lọc chỉ các đơn hàng đã thanh toán thành công (COMPLETED hoặc PAID)
-      const paidOrders = orders.filter(order => 
-        order.status === 'COMPLETED' || order.status === 'PAID'
-      );
-      
-      // Lấy danh sách tên khách hàng duy nhất (loại bỏ trùng lặp)
-      const uniqueCustomers = {};
-      paidOrders.forEach((order, index) => {
-        const customerName = order.receiverName;
-        if (customerName && !uniqueCustomers[customerName]) {
-          uniqueCustomers[customerName] = {
-            key: `customer-${index}`,
-            id: index + 1,
-            customerName: customerName,
-            email: order.email || 'N/A',
-            phone: order.phone || 'N/A',
-            address: order.address || 'N/A',
-            totalOrders: 0,
-            totalAmount: 0
-          };
-        }
-        
-        // Tính tổng số đơn và tổng tiền của khách hàng
-        if (uniqueCustomers[customerName]) {
-          uniqueCustomers[customerName].totalOrders += 1;
-          uniqueCustomers[customerName].totalAmount += order.totalPrice || 0;
-        }
-      });
-      
-      const customersList = Object.values(uniqueCustomers);
-      console.log('Danh sách khách hàng đã thanh toán:', customersList);
-      setPaidCustomers(customersList);
-      
-      // Cập nhật số lượng khách hàng đã thanh toán vào stats
-      setStats(prev => ({ 
-        ...prev, 
-        totalCustomers: customersList.length 
-      }));
-    } catch (error) {
-      console.error('Error fetching paid customers:', error);
-      setPaidCustomers([]);
-      setStats(prev => ({ 
-        ...prev, 
-        totalCustomers: 0 
-      }));
-    }
-  };
-
-  // Hàm lấy tất cả đơn hàng của tất cả shipper để tính hiệu suất
-  const fetchAllShipperOrders = async () => {
-    try {
-      console.log('Đang tải dữ liệu đơn hàng của tất cả shipper...');
-      
-      // Lấy danh sách tất cả shippers
-      const shippersData = await shipperService.getAllShippers();
-      const shippersList = Array.isArray(shippersData) ? shippersData : shippersData?.data || [];
-      
-      console.log('Danh sách shippers:', shippersList);
-      
-      // Với mỗi shipper, tính toán thống kê dựa trên đơn hàng từ API staff/orders
-      const response = await staffService.getAllOrders();
-      const allOrders = Array.isArray(response) ? response : response?.data || [];
-      
-      console.log('📦 Tất cả đơn hàng từ API:', allOrders);
-      console.log('📦 Số lượng đơn hàng:', allOrders.length);
-      
-      // Log một vài đơn hàng mẫu để kiểm tra cấu trúc
-      if (allOrders.length > 0) {
-        console.log('📦 Đơn hàng mẫu (đầu tiên):', allOrders[0]);
-        console.log('📦 Các trường trong đơn hàng:', Object.keys(allOrders[0]));
-      }
-      
-      const shipperStatsMap = {};
-      
-      // Khởi tạo stats cho mỗi shipper
-      shippersList.forEach(shipper => {
-        const shipperName = shipper.shipperName || shipper.name || `Shipper ${shipper.shipperId || shipper.id}`;
-        const shipperId = shipper.shipperId || shipper.id;
-        
-        shipperStatsMap[shipperId] = {
-          shipperId: shipperId,
-          shipperName: shipperName,
-          pending: 0,      // Đơn chờ giao
-          active: 0,       // Đang giao
-          completed: 0,    // Đã hoàn thành
-          total: 0         // Tổng số đơn
-        };
-      });
-      
-      // Đếm số đơn hàng theo trạng thái cho mỗi shipper
-      allOrders.forEach((order, index) => {
-        const shipperId = order.shipperId || order.shipper?.shipperId;
-        
-        // Debug: Log để xem shipperId có tồn tại không
-        if (index < 5) { // Chỉ log 5 đơn đầu tiên để tránh spam
-          console.log(`📦 Đơn hàng #${order.orderId || index}:`, {
-            orderId: order.orderId,
-            shipperId: shipperId,
-            status: order.status,
-            hasShipperIdField: 'shipperId' in order,
-            hasShipperObject: 'shipper' in order
-          });
-        }
-        
-        if (shipperId && shipperStatsMap[shipperId]) {
-          shipperStatsMap[shipperId].total++;
-          
-          // Phân loại theo trạng thái
-          if (order.status === 'CONFIRMED') {
-            shipperStatsMap[shipperId].pending++;
-          } else if (order.status === 'SHIPPING') {
-            shipperStatsMap[shipperId].active++;
-          } else if (order.status === 'COMPLETED' || order.status === 'PAID') {
-            shipperStatsMap[shipperId].completed++;
-          }
-        } else if (index < 5) {
-          console.warn(`⚠️ Đơn hàng #${order.orderId || index} không có shipperId hoặc shipper không tồn tại trong danh sách`);
-        }
-      });
-      
-      const shipperOrdersList = Object.values(shipperStatsMap);
-      console.log('Thống kê đơn hàng của shipper:', shipperOrdersList);
-      setShipperOrdersData(shipperOrdersList);
-      
-    } catch (error) {
-      console.error('Error fetching shipper orders data:', error);
-      setShipperOrdersData([]);
-    }
-  };
-
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'N/A') return 'N/A';
     try {
@@ -371,11 +232,10 @@ const Overview = () => {
   };
 
   const formatCurrency = (amount) => {
-    const validAmount = Number(amount || 0);
-    if (isNaN(validAmount)) {
-      return '0 VNĐ';
-    }
-    return new Intl.NumberFormat('vi-VN').format(validAmount) + ' VNĐ';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VNĐ'
+    }).format(amount || 0);
   };
 
   const getStatusTag = (status) => {
@@ -501,29 +361,42 @@ const Overview = () => {
 
   // 4. Tính toán dữ liệu cho biểu đồ hiệu suất shipper
   const getShipperPerformanceData = () => {
-    // Sử dụng dữ liệu thực tế từ shipperOrdersData
-    if (!shipperOrdersData || shipperOrdersData.length === 0) {
-      return {
-        shipperNames: [],
-        completedOrders: [],
-        deliveredOrders: [],
-        successRates: []
-      };
-    }
-    
-    const shipperNames = shipperOrdersData.map(shipper => shipper.shipperName || 'N/A');
-    const completedOrders = shipperOrdersData.map(shipper => shipper.completed || 0);
-    const activeOrders = shipperOrdersData.map(shipper => shipper.active || 0);
-    const successRates = shipperOrdersData.map(shipper => {
-      const total = shipper.total || 0;
-      const completed = shipper.completed || 0;
-      return total > 0 ? ((completed / total) * 100).toFixed(1) : 0;
+    const shipperStats = {};
+
+    allOrders.forEach(order => {
+      const shipperId = order.shipperId || order.shipper?.shipperId;
+      const shipperName = order.shipperName || order.shipper?.shipperName || `Shipper ${shipperId || 'N/A'}`;
+
+      if (!shipperStats[shipperName]) {
+        shipperStats[shipperName] = {
+          total: 0,
+          completed: 0,
+          delivered: 0
+        };
+      }
+
+      shipperStats[shipperName].total++;
+      if (order.status === 'DELIVERED') {
+        shipperStats[shipperName].delivered++;
+        shipperStats[shipperName].completed++;
+      } else if (order.status === 'SHIPPING' || order.status === 'CONFIRMED') {
+        shipperStats[shipperName].completed++;
+      }
     });
+
+    const shipperNames = Object.keys(shipperStats);
+    const completedOrders = shipperNames.map(name => shipperStats[name].completed);
+    const deliveredOrders = shipperNames.map(name => shipperStats[name].delivered);
+    const successRates = shipperNames.map(name =>
+      shipperStats[name].total > 0
+        ? ((shipperStats[name].delivered / shipperStats[name].total) * 100).toFixed(1)
+        : 0
+    );
 
     return {
       shipperNames,
       completedOrders,
-      deliveredOrders: activeOrders, // Sử dụng active orders thay vì delivered
+      deliveredOrders,
       successRates
     };
   };
@@ -608,33 +481,6 @@ const Overview = () => {
         const genderInfo = genderMap[gender] || genderMap[gender?.toLowerCase()] || { text: gender || 'N/A', color: 'default' };
         return <Tag color={genderInfo.color}>{genderInfo.text}</Tag>;
       },
-    },
-    {
-      title: 'Địa chỉ',
-      dataIndex: 'address',
-      key: 'address',
-      ellipsis: true,
-    },
-  ];
-
-  // Columns cho bảng khách hàng đã thanh toán thành công
-  const paidCustomerColumns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 60,
-    },
-    {
-      title: 'Tên khách hàng',
-      dataIndex: 'customerName',
-      key: 'customerName',
-      render: (text) => <Text strong>{text}</Text>,
-    },
-    {
-      title: 'Số điện thoại',
-      dataIndex: 'phone',
-      key: 'phone',
     },
     {
       title: 'Địa chỉ',
@@ -996,7 +842,7 @@ const Overview = () => {
                     }
                   },
                   legend: {
-                    data: ['Số đơn hoàn thành', 'Số đơn đang giao', 'Tỷ lệ thành công (%)']
+                    data: ['Số đơn hoàn thành', 'Số đơn đã giao', 'Tỷ lệ thành công (%)']
                   },
                   grid: {
                     left: '3%',
@@ -1033,7 +879,7 @@ const Overview = () => {
                       }
                     },
                     {
-                      name: 'Số đơn đang giao',
+                      name: 'Số đơn đã giao',
                       type: 'bar',
                       data: getShipperPerformanceData().deliveredOrders,
                       itemStyle: {
@@ -1142,7 +988,7 @@ const Overview = () => {
         </Row>
 
         <Row gutter={16} style={{ marginBottom: 24 }} align="stretch">
-          {/* Paid Customers Table - Khách hàng đã thanh toán thành công */}
+          {/* Recent Users Table */}
           <Col xs={24} lg={12}>
             <Card
               style={{ height: '100%' }}
@@ -1154,17 +1000,14 @@ const Overview = () => {
               }
             >
               <Table
-                columns={paidCustomerColumns}
-                dataSource={paidCustomers}
+                columns={userColumns}
+                dataSource={recentUsers}
                 pagination={{
                   pageSize: 5,
                   showTotal: (total) => `Tổng ${total} khách hàng`,
                   locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
-                locale={{
-                  emptyText: 'No data'
-                }}
               />
             </Card>
           </Col>
