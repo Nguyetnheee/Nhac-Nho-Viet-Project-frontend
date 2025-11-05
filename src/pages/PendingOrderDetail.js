@@ -27,10 +27,11 @@ const PendingOrderDetail = () => {
 
   // Format tiền VNĐ
   const formatMoney = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount || 0);
+    const validAmount = Number(amount || 0);
+    if (isNaN(validAmount)) {
+      return '0 VNĐ';
+    }
+    return new Intl.NumberFormat('vi-VN').format(validAmount) + ' VNĐ';
   };
 
   // Format ngày giờ
