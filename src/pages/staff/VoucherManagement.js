@@ -82,7 +82,8 @@ const VoucherManagement = () => {
       // Chỉ thêm params nếu có giá trị
       if (filters.code) params.code = filters.code;
       if (filters.discountType) params.discountType = filters.discountType;
-      if (filters.isActive !== '') params.isActive = filters.isActive === 'true';
+      // Gửi isActive=true khi lọc Hoạt động để backend giảm tải; các trường hợp khác lọc ở client
+      if (filters.isActive === 'true') params.isActive = true;
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
       
@@ -128,17 +129,34 @@ const VoucherManagement = () => {
 
       console.log('✅ Processed vouchers:', voucherData, 'Total:', total);
 
-      setVouchers(voucherData);
+      // Apply client-side filtering to ensure correct status with expiry
+      const now = new Date();
+      let filteredData = voucherData;
+      if (filters.isActive === 'true') {
+        filteredData = voucherData.filter(v => {
+          const endDate = v.endDate ? new Date(v.endDate) : null;
+          const notExpired = !endDate || endDate >= now;
+          return Boolean(v.isActive) && notExpired;
+        });
+      } else if (filters.isActive === 'false') {
+        filteredData = voucherData.filter(v => {
+          const endDate = v.endDate ? new Date(v.endDate) : null;
+          const isExpired = endDate && endDate < now;
+          return !Boolean(v.isActive) || isExpired;
+        });
+      }
+
+      setVouchers(filteredData);
       setPagination(prev => ({
         ...prev,
-        total: total,
+        total: filteredData.length,
       }));
 
-      // Calculate statistics
+      // Calculate statistics (respecting expiry)
       calculateStats(voucherData);
 
-      if (voucherData.length > 0) {
-        message.success(`Đã tải ${voucherData.length} vouchers`);
+      if (filteredData.length > 0) {
+        message.success(`Đã tải ${filteredData.length} vouchers`);
       } else {
         message.info('Không tìm thấy voucher nào');
       }
@@ -168,8 +186,15 @@ const VoucherManagement = () => {
 
   const calculateStats = (data) => {
     const now = new Date();
-    const active = data.filter(v => v.isActive).length;
-    const expired = data.filter(v => new Date(v.endDate) < now).length;
+    const active = data.filter(v => {
+      const endDate = v.endDate ? new Date(v.endDate) : null;
+      const notExpired = !endDate || endDate >= now;
+      return Boolean(v.isActive) && notExpired;
+    }).length;
+    const expired = data.filter(v => {
+      const endDate = v.endDate ? new Date(v.endDate) : null;
+      return Boolean(endDate) && endDate < now;
+    }).length;
     const percentage = data.filter(v => v.discountType === 'PERCENTAGE').length;
     const fixedAmount = data.filter(v => v.discountType === 'FIXED_AMOUNT').length;
 
