@@ -31,6 +31,7 @@ const Overview = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [recentVouchers, setRecentVouchers] = useState([]);
   const [shippers, setShippers] = useState([]);
+  const [topSelling, setTopSelling] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
   // eslint-disable-next-line no-unused-vars
   const [products, setProducts] = useState([]);
@@ -45,7 +46,8 @@ const Overview = () => {
         fetchRecentVouchers(),
         fetchShippers(),
         fetchAllOrders(),
-        fetchProducts()
+        fetchProducts(),
+        fetchTopSelling()
       ]);
     } catch (error) {
       message.error('Không thể tải dữ liệu tổng quan!');
@@ -150,6 +152,33 @@ const Overview = () => {
           shippingStatus: order.shippingStatus || 'Chưa vận chuyển',
           shipperName: order.shipperName || 'Chưa phân công'
         })));
+
+        // Derive unique recent customers from orders
+        const uniqueMap = new Map();
+        orders.forEach((o) => {
+          const name = o.receiverName || o.customerName || 'N/A';
+          const phone = o.phone || 'N/A';
+          const key = `${name}-${phone}`;
+          if (!uniqueMap.has(key)) {
+            uniqueMap.set(key, {
+              id: uniqueMap.size + 1,
+              username: name,
+              customerName: name,
+              email: 'N/A',
+              phone: phone,
+              gender: 'N/A',
+              address: o.address || 'N/A'
+            });
+          }
+        });
+
+        const uniqueCustomers = Array.from(uniqueMap.values());
+        setRecentUsers(uniqueCustomers.map((u) => ({
+          key: u.id,
+          ...u
+        })));
+        // Update stats card: totalCustomers = number of unique purchasers recently
+        setStats(prev => ({ ...prev, totalCustomers: uniqueCustomers.length }));
       }
     } catch (error) {
       console.error('Error fetching recent orders:', error);
@@ -158,21 +187,27 @@ const Overview = () => {
 
   const fetchRecentVouchers = async () => {
     try {
-      const response = await api.get('/api/vouchers/recent').catch(() => null);
+      const response = await api.get('/api/vouchers/valid').catch(() => null);
       if (response?.data) {
-        const vouchers = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setRecentVouchers(vouchers.slice(0, 10).map((voucher, index) => ({
+        const vouchers = Array.isArray(response.data)
+          ? response.data
+          : (Array.isArray(response.data.data) ? response.data.data : []);
+
+        setRecentVouchers(vouchers.map((voucher, index) => ({
           key: voucher.voucherId || voucher.id || index,
           code: voucher.code || voucher.voucherCode || 'N/A',
-          discount: voucher.discount || voucher.discountValue || 0,
-          type: voucher.type || voucher.discountType || 'PERCENTAGE',
-          status: voucher.status || voucher.isActive ? 'ACTIVE' : 'INACTIVE',
+          discount: voucher.discountValue ?? voucher.discount ?? 0,
+          type: voucher.discountType || voucher.type || 'PERCENTAGE',
+          status: (voucher.isValid !== false && voucher.isActive !== false) ? 'ACTIVE' : 'INACTIVE',
           createdAt: voucher.createdAt || voucher.startDate || 'N/A',
-          expiryDate: voucher.expiryDate || voucher.endDate || 'N/A'
+          expiryDate: voucher.endDate || voucher.expiryDate || 'N/A'
         })));
+      } else {
+        setRecentVouchers([]);
       }
     } catch (error) {
       console.error('Error fetching recent vouchers:', error);
+      setRecentVouchers([]);
     }
   };
 
@@ -207,6 +242,24 @@ const Overview = () => {
     } catch (error) {
       console.error('Error fetching all orders:', error);
       setAllOrders([]);
+    }
+  };
+
+  const fetchTopSelling = async () => {
+    try {
+      const response = await api.get('/api/staff/orders/top-selling').catch(() => null);
+      let list = [];
+      if (Array.isArray(response?.data)) {
+        list = response.data;
+      } else if (Array.isArray(response?.data?.data)) {
+        list = response.data.data;
+      } else if (response?.data?.content && Array.isArray(response.data.content)) {
+        list = response.data.content;
+      }
+      setTopSelling(list.slice(0, 10));
+    } catch (error) {
+      console.error('Error fetching top selling products:', error);
+      setTopSelling([]);
     }
   };
 
@@ -403,36 +456,12 @@ const Overview = () => {
 
   // 5. Tính toán dữ liệu cho top sản phẩm bán chạy
   const getTopProductsData = () => {
-    const productStats = {};
-
-    // Giả sử orders có items chứa productId và quantity
-    allOrders.forEach(order => {
-      const items = order.items || order.orderItems || [];
-      items.forEach(item => {
-        const productId = item.productId || item.product?.productId;
-        const productName = item.productName || item.product?.productName || `Sản phẩm ${productId || 'N/A'}`;
-        const quantity = item.quantity || 0;
-        const price = item.price || item.product?.price || 0;
-
-        if (!productStats[productId]) {
-          productStats[productId] = {
-            name: productName,
-            quantity: 0,
-            revenue: 0
-          };
-        }
-
-        productStats[productId].quantity += quantity;
-        productStats[productId].revenue += quantity * price;
-      });
-    });
-
-    // Sắp xếp theo doanh thu và lấy top 10
-    const sortedProducts = Object.values(productStats)
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
-
-    return sortedProducts;
+    // Dữ liệu đã được backend tính sẵn
+    return (topSelling || []).map(p => ({
+      name: p.productName || `Sản phẩm ${p.productId}`,
+      quantity: p.quantity || 0,
+      revenue: p.revenue || 0
+    }));
   };
 
   const userColumns = [

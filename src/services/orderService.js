@@ -26,7 +26,10 @@ export const orderService = {
   getOrdersByStatus: (status) => api.get(`/api/orders/admin/status/${status}`),
   
   // Staff: Lấy tất cả đơn hàng cho staff
-  getStaffOrders: () => api.get('/api/staff/orders')
+  getStaffOrders: () => api.get('/api/staff/orders'),
+
+  // Staff: Top 10 sản phẩm bán chạy
+  getTopSellingProducts: () => api.get('/api/staff/orders/top-selling')
 };
 
 export default orderService;
