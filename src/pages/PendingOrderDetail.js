@@ -59,19 +59,54 @@ const PendingOrderDetail = () => {
         return;
       }
 
-      const response = await api.get(`/api/customer/orders/${orderId}`, {
+      // Gọi API chi tiết đơn hàng theo orderId (có đầy đủ thông tin)
+      const detailResponse = await api.get(`/api/customer/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      console.log('📦 Pending order data:', response.data);
+      console.log('📦 Order detail response:', detailResponse.data);
       
-      const order = response.data.data || response.data;
-      setOrderData(order);
+      const orderDetail = detailResponse.data.data || detailResponse.data;
+      console.log('✅ Order details:', orderDetail);
+
+      // Gọi API danh sách orders để lấy thông tin khách hàng (receiverName, phone, address)
+      const ordersResponse = await api.get('/api/customer/orders', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      console.log('📦 All customer orders:', ordersResponse.data);
+      
+      // Tìm order theo orderId trong danh sách để lấy thông tin khách hàng
+      const orders = ordersResponse.data.data || ordersResponse.data;
+      const foundOrder = Array.isArray(orders) 
+        ? orders.find(o => o.orderId === parseInt(orderId) || o.orderCode === orderId)
+        : null;
+
+      if (foundOrder) {
+        console.log('👤 Customer info from list:', {
+          receiverName: foundOrder.receiverName,
+          phone: foundOrder.phone,
+          address: foundOrder.address
+        });
+        
+        // Merge: lấy items từ detail API, thông tin khách hàng từ list API
+        setOrderData({
+          ...orderDetail,
+          receiverName: foundOrder.receiverName,
+          phone: foundOrder.phone,
+          address: foundOrder.address
+        });
+      } else {
+        // Nếu không tìm thấy trong list (có thể do phân trang), chỉ dùng detail API
+        console.log('⚠️ Order not found in list, using detail API only');
+        setOrderData(orderDetail);
+      }
 
       // Kiểm tra nếu đơn hàng đã thanh toán thành công -> redirect sang OrderSuccess
-      if (order.orderStatus === 'PAID' || order.orderStatus === 'CONFIRMED' || 
-          order.orderStatus === 'PROCESSING' || order.orderStatus === 'SHIPPING' || 
-          order.orderStatus === 'DELIVERED' || order.orderStatus === 'COMPLETED') {
+      const orderStatus = orderDetail.status || orderDetail.orderStatus;
+      if (orderStatus === 'PAID' || orderStatus === 'CONFIRMED' || 
+          orderStatus === 'PROCESSING' || orderStatus === 'SHIPPING' || 
+          orderStatus === 'DELIVERED' || orderStatus === 'COMPLETED') {
         console.log('✅ Order is paid, redirecting to OrderSuccess');
         navigate(`/order-success/${orderId}`);
         return;
@@ -134,7 +169,7 @@ const PendingOrderDetail = () => {
 
   // Xác định trạng thái và icon
   const getStatusInfo = () => {
-    const status = orderData.orderStatus || 'PENDING';
+    const status = orderData.status || orderData.orderStatus || 'PENDING';
     
     switch(status) {
       case 'PENDING':
@@ -177,7 +212,7 @@ const PendingOrderDetail = () => {
         </div>
 
         {/* Warning Banner */}
-        {orderData.orderStatus === 'PENDING' && (
+        {(orderData.status === 'PENDING' || orderData.orderStatus === 'PENDING') && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded">
             <div className="flex items-start">
               <CloseCircleOutlined className="text-red-600 text-xl mr-3 mt-1" />
@@ -192,7 +227,7 @@ const PendingOrderDetail = () => {
           </div>
         )}
         
-        {orderData.orderStatus === 'CANCELLED' && (
+        {(orderData.status === 'CANCELLED' || orderData.orderStatus === 'CANCELLED') && (
           <div className="bg-gray-50 border-l-4 border-gray-400 p-4 mb-6 rounded">
             <div className="flex items-start">
               <WarningOutlined className="text-gray-600 text-xl mr-3 mt-1" />
@@ -222,7 +257,9 @@ const PendingOrderDetail = () => {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <p className="text-sm text-gray-600">Mã đơn hàng</p>
-                  <p className="font-semibold text-vietnam-green">#{orderData.orderId}</p>
+                  <p className="font-semibold text-vietnam-green">
+                    {orderData.orderCode || `#${orderData.orderId}`}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Ngày đặt hàng</p>
@@ -231,11 +268,12 @@ const PendingOrderDetail = () => {
                 <div>
                   <p className="text-sm text-gray-600">Trạng thái</p>
                   <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium 
-                    ${orderData.orderStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
-                      orderData.orderStatus === 'CANCELLED' ? 'bg-red-100 text-red-800' : 
+                    ${(orderData.status || orderData.orderStatus) === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
+                      (orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'bg-red-100 text-red-800' : 
                       'bg-gray-100 text-gray-800'}`}>
-                    {orderData.orderStatus === 'PENDING' ? 'Chờ thanh toán' :
-                     orderData.orderStatus === 'CANCELLED' ? 'Đã hủy' : orderData.orderStatus}
+                    {(orderData.status || orderData.orderStatus) === 'PENDING' ? 'Chờ thanh toán' :
+                     (orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'Đã hủy' : 
+                     (orderData.status || orderData.orderStatus)}
                   </span>
                 </div>
                 <div>
@@ -265,7 +303,7 @@ const PendingOrderDetail = () => {
                         <div className="text-right">
                           <p className="font-semibold text-vietnam-green">{formatMoney(item.price)}</p>
                           <p className="text-sm text-gray-600">
-                            Tổng: {formatMoney(item.price * item.quantity)}
+                            Tổng: {formatMoney(item.subtotal || (item.price * item.quantity))}
                           </p>
                         </div>
                       </div>
@@ -289,7 +327,9 @@ const PendingOrderDetail = () => {
                   <UserOutlined className="text-gray-500 mr-3 mt-1" />
                   <div>
                     <p className="text-sm text-gray-600">Người nhận</p>
-                    <p className="font-semibold">{orderData.customerName || 'Chưa cập nhật'}</p>
+                    <p className="font-semibold">
+                      {orderData.receiverName || 'Chưa cập nhật'}
+                    </p>
                   </div>
                 </div>
                 
@@ -297,7 +337,9 @@ const PendingOrderDetail = () => {
                   <PhoneOutlined className="text-gray-500 mr-3 mt-1" />
                   <div>
                     <p className="text-sm text-gray-600">Số điện thoại</p>
-                    <p className="font-semibold">{orderData.phoneNumber || 'Chưa cập nhật'}</p>
+                    <p className="font-semibold">
+                      {orderData.phone || 'Chưa cập nhật'}
+                    </p>
                   </div>
                 </div>
                 
@@ -305,7 +347,9 @@ const PendingOrderDetail = () => {
                   <EnvironmentOutlined className="text-gray-500 mr-3 mt-1" />
                   <div>
                     <p className="text-sm text-gray-600">Địa chỉ giao hàng</p>
-                    <p className="font-semibold">{orderData.address || 'Chưa cập nhật'}</p>
+                    <p className="font-semibold">
+                      {orderData.address || 'Chưa cập nhật'}
+                    </p>
                   </div>
                 </div>
               </div>
