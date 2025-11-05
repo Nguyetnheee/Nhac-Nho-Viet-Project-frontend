@@ -98,23 +98,31 @@ export const CartProvider = ({ children }) => {
 
 
   const increaseLocalItem = (productId) => {
-    setCartItems(prev =>
-      prev.map(item =>
+    setCartItems(prev => {
+      const updated = prev.map(item =>
         item.productId === productId
-          ? { ...item, quantity: item.quantity + 1 }
+          ? { ...item, quantity: item.quantity + 1, lineTotal: item.price * (item.quantity + 1) }
           : item
-      )
-    );
+      );
+      // ✅ Tính lại subTotal ngay sau khi cập nhật quantity (optimistic)
+      const newSubTotal = updated.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      setTotals(prev => ({ ...prev, subTotal: newSubTotal }));
+      return updated;
+    });
   };
 
   const decreaseLocalItem = (productId) => {
-    setCartItems(prev =>
-      prev.map(item =>
+    setCartItems(prev => {
+      const updated = prev.map(item =>
         item.productId === productId && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
+          ? { ...item, quantity: item.quantity - 1, lineTotal: item.price * (item.quantity - 1) }
           : item
-      )
-    );
+      );
+      // ✅ Tính lại subTotal ngay sau khi cập nhật quantity (optimistic)
+      const newSubTotal = updated.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      setTotals(prev => ({ ...prev, subTotal: newSubTotal }));
+      return updated;
+    });
   };
 
   // -------- API calls --------

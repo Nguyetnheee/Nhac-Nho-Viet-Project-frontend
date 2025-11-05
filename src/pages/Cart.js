@@ -418,8 +418,19 @@ const Cart = () => {
                             onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              decreaseLocalItem(productId);
-                              await decreaseCartItem(productId);
+                              try {
+                                // ✅ Optimistic update - cập nhật UI trước
+                                decreaseLocalItem(productId);
+                                // ✅ Gọi API để cập nhật database
+                                await decreaseCartItem(productId);
+                                // ✅ QUAN TRỌNG: Fetch lại giỏ hàng để cập nhật giá và voucher
+                                await fetchCart();
+                              } catch (error) {
+                                console.error('Error decreasing item:', error);
+                                // ✅ Nếu lỗi, fetch lại để rollback về trạng thái đúng
+                                await fetchCart();
+                                showError('Không thể giảm số lượng. Vui lòng thử lại.');
+                              }
                             }}
                             className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                           >
@@ -430,8 +441,19 @@ const Cart = () => {
                             onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              increaseLocalItem(productId);
-                              await increaseCartItem(productId);
+                              try {
+                                // ✅ Optimistic update - cập nhật UI trước
+                                increaseLocalItem(productId);
+                                // ✅ Gọi API để cập nhật database
+                                await increaseCartItem(productId);
+                                // ✅ QUAN TRỌNG: Fetch lại giỏ hàng để cập nhật giá và voucher
+                                await fetchCart();
+                              } catch (error) {
+                                console.error('Error increasing item:', error);
+                                // ✅ Nếu lỗi, fetch lại để rollback về trạng thái đúng
+                                await fetchCart();
+                                showError('Không thể tăng số lượng. Vui lòng thử lại.');
+                              }
                             }}
                             className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                           >
