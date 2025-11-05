@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { checklistService } from '../services/checklistService';
-import { ritualService } from '../services/ritualService';
 import { scrollToTop } from '../utils/scrollUtils';
-import { Select, Pagination, Spin, Empty } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { groupChecklistsByRitualName } from '../utils/dataUtils';
+import { Select, Pagination, Spin } from 'antd';
 
 const { Option } = Select;
 
@@ -46,110 +45,66 @@ const Checklist = () => {
     try {
       console.log('🔍 Checklist page: Filtering checklists with:', filters);
       
-      // Lấy cả 2 APIs: grouped (để hiển thị) và rituals (để lấy ritualId)
-      const [groupedData, ritualsData] = await Promise.all([
-        checklistService.getGroupedChecklists(),
-        ritualService.getAllRituals() // API rituals có {ritualId, ritualName, ...}
-      ]);
+      // Kiểm tra xem có filter nào được áp dụng không
+      const hasFilters = filters.ritualName || filters.itemName || filters.unit;
       
-      console.log('✅ Checklist page: Grouped data received:', groupedData);
-      console.log('✅ Checklist page: Rituals data received:', ritualsData);
-
-      // Tạo mapping ritualName → ritualId từ API rituals
-      console.log('📦 Rituals data structure (first item):', ritualsData[0]);
+      let allChecklistData = [];
       
-      const ritualIdMap = {};
-      ritualsData.forEach(ritual => {
-        console.log('Processing ritual:', ritual);
-        if (ritual.ritualName) {
-          ritualIdMap[ritual.ritualName] = ritual.ritualId;
-        }
-      });
-      console.log('🗺️ RitualId mapping created:', ritualIdMap);
-      console.log('🔢 Total rituals in mapping:', Object.keys(ritualIdMap).length);
-
-      // Convert grouped object thành array
-      // groupedData format: { "RitualName1": [...items], "RitualName2": [...items] }
-      const ritualEntries = Object.entries(groupedData);
-      console.log('📋 Total rituals:', ritualEntries.length);
-
-      // Extract filter options từ grouped data (chỉ lần đầu)
-      if (filterOptions.ritualNames.length === 0) {
-        const ritualNames = ritualEntries.map(([name]) => name).sort();
-        
-        // Flatten tất cả items để lấy itemNames và units
-        const allItems = ritualEntries.flatMap(([_, items]) => items);
-        const itemNames = [...new Set(allItems.map(item => item.itemName).filter(Boolean))].sort();
-        const units = [...new Set(allItems.map(item => item.unit).filter(Boolean))].sort();
-        
-        console.log('✅ Filter options extracted:');
-        console.log('  - Rituals:', ritualNames.length);
-        console.log('  - Items:', itemNames.length);
-        console.log('  - Units:', units.length);
-        
-        setFilterOptions({ ritualNames, itemNames, units });
-      }
+      // Luôn load tất cả data trước
+      const data = await checklistService.getChecklists();
+      console.log('✅ Checklist page: All data received:', data);
+      allChecklistData = Array.isArray(data) ? data : [];
 
       // Áp dụng client-side filtering
-      let filteredEntries = ritualEntries;
-
-      // Filter theo ritual name
+      let filteredData = allChecklistData;
+      
       if (filters.ritualName) {
-        filteredEntries = filteredEntries.filter(([ritualName]) => 
-          ritualName === filters.ritualName
+        filteredData = filteredData.filter(item => 
+          item.ritual?.ritualName === filters.ritualName
         );
-        console.log(`🔍 Filtered by ritual "${filters.ritualName}":`, filteredEntries.length, 'rituals');
+        console.log(`🔍 Filtered by ritual "${filters.ritualName}":`, filteredData.length, 'items');
+      }
+      
+      if (filters.itemName) {
+        filteredData = filteredData.filter(item => 
+          item.item?.itemName === filters.itemName
+        );
+        console.log(`🔍 Filtered by item "${filters.itemName}":`, filteredData.length, 'items');
+      }
+      
+      if (filters.unit) {
+        filteredData = filteredData.filter(item => 
+          item.unit === filters.unit
+        );
+        console.log(`🔍 Filtered by unit "${filters.unit}":`, filteredData.length, 'items');
       }
 
-      // Filter theo item name hoặc unit
-      if (filters.itemName || filters.unit) {
-        filteredEntries = filteredEntries.map(([ritualName, items]) => {
-          let filteredItems = items;
+      console.log('📊 Final filtered data count:', filteredData.length);
 
-          if (filters.itemName) {
-            filteredItems = filteredItems.filter(item => 
-              item.itemName === filters.itemName
-            );
-          }
-
-          if (filters.unit) {
-            filteredItems = filteredItems.filter(item => 
-              item.unit === filters.unit
-            );
-          }
-
-          return [ritualName, filteredItems];
-        }).filter(([_, items]) => items.length > 0); // Loại bỏ ritual không có items sau khi filter
-        
-        console.log(`🔍 Filtered by item/unit:`, filteredEntries.length, 'rituals with matching items');
-      }
-
-      // Convert về format component cần
-      // Lấy ritualId từ mapping đã tạo
-      const formattedRituals = filteredEntries.map(([ritualName, items]) => ({
-        ritualName: ritualName,
-        ritualId: ritualIdMap[ritualName], // Lấy từ mapping ritualName → ritualId
-        items: items
-      }));
-
-      console.log('📄 Final formatted rituals:', formattedRituals.length);
-      console.log('🔍 Sample ritual with ID:', formattedRituals[0]);
-
-      // Cập nhật pagination
+      // Cập nhật pagination với tổng số items sau khi filter
       setPagination(prev => ({
         ...prev,
-        total: formattedRituals.length,
-        totalPages: Math.ceil(formattedRituals.length / prev.pageSize)
+        total: filteredData.length,
+        totalPages: Math.ceil(filteredData.length / prev.pageSize)
       }));
 
       // Áp dụng pagination client-side
       const startIndex = pagination.current * pagination.pageSize;
       const endIndex = startIndex + pagination.pageSize;
-      const paginatedData = formattedRituals.slice(startIndex, endIndex);
+      const paginatedData = filteredData.slice(startIndex, endIndex);
       
-      console.log(`📄 Showing page ${pagination.current + 1}: rituals ${startIndex + 1}-${Math.min(endIndex, formattedRituals.length)} of ${formattedRituals.length}`);
+      console.log(`� Showing page ${pagination.current + 1}: items ${startIndex} to ${endIndex}`);
 
-      setChecklistsByRitual(paginatedData);
+      // Nhóm theo ritual
+      const groupedData = groupChecklistsByRitualName(paginatedData);
+      console.log('📋 Grouped by ritual:', groupedData);
+      
+      setChecklistsByRitual(groupedData);
+      
+      // Extract filter options từ toàn bộ data (chỉ lần đầu)
+      if (filterOptions.ritualNames.length === 0) {
+        extractFilterOptions(allChecklistData);
+      }
       
     } catch (error) {
       console.error('❌ Checklist page: Error fetching checklists:', error);
@@ -164,6 +119,32 @@ const Checklist = () => {
     }
   };
 
+  // Trích xuất các giá trị unique cho filter dropdowns
+  const extractFilterOptions = (data) => {
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn('⚠️ No data to extract filter options');
+      return;
+    }
+
+    console.log('🔧 Extracting filter options from data:', data.length, 'items');
+    console.log('Sample item:', data[0]);
+
+    const ritualNames = [...new Set(data.map(item => item.ritual?.ritualName).filter(Boolean))];
+    const itemNames = [...new Set(data.map(item => item.item?.itemName).filter(Boolean))];
+    const units = [...new Set(data.map(item => item.unit).filter(Boolean))];
+    
+    console.log('✅ Filter options extracted:');
+    console.log('  - Ritual names:', ritualNames);
+    console.log('  - Item names:', itemNames);
+    console.log('  - Units:', units);
+    
+    setFilterOptions({
+      ritualNames: ritualNames.sort(),
+      itemNames: itemNames.sort(),
+      units: units.sort()
+    });
+  };
+
   const handleFilterChange = (filterName, value) => {
     setFilters(prev => ({
       ...prev,
@@ -172,19 +153,15 @@ const Checklist = () => {
     setPagination(prev => ({ ...prev, current: 0 })); // Reset về trang đầu
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page, pageSize) => {
     setPagination(prev => ({
       ...prev,
-      current: page - 1 // Ant Design pagination is 1-based, API is 0-based
+      current: page - 1, // Ant Design pagination is 1-based, API is 0-based
+      pageSize: pageSize
     }));
   };
   
   const handleViewDetails = (ritualId) => {
-    console.log('🔍 Navigating to ritual detail. RitualId:', ritualId);
-    if (!ritualId) {
-      console.error('❌ RitualId is undefined! Cannot navigate.');
-      return;
-    }
     navigate(`/rituals/${ritualId}`); 
   };
 
@@ -211,11 +188,11 @@ const Checklist = () => {
           </p>
 
           {/* Bộ Lọc */}
-          <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30 hover:shadow-[0_20px_50px_rgba(218,165,32,0.3)] transition-all duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Lọc theo Tên Nghi Lễ */}
               <div>
-                <label className="block text-white text-sm font-bold mb-3 text-left tracking-wide">
+                <label className="block text-white text-sm font-semibold mb-2 text-left">
                   Tên Nghi Lễ
                 </label>
                 <Select
@@ -225,7 +202,6 @@ const Checklist = () => {
                   size="large"
                   value={filters.ritualName || undefined}
                   onChange={(value) => handleFilterChange('ritualName', value)}
-                  className="custom-select-filter"
                 >
                   {filterOptions.ritualNames.map(name => (
                     <Option key={name} value={name}>{name}</Option>
@@ -235,7 +211,7 @@ const Checklist = () => {
 
               {/* Lọc theo Tên Vật Phẩm */}
               <div>
-                <label className="block text-white text-sm font-bold mb-3 text-left tracking-wide">
+                <label className="block text-white text-sm font-semibold mb-2 text-left">
                   Tên Vật Phẩm
                 </label>
                 <Select
@@ -245,7 +221,6 @@ const Checklist = () => {
                   size="large"
                   value={filters.itemName || undefined}
                   onChange={(value) => handleFilterChange('itemName', value)}
-                  className="custom-select-filter"
                 >
                   {filterOptions.itemNames.map(name => (
                     <Option key={name} value={name}>{name}</Option>
@@ -255,7 +230,7 @@ const Checklist = () => {
 
               {/* Lọc theo Đơn Vị */}
               <div>
-                <label className="block text-white text-sm font-bold mb-3 text-left tracking-wide">
+                <label className="block text-white text-sm font-semibold mb-2 text-left">
                   Đơn Vị
                 </label>
                 <Select
@@ -265,7 +240,6 @@ const Checklist = () => {
                   size="large"
                   value={filters.unit || undefined}
                   onChange={(value) => handleFilterChange('unit', value)}
-                  className="custom-select-filter"
                 >
                   {filterOptions.units.map(unit => (
                     <Option key={unit} value={unit}>{unit}</Option>
@@ -287,25 +261,18 @@ const Checklist = () => {
         ) : checklistsByRitual.length === 0 ? (
           <div className="text-center py-20">
             <div className="max-w-md mx-auto">
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={
-                  <div>
-                    <h3 className="text-2xl font-bold text-vietnam-green mb-4">
-                      Không tìm thấy kết quả
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      Thử thay đổi bộ lọc để xem các kết quả khác
-                    </p>
-                  </div>
-                }
-              />
+              <div className="text-6xl mb-4">📋</div>
+              <h3 className="text-2xl font-bold text-vietnam-green mb-4">
+                Không tìm thấy kết quả
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Thử thay đổi bộ lọc để xem các kết quả khác
+              </p>
               <button
                 onClick={fetchChecklists}
-                className="bg-vietnam-green text-white px-6 py-3 rounded-lg hover:bg-vietnam-green/90 transition-colors inline-flex items-center gap-2"
+                className="bg-vietnam-green text-white px-6 py-3 rounded-lg hover:bg-vietnam-green/90 transition-colors"
               >
-                <ReloadOutlined />
-                Tải lại
+                🔄 Tải lại
               </button>
             </div>
           </div>
@@ -353,11 +320,11 @@ const Checklist = () => {
                               htmlFor={`item-${item.checklistId}-${ritualChecklist.ritualId}`}
                               className="ml-3 text-stone-800 font-medium text-base flex-1 cursor-pointer"
                             >
-                              {item.itemName}
-                              {item.quantity && item.unit && (
-                                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-amber-200/70 text-stone-800 border border-amber-300 whitespace-nowrap font-semibold">
-                                  {item.quantity} {item.unit}
-                                </span>
+                              {item.itemName} 
+                              {item.quantity > 1 && (
+                                  <span className="ml-2 text-xs px-1.5 py-[2px] rounded bg-amber-200/70 text-stone-800 border border-amber-300 whitespace-nowrap">
+                                    x{item.quantity}
+                                  </span>
                               )}
                             </label>
                           </div>
@@ -392,7 +359,9 @@ const Checklist = () => {
                 pageSize={pagination.pageSize}
                 total={pagination.total}
                 onChange={handlePageChange}
+                showSizeChanger
                 showTotal={(total) => `Tổng ${total} mục`}
+                pageSizeOptions={['10', '20', '30', '50']}
               />
             </div>
           )}

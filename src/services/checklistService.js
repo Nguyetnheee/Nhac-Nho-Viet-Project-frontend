@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// ✅ Sử dụng environment variable thay vì hardcode
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 
 export const publicApi = axios.create({
@@ -17,10 +16,10 @@ export const checklistService = {
   getAllChecklists: async () => {
     try {
       const response = await publicApi.get('/api/checklists');
-      console.log("✅ Get all checklists:", response.data);
+      console.log("Get all checklists:", response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error getting all checklists:', error);
+      console.error('Error getting all checklists:', error);
       console.error('Error details:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -120,12 +119,12 @@ export const checklistService = {
   // Lấy danh sách units
   getUnits: async () => {
     try {
-      console.log('🔍 Fetching all units...');
+      console.log('Fetching all units...');
       const response = await publicApi.get('/api/units');
-      console.log('✅ Units loaded:', response.data);
+      console.log('Units loaded:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error getting units:', error);
+      console.error('Error getting units:', error);
       throw error;
     }
   },
@@ -146,16 +145,55 @@ export const checklistService = {
   getByRitual: async (ritualId) => {
     try {
       const response = await publicApi.get(`/api/checklists/ritual/${ritualId}`);
-      console.log(`✅ Checklist for ritual ${ritualId}:`, response.data);
+      console.log(`Checklist for ritual ${ritualId}:`, response.data);
       return response.data;
     } catch (error) {
-      console.error(`❌ Error getting checklist for ritual ${ritualId}:`, error);
+      console.error(`Error getting checklist for ritual ${ritualId}:`, error);
       console.error('Error details:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
         url: error.config?.url
       });
+      throw error;
+    }
+  },
+
+  // Lọc checklist với các filter (CUSTOMER auth required)
+  filterChecklists: async (filters = {}) => {
+    try {
+      console.log('🔍 Filtering checklists with params:', filters);
+      
+      // Chuẩn bị query params
+      const params = new URLSearchParams();
+      if (filters.ritualName) params.append('ritualName', filters.ritualName);
+      if (filters.itemName) params.append('itemName', filters.itemName);
+      if (filters.unit) params.append('unit', filters.unit);
+      if (filters.page !== undefined) params.append('page', filters.page);
+      if (filters.size !== undefined) params.append('size', filters.size);
+      if (filters.sort) params.append('sort', filters.sort);
+      
+      const queryString = params.toString();
+      const url = `/api/checklists/filter${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await publicApi.get(url);
+      console.log('Filtered checklists:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error filtering checklists:', error);
+      throw error;
+    }
+  },
+
+  // Lấy checklists đã group theo ritual name
+  getGroupedChecklists: async () => {
+    try {
+      console.log('🔍 Fetching grouped checklists...');
+      const response = await publicApi.get('/api/checklists/grouped');
+      console.log('Grouped checklists:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting grouped checklists:', error);
       throw error;
     }
   }
