@@ -177,7 +177,10 @@ const ShipperOrderManagement = () => {
     if (!amount && amount !== 0) return '0 VNĐ';
     const validAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     if (isNaN(validAmount)) return '0 VNĐ';
-    return new Intl.NumberFormat('vi-VN').format(validAmount) + ' VNĐ';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VNĐ',
+    }).format(validAmount);
   };
 
   const formatDate = (dateString) => {
