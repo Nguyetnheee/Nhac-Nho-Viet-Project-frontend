@@ -179,7 +179,7 @@ const ShipperOrderManagement = () => {
     if (isNaN(validAmount)) return '0 VNĐ';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VNĐ',
+      currency: 'VND',
     }).format(validAmount);
   };
 
