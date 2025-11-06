@@ -649,6 +649,113 @@ const Overview = () => {
 
   return (
     <div>
+      <style>{`
+        /* Table headers styling - Trong suốt với chữ tối */
+        .overview-table-header .ant-table-thead > tr > th {
+          background-color: rgba(255, 255, 255, 0.9) !important;
+          background: linear-gradient(to bottom, rgba(250, 250, 250, 0.95), rgba(245, 245, 245, 0.9)) !important;
+          color: #333 !important;
+          font-weight: bold !important;
+          border-bottom: 2px solid #e8e8e8 !important;
+        }
+        
+        /* Chart card headers styling - Đa dạng màu sắc */
+        .chart-card-1 .ant-card-head {
+          background-color: #722ed1 !important;
+        }
+        .chart-card-1 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        
+        .chart-card-2 .ant-card-head {
+          background-color: #eb2f96 !important;
+        }
+        .chart-card-2 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        
+        .chart-card-3 .ant-card-head {
+          background-color: #52c41a !important;
+        }
+        .chart-card-3 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        
+        .chart-card-4 .ant-card-head {
+          background-color: #fa8c16 !important;
+        }
+        .chart-card-4 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        
+        .chart-card-5 .ant-card-head {
+          background-color: #13c2c2 !important;
+        }
+        .chart-card-5 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        
+        /* Table card headers styling - Đa dạng màu sắc */
+        .table-card-1 .ant-card-head {
+          background-color: #1890ff !important;
+        }
+        .table-card-1 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        .table-card-1 .ant-card-head-title .anticon {
+          color: #fff !important;
+        }
+        
+        .table-card-2 .ant-card-head {
+          background-color: #52c41a !important;
+        }
+        .table-card-2 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        .table-card-2 .ant-card-head-title .anticon {
+          color: #fff !important;
+        }
+        
+        .table-card-3 .ant-card-head {
+          background-color: #fa8c16 !important;
+        }
+        .table-card-3 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        .table-card-3 .ant-card-head-title .anticon {
+          color: #fff !important;
+        }
+        
+        .table-card-4 .ant-card-head {
+          background-color: #eb2f96 !important;
+        }
+        .table-card-4 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        .table-card-4 .ant-card-head-title .anticon {
+          color: #fff !important;
+        }
+        
+        .table-card-5 .ant-card-head {
+          background-color: #722ed1 !important;
+        }
+        .table-card-5 .ant-card-head-title {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        .table-card-5 .ant-card-head-title .anticon {
+          color: #fff !important;
+        }
+      `}</style>
       <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div className="mb-4 md:mb-0">
@@ -713,7 +820,7 @@ const Overview = () => {
         <Row gutter={16} style={{ marginBottom: 24 }}>
           {/* 1. Biểu đồ tổng quan đơn hàng theo trạng thái */}
           <Col xs={24} lg={12}>
-            <Card title="Tổng quan đơn hàng theo trạng thái">
+            <Card title="Tổng quan đơn hàng theo trạng thái" className="chart-card-1">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -758,7 +865,7 @@ const Overview = () => {
 
           {/* 2. Biểu đồ doanh thu */}
           <Col xs={24} lg={12}>
-            <Card title="Tổng doanh thu">
+            <Card title="Tổng doanh thu" className="chart-card-2">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -811,7 +918,7 @@ const Overview = () => {
         <Row gutter={16} style={{ marginBottom: 24 }}>
           {/* 3. Biểu đồ xu hướng đơn hàng theo thời gian */}
           <Col xs={24} lg={24}>
-            <Card title="Xu hướng đơn hàng trong 24 giờ qua">
+            <Card title="Xu hướng đơn hàng trong 24 giờ qua" className="chart-card-3">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -861,7 +968,7 @@ const Overview = () => {
         <Row gutter={16} style={{ marginBottom: 24 }}>
           {/* 4. Biểu đồ hiệu suất shipper */}
           <Col xs={24} lg={24}>
-            <Card title="Hiệu suất Shipper">
+            <Card title="Hiệu suất Shipper" className="chart-card-4">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -939,7 +1046,7 @@ const Overview = () => {
         <Row gutter={16} style={{ marginBottom: 24 }}>
           {/* 5. Top sản phẩm bán chạy */}
           <Col xs={24} lg={24}>
-            <Card title="Top 10 Sản phẩm bán chạy">
+            <Card title="Top 10 Sản phẩm bán chạy" className="chart-card-5">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -1027,6 +1134,7 @@ const Overview = () => {
                   <span>Khách hàng gần đây</span>
                 </Space>
               }
+              className="table-card-1"
             >
               <Table
                 columns={userColumns}
@@ -1037,6 +1145,7 @@ const Overview = () => {
                   locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
+                className="overview-table-header"
               />
             </Card>
           </Col>
@@ -1051,6 +1160,7 @@ const Overview = () => {
                   <span>Danh sách Shipper</span>
                 </Space>
               }
+              className="table-card-2"
             >
               <Table
                 columns={shipperColumns}
@@ -1062,6 +1172,7 @@ const Overview = () => {
                 }}
                 size="small"
                 scroll={{ x: true }}
+                className="overview-table-header"
               />
             </Card>
           </Col>
@@ -1078,6 +1189,7 @@ const Overview = () => {
                 </Space>
               }
               style={{ marginBottom: 24 }}
+              className="table-card-3"
             >
               <Table
                 columns={orderColumns}
@@ -1090,6 +1202,7 @@ const Overview = () => {
                 }}
                 size="small"
                 scroll={{ x: true }}
+                className="overview-table-header"
               />
             </Card>
           </Col>
@@ -1104,6 +1217,7 @@ const Overview = () => {
                 </Space>
               }
               style={{ marginBottom: 24 }}
+              className="table-card-4"
             >
               <Table
                 columns={shippingColumns}
@@ -1116,6 +1230,7 @@ const Overview = () => {
                 }}
                 size="small"
                 scroll={{ x: true }}
+                className="overview-table-header"
               />
             </Card>
           </Col>
@@ -1129,6 +1244,7 @@ const Overview = () => {
               <span>Voucher gần đây</span>
             </Space>
           }
+          className="table-card-5"
         >
           <Table
             columns={voucherColumns}
@@ -1140,6 +1256,7 @@ const Overview = () => {
             }}
             size="small"
             scroll={{ x: true }}
+            className="overview-table-header"
           />
         </Card>
       </Spin>

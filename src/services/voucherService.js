@@ -35,23 +35,44 @@ export const getAllVouchers = async (params = {}) => {
 };
 
 /**
- * Tạo voucher mới (STAFF)
- * @param {Object} payload - dữ liệu voucher
- * @returns {Promise<any>}
+ * ➕ TẠO VOUCHER MỚI - Tạo voucher mới (Requires STAFF authentication)
+ * POST /api/vouchers
+ * @param {Object} voucherData - Dữ liệu voucher
+ * @param {string} voucherData.code - Mã voucher
+ * @param {string} voucherData.description - Mô tả
+ * @param {string} voucherData.discountType - Loại giảm giá (PERCENTAGE hoặc FIXED_AMOUNT)
+ * @param {number} voucherData.discountValue - Giá trị giảm
+ * @param {number} voucherData.minOrderAmount - Đơn tối thiểu (0 = không giới hạn)
+ * @param {number} voucherData.maxDiscountAmount - Giảm tối đa (0 = không giới hạn)
+ * @param {number} voucherData.usageLimit - Số lần sử dụng (0 = không giới hạn)
+ * @param {string} voucherData.startDate - Ngày bắt đầu (ISO string)
+ * @param {string} voucherData.endDate - Ngày kết thúc (ISO string)
+ * @param {boolean} voucherData.isActive - Trạng thái hoạt động
+ * @returns {Promise} Response data từ backend
  */
-export const createVoucher = async (payload) => {
+export const createVoucher = async (voucherData) => {
   try {
-    const response = await api.post('/api/vouchers', payload);
+    console.log('📤 [STAFF AUTH REQUIRED] Creating voucher:', voucherData);
+    
+    const response = await api.post('/api/vouchers', voucherData);
+    
+    console.log('✅ Voucher created successfully:', response.data);
+    
     return response.data;
   } catch (error) {
-    const status = error.response?.status;
-    let message = error.response?.data?.message || error.message || 'Không thể tạo voucher.';
-    if (status === 403) {
-      message = 'Bạn không có quyền tạo voucher. Vui lòng dùng tài khoản STAFF.';
-    }
-    const err = new Error(message);
-    err.status = status;
-    throw err;
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể tạo voucher. Vui lòng thử lại.";
+    
+    console.error('❌ Create voucher error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    throw new Error(errorMessage);
   }
 };
 

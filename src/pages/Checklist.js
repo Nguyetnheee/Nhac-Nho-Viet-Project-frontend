@@ -307,28 +307,28 @@ const Checklist = () => {
         okText="Tạo checklist"
         cancelText="Hủy"
         className="nnv-create-checklist-modal"
-        title={<div className="flex items-center gap-2 text-vietnam-green"><PlusCircleOutlined /> <span className="font-semibold">Thêm mục checklist mới</span></div>}
+        title={<div className="flex items-center gap-2 text-vietnam-green"><PlusCircleOutlined /> <span className="font-semibold">Thêm mục danh mục mới</span></div>}
         okButtonProps={{ style: { background: '#d4af37', borderColor: '#d4af37', color: '#1f2937', fontWeight: 600 } }}
         cancelButtonProps={{ style: { borderColor: '#065f46', color: '#065f46' } }}
         styles={{ body: { background: 'linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.92))' } }}
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1 text-vietnam-green">UserChecklist ID</label>
+            <label className="block text-sm font-medium mb-1 text-vietnam-green">Tiêu đề lễ</label>
             <Input
               value={formData.userChecklistId}
               onChange={(e) => setFormData(prev => ({ ...prev, userChecklistId: e.target.value.replace(/[^0-9]/g, '') }))}
-              placeholder="Nhập ID danh sách của bạn"
+              placeholder="Nhập tiêu đề danh sách của bạn"
               inputMode="numeric"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-vietnam-green">Item ID</label>
+              <label className="block text-sm font-medium mb-1 text-vietnam-green">Tên vật phẩm</label>
               <Input
                 value={formData.itemId}
                 onChange={(e) => setFormData(prev => ({ ...prev, itemId: e.target.value.replace(/[^0-9]/g, '') }))}
-                placeholder="Nhập ID vật phẩm"
+                placeholder="Nhập tên vật phẩm"
                 inputMode="numeric"
               />
             </div>
