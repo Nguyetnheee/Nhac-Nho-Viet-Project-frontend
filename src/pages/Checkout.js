@@ -191,11 +191,11 @@ const Checkout = () => {
         voucherCode: checkoutResponse.voucherCode
       });
 
-      showSuccess(`Tạo đơn hàng thành công! Mã: ${orderId}`);
+      showSuccess(`Tạo đơn hàng thành công!`);
       
       // ✅ Bước 2: Gọi API tạo payment link với orderId
       // Backend sẽ tự động lấy totalAmount (đã trừ voucher) từ Order table
-      console.log('� CREATING PAYMENT for Order:', orderId);
+      console.log('  CREATING PAYMENT for Order:', orderId);
       
       const paymentResponse = await paymentService.createPayment(orderId);
       console.log('✅ PAYMENT RESPONSE:', paymentResponse);
@@ -439,7 +439,7 @@ const Checkout = () => {
                     <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
                   </div>
                   <span className="font-semibold text-vietnam-green">
-                    {(item.price * item.quantity).toLocaleString('vi-VN')} VNĐ
+                    {(item.price).toLocaleString('vi-VN')} VNĐ
                   </span>
                 </div>
               ))}

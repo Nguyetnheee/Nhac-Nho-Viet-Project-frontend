@@ -152,19 +152,29 @@ const shipperService = {
   },
 
   /**
-   * Shipper xác nhận đã giao hàng thành công
+   * Shipper xác nhận đã giao hàng thành công (kèm ảnh bằng chứng)
    * @param {number} orderId - ID của đơn hàng
+   * @param {File} proofImageFile - Ảnh bằng chứng giao hàng (bắt buộc)
    */
-  completeOrder: async (orderId) => {
+  completeOrder: async (orderId, proofImageFile) => {
     try {
-      console.log('Completing order:', orderId);
-      
+      console.log('Completing order with proof image:', { orderId, hasFile: !!proofImageFile });
+
+      const formData = new FormData();
+      if (proofImageFile) {
+        formData.append('proofImage', proofImageFile);
+      }
+
       // Debug: Check token and headers
       const token = localStorage.getItem('token');
       console.log('Token exists:', !!token);
       console.log('Token (first 20 chars):', token?.substring(0, 20));
-      
-      const response = await api.put(`/api/shipper/orders/${orderId}/complete`);
+
+      const response = await api.put(
+        `/api/shipper/orders/${orderId}/complete`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
       console.log('Order completed successfully:', response.data);
       return response.data;
     } catch (error) {

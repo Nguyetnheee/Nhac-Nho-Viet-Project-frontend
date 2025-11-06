@@ -18,21 +18,23 @@ const ResetPassword = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  //  Bảo vệ route: thiếu email thì quay lại forgot-password
+  // Bảo vệ route: thiếu email thì quay lại forgot-password
   useEffect(() => {
     if (!email) {
       navigate('/forgot-password', { replace: true });
     }
   }, [email, navigate]);
 
-  const pwTooShort = password.length > 0 && password.length < 6;
+  // Regex: ít nhất 8 ký tự, có chữ, số và ký tự đặc biệt
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+
+  const pwInvalid = password.length > 0 && !passwordRegex.test(password);
   const notMatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const canSubmit = useMemo(() => {
     return (
       !!email &&
-      password.length >= 6 &&
-      confirmPassword.length >= 6 &&
+      passwordRegex.test(password) &&
       password === confirmPassword &&
       !loading
     );
@@ -47,8 +49,8 @@ const ResetPassword = () => {
       setError('Thiếu email. Vui lòng thực hiện lại từ bước quên mật khẩu.');
       return;
     }
-    if (password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự.');
+    if (!passwordRegex.test(password)) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự, gồm chữ, số và ký tự đặc biệt.');
       return;
     }
     if (password !== confirmPassword) {
@@ -61,7 +63,6 @@ const ResetPassword = () => {
       const res = await resetPassword(email, password);
       if (String(res?.status || '').toLowerCase() === 'success') {
         setMessage(res?.message || 'Đặt lại mật khẩu thành công.');
-        // Quay về trang đăng nhập sau khi đã reset xong 
         setTimeout(() => {
           navigate('/login', {
             replace: true,
@@ -113,11 +114,10 @@ const ResetPassword = () => {
                 name="password"
                 type={showPw ? 'text' : 'password'}
                 required
-                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:border-transparent transition-all duration-300 pr-12"
-                placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                placeholder="Ít nhất 8 ký tự, gồm chữ, số và ký tự đặc biệt"
               />
               <button
                 type="button"
@@ -128,8 +128,10 @@ const ResetPassword = () => {
                 {showPw ? 'Ẩn' : 'Hiện'}
               </button>
             </div>
-            {pwTooShort && (
-              <p className="mt-1 text-xs text-red-600">Mật khẩu phải có ít nhất 6 ký tự.</p>
+            {pwInvalid && (
+              <p className="mt-1 text-xs text-red-600">
+                Mật khẩu phải có ít nhất 8 ký tự, gồm chữ, số và ký tự đặc biệt.
+              </p>
             )}
           </div>
 
@@ -143,7 +145,6 @@ const ResetPassword = () => {
                 name="confirmPassword"
                 type={showConfirmPw ? 'text' : 'password'}
                 required
-                minLength={6}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-vietnam-gold focus:border-transparent transition-all duration-300 pr-12"

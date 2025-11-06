@@ -40,6 +40,10 @@ const ShipperOrderManagement = () => {
   const [loading, setLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [completeOrderId, setCompleteOrderId] = useState(null);
+  const [proofFile, setProofFile] = useState(null);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState(null);
 
   // Load orders based on active tab
   useEffect(() => {
@@ -119,53 +123,44 @@ const ShipperOrderManagement = () => {
   };
 
   const handleCompleteOrder = async (orderId) => {
-    // Tìm order để kiểm tra status
     const order = activeOrders.find(o => o.orderId === orderId);
-    console.log('Attempting to complete order:', orderId);
-    console.log('Order details:', order);
-    console.log('Order status:', order?.status);
-    
-    Modal.confirm({
-      title: 'Xác nhận hoàn thành',
-      content: (
-        <div>
-          <p>Bạn xác nhận đã giao hàng thành công?</p>
-          <p style={{ fontSize: '12px', color: '#888' }}>
-            Đơn hàng: #{orderId} | Trạng thái: {order?.status}
-          </p>
-        </div>
-      ),
-      okText: 'Đã giao',
-      cancelText: 'Chưa',
-      onOk: async () => {
-        try {
-          setLoading(true);
-          await shipperService.completeOrder(orderId);
-          message.success('Đã xác nhận giao hàng thành công!');
-          // Refresh both active and completed lists
-          await loadOrders('active', true);
-          await loadOrders('completed', true);
-          // Switch to completed tab
-          setActiveTab('completed');
-        } catch (error) {
-          console.error('Error completing order:', error);
-          
-          // Hiển thị thông báo lỗi chi tiết hơn
-          let errorMessage = 'Không thể xác nhận giao hàng';
-          if (error.response?.data?.message) {
-            errorMessage += ': ' + translateToVietnamese(error.response.data.message);
-          } else if (error.response?.status === 403) {
-            errorMessage += ': Không có quyền thực hiện. Vui lòng kiểm tra lại trạng thái đơn hàng.';
-          } else if (error.message) {
-            errorMessage += ': ' + translateToVietnamese(error.message);
-          }
-          
-          message.error(errorMessage);
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
+    console.log('Attempting to complete order:', orderId, order);
+    setCompleteOrderId(orderId);
+    setProofFile(null);
+    setProofPreviewUrl(null);
+    setCompleteModalVisible(true);
+  };
+
+  const submitCompleteOrder = async () => {
+    if (!proofFile) {
+      message.warning('Vui lòng tải lên ảnh bằng chứng giao hàng.');
+      return;
+    }
+    try {
+      setLoading(true);
+      await shipperService.completeOrder(completeOrderId, proofFile);
+      message.success('Đã xác nhận giao hàng thành công!');
+      setCompleteModalVisible(false);
+      setProofFile(null);
+      setProofPreviewUrl(null);
+      // Refresh lists
+      await loadOrders('active', true);
+      await loadOrders('completed', true);
+      setActiveTab('completed');
+    } catch (error) {
+      console.error('Error completing order:', error);
+      let errorMessage = 'Không thể xác nhận giao hàng';
+      if (error.response?.data?.message) {
+        errorMessage += ': ' + translateToVietnamese(error.response.data.message);
+      } else if (error.response?.status === 403) {
+        errorMessage += ': Không có quyền thực hiện. Vui lòng kiểm tra lại trạng thái đơn hàng.';
+      } else if (error.message) {
+        errorMessage += ': ' + translateToVietnamese(error.message);
+      }
+      message.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showOrderDetail = (order) => {
@@ -559,6 +554,54 @@ const ShipperOrderManagement = () => {
               </Descriptions.Item>
             )}
           </Descriptions>
+        )}
+      </Modal>
+      
+      {/* Complete Order Modal with proof image upload */}
+      <Modal
+        title={
+          <Space>
+            <CheckCircleOutlined />
+            <span>Xác nhận đã giao hàng</span>
+          </Space>
+        }
+        open={completeModalVisible}
+        onCancel={() => {
+          setCompleteModalVisible(false);
+          setProofFile(null);
+          setProofPreviewUrl(null);
+        }}
+        okText="Xác nhận đã giao"
+        cancelText="Hủy"
+        onOk={submitCompleteOrder}
+        okButtonProps={{ disabled: !proofFile, loading }}
+        confirmLoading={loading}
+      >
+        <div style={{ marginBottom: 12 }}>
+          <p>Vui lòng tải lên ảnh bằng chứng đã giao hàng cho khách (bắt buộc).</p>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files && e.target.files[0];
+              setProofFile(file || null);
+              if (file) {
+                const url = URL.createObjectURL(file);
+                setProofPreviewUrl(url);
+              } else {
+                setProofPreviewUrl(null);
+              }
+            }}
+          />
+        </div>
+        {proofPreviewUrl && (
+          <div style={{ textAlign: 'center' }}>
+            <img
+              src={proofPreviewUrl}
+              alt="Proof preview"
+              style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid #eee' }}
+            />
+          </div>
         )}
       </Modal>
     </div>
