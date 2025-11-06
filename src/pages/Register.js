@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import CustomAlert from '../components/CustomAlert';
@@ -17,15 +18,79 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const validateField = (name, value, allValues = formData) => {
+    switch (name) {
+      case 'customerName':
+        if (!value.trim()) return 'Họ và tên là bắt buộc';
+        if (value.trim().length < 2) return 'Họ và tên phải từ 2 ký tự trở lên';
+        return '';
+      case 'username':
+        if (!value.trim()) return 'Username là bắt buộc';
+        if (value.includes(' ')) return 'Username không được chứa khoảng trắng';
+        if (value.length < 3) return 'Username phải từ 3 ký tự trở lên';
+        return '';
+      case 'email': {
+        if (!value.trim()) return 'Email là bắt buộc';
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!re.test(value)) return 'Email không hợp lệ';
+        return '';
+      }
+      case 'password': {
+        if (!value) return 'Mật khẩu là bắt buộc';
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+        if (!passwordRegex.test(value)) return 'Mật khẩu phải ≥ 8 ký tự, gồm chữ, số và ký tự đặc biệt';
+        // re-validate confirmPassword if exists
+        if (allValues.confirmPassword && allValues.confirmPassword !== value) return fieldErrors.confirmPassword || '';
+        return '';
+      }
+      case 'confirmPassword':
+        if (!value) return 'Vui lòng nhập lại mật khẩu';
+        if (value !== allValues.password) return 'Mật khẩu xác nhận không khớp';
+        return '';
+      case 'phone': {
+        if (!value) return 'Số điện thoại là bắt buộc';
+        if (!/^\d{10}$/.test(value)) return 'Số điện thoại phải gồm 10 chữ số';
+        return '';
+      }
+      case 'birthDate':
+        if (!value) return 'Ngày sinh là bắt buộc';
+        return '';
+      case 'gender':
+        if (!value) return 'Giới tính là bắt buộc';
+        return '';
+      case 'address':
+        if (!value.trim()) return 'Địa chỉ là bắt buộc';
+        return '';
+      default:
+        return '';
+    }
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Chỉ cho phép nhập số trong trường phone
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '');
+      setFormData({ ...formData, [name]: numericValue });
+      const msg = validateField(name, numericValue, { ...formData, [name]: numericValue });
+      setFieldErrors((prev) => ({ ...prev, [name]: msg }));
+      return;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    const msg = validateField(name, value, { ...formData, [name]: value });
+    setFieldErrors((prev) => ({ ...prev, [name]: msg }));
   };
 
   const handleSubmit = async (e) => {
@@ -33,8 +98,16 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp');
+    // Validate all fields before submit
+    const fields = Object.keys(formData);
+    const newErrors = {};
+    fields.forEach((f) => {
+      const msg = validateField(f, formData[f]);
+      if (msg) newErrors[f] = msg;
+    });
+    setFieldErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setError('Vui lòng sửa các lỗi trong biểu mẫu.');
       setLoading(false);
       return;
     }
@@ -49,14 +122,13 @@ const Register = () => {
       gender: formData.gender,
       address: formData.address
     });
-    
+
     if (result.success) {
-      // Chuyển đến trang xác thực OTP với email
       navigate('/verify-otp', { state: { email: formData.email } });
     } else {
       setError(result.error);
     }
-    
+
     setLoading(false);
   };
 
@@ -79,17 +151,17 @@ const Register = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <CustomAlert 
+            <CustomAlert
               type="error"
               message="Lỗi đăng ký!"
-              description={error?.message || String(error)}
+              description={String(error)}
               onClose={() => setError('')}
             />
           )}
-          
+
           <div className="space-y-4">
             <div>
               <label htmlFor="customerName" className="block text-sm font-medium text-gray-700">
@@ -105,6 +177,9 @@ const Register = () => {
                 className="input-field mt-1"
                 placeholder="Nhập họ và tên"
               />
+              {fieldErrors.customerName && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.customerName}</p>
+              )}
             </div>
 
             <div>
@@ -121,6 +196,9 @@ const Register = () => {
                 className="input-field mt-1"
                 placeholder="Nhập username"
               />
+              {fieldErrors.username && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>
+              )}
             </div>
 
             <div>
@@ -137,38 +215,67 @@ const Register = () => {
                 className="input-field mt-1"
                 placeholder="Nhập email"
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Mật khẩu <span className="text-red-500">*</span>
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="input-field mt-1"
-                placeholder="Nhập mật khẩu"
-              />
+              <div className="relative mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="input-field pr-10"
+                  placeholder="Ít nhất 8 ký tự, gồm chữ, số và ký tự đặc biệt"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Xác nhận mật khẩu <span className="text-red-500">*</span>
               </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="input-field mt-1"
-                placeholder="Nhập lại mật khẩu"
-              />
+              <div className="relative mt-1">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="input-field pr-10"
+                  placeholder="Nhập lại mật khẩu"
+                />
+                <button
+                  type="button"
+                  aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                </button>
+              </div>
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
 
             <div>
@@ -183,8 +290,12 @@ const Register = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 className="input-field mt-1"
-                placeholder="Nhập số điện thoại"
+                placeholder="Chỉ nhập số điện thoại"
+                pattern="[0-9]*"
               />
+              {fieldErrors.phone && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
+              )}
             </div>
 
             <div>
@@ -200,6 +311,9 @@ const Register = () => {
                 onChange={handleChange}
                 className="input-field mt-1"
               />
+              {fieldErrors.birthDate && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.birthDate}</p>
+              )}
             </div>
 
             <div>
@@ -217,8 +331,10 @@ const Register = () => {
                 <option value="">Chọn giới tính</option>
                 <option value="male">Nam</option>
                 <option value="female">Nữ</option>
-                <option value="other">Khác</option>
               </select>
+              {fieldErrors.gender && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.gender}</p>
+              )}
             </div>
 
             <div>
@@ -235,6 +351,9 @@ const Register = () => {
                 className="input-field mt-1"
                 placeholder="Nhập địa chỉ"
               />
+              {fieldErrors.address && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.address}</p>
+              )}
             </div>
           </div>
 

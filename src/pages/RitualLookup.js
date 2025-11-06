@@ -14,7 +14,6 @@ const REGION_OPTIONS = [
 ];
 
 /* Ảnh fallback + build absolute URL nếu BE trả đường tương đối */
-// ✅ Sử dụng environment variable thay vì hardcode
 const BACKEND_BASE = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 const getImageUrl = (url) =>
   url
@@ -54,6 +53,9 @@ const RitualLookup = () => {
   // Ref để lưu timeout ID cho debounce
   const debounceTimerRef = useRef(null);
   const isInitialMount = useRef(true);
+  
+  // ✅ THÊM: Flag để track trạng thái search
+  const isSearchMode = useRef(false);
 
   // Đọc query params mỗi khi URL đổi
   useEffect(() => {
@@ -64,9 +66,13 @@ const RitualLookup = () => {
     // Ưu tiên search nếu có q
     if (q) {
       setSearchTerm(q);
+      isSearchMode.current = true; // ✅ Bật search mode
       doSearch(q);
       return;
     }
+
+    // ✅ Tắt search mode khi không có query
+    isSearchMode.current = false;
 
     // Nếu có regions
     if (regionsParam) {
@@ -92,6 +98,11 @@ const RitualLookup = () => {
     // Skip lần đầu tiên mount (vì useEffect trên đã xử lý)
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      return;
+    }
+
+    // ✅ QUAN TRỌNG: Không gọi API nếu đang ở search mode
+    if (isSearchMode.current) {
       return;
     }
 
@@ -139,6 +150,11 @@ const RitualLookup = () => {
   };
 
   const toggleRegion = (key) => {
+    // ✅ Tắt search mode khi user click region
+    isSearchMode.current = false;
+    setSearchTerm("");
+    setLastQuery("");
+    
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       if (key === "all") return new Set(["all"]);
@@ -199,6 +215,7 @@ const RitualLookup = () => {
   // Hàm search có thể gọi từ query param hoặc form
   const doSearch = async (q) => {
     setLoading(true);
+    isSearchMode.current = true; // ✅ Bật search mode
     try {
       const results = await ritualService.searchRituals(q);
       setRituals(Array.isArray(results) ? results : []);
@@ -214,6 +231,7 @@ const RitualLookup = () => {
   };
 
   const clearSearch = () => {
+    isSearchMode.current = false; // ✅ Tắt search mode
     setSearchTerm("");
     setLastQuery("");
     navigate({ search: "" }, { replace: true });
