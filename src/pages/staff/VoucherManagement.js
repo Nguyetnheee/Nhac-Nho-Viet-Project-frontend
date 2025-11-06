@@ -19,6 +19,7 @@ import {
   Modal,
   Form,
   Switch,
+  Typography,
 } from 'antd';
 import {
   PlusOutlined,
@@ -35,7 +36,7 @@ import { getAllVouchers, createVoucher } from '../../services/voucherService';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
-
+const { Title, Text } = Typography;
 // Helper function to format date
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -85,7 +86,7 @@ const VoucherManagement = () => {
     try {
       // Chuẩn bị params theo đúng API spec
       const params = {};
-      
+
       // Chỉ thêm params nếu có giá trị
       if (filters.code) params.code = filters.code;
       if (filters.discountType) params.discountType = filters.discountType;
@@ -93,7 +94,7 @@ const VoucherManagement = () => {
       if (filters.isActive === 'true') params.isActive = true;
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
-      
+
       // Pagination params
       params.page = pagination.current - 1; // Backend sử dụng 0-indexed
       params.size = pagination.pageSize;
@@ -101,11 +102,11 @@ const VoucherManagement = () => {
       params.direction = 'DESC';
 
       console.log('📤 Fetching vouchers with params:', params);
-      
+
       const response = await getAllVouchers(params);
-      
+
       console.log('📦 Raw API response:', response);
-      
+
       // Xử lý response - Backend có thể trả về nhiều format khác nhau
       let voucherData = [];
       let total = 0;
@@ -169,10 +170,10 @@ const VoucherManagement = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching vouchers:', error);
-      
+
       // Xử lý error message
       let errorMsg = 'Không thể tải danh sách vouchers';
-      
+
       if (error.message.includes('no session')) {
         errorMsg = 'Lỗi hệ thống: Backend session issue. Vui lòng liên hệ quản trị viên.';
       } else if (error.response?.status === 403) {
@@ -180,9 +181,9 @@ const VoucherManagement = () => {
       } else if (error.message) {
         errorMsg = error.message;
       }
-      
+
       message.error(errorMsg);
-      
+
       // Set empty data on error
       setVouchers([]);
       setPagination(prev => ({ ...prev, total: 0 }));
@@ -270,8 +271,8 @@ const VoucherManagement = () => {
       width: 120,
       render: (value, record) => (
         <span style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
-          {record.discountType === 'PERCENTAGE' 
-            ? `${value}%` 
+          {record.discountType === 'PERCENTAGE'
+            ? `${value}%`
             : `${value?.toLocaleString()}đ`}
         </span>
       ),
@@ -363,7 +364,32 @@ const VoucherManagement = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div >
+      <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>Quản lý Voucher</Space>
+            </Title>
+            <Text type="secondary">Thêm, xóa, sửa và quản lý các Voucher</Text>
+          </div>
+          <Space>
+            <Tooltip title="Làm mới">
+              <Button icon={<ReloadOutlined />} onClick={fetchVouchers} loading={loading}>
+                Tải lại
+              </Button>
+            </Tooltip>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalVisible(true)}
+              className="bg-vietnam-green hover:!bg-emerald-800"
+            >
+              Thêm Voucher
+            </Button>
+          </Space>
+        </div>
+      </Card>
       {/* Statistics Cards */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
@@ -408,86 +434,131 @@ const VoucherManagement = () => {
         </Col>
       </Row>
 
-      {/* Main Card */}
-      <Card
-        title={
-          <Space>
-            <GiftOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
-            <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              Quản lý Vouchers
-            </span>
-            <Badge count={stats.total} showZero style={{ backgroundColor: '#52c41a' }} />
-          </Space>
-        }
-        extra={
-          <Space>
-            <Button
-              type="default"
-              icon={<ReloadOutlined />}
-              onClick={fetchVouchers}
-              loading={loading}
+      <Card className="shadow-lg rounded-xl mb-6">
+        <Row gutter={[16, 16]} align="bottom">
+          <Col xs={24} sm={12} md={6}>
+            <Text strong>Mã voucher</Text>
+            <Input
+              placeholder="Tìm theo mã voucher"
+              prefix={<SearchOutlined className="text-gray-400" />}
+              value={filters.code}
+              onChange={(e) => setFilters({ ...filters, code: e.target.value })}
+              className="w-full mt-1"
+              allowClear
+            />
+          </Col>
+          {/* Nếu muốn lọc theo lễ hội */}
+          {/* <Col xs={24} sm={12} md={6}>
+            <Text strong>Lễ hội</Text>
+            <Select
+              placeholder="Chọn lễ hội"
+              value={filters.ritualId || undefined}
+              onChange={(value) => setFilters({ ...filters, ritualId: value })}
+              className="w-full mt-1"
+              allowClear
+              showSearch
+              optionFilterProp="children"
             >
-              Làm mới
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateModalVisible(true)}
+              {rituals?.map(r => (
+                <Option key={r.ritualId} value={r.ritualId}>{r.ritualName}</Option>
+              ))}
+            </Select>
+          </Col> */}
+          <Col xs={24} sm={12} md={6}>
+            <Text strong>Loại giảm giá</Text>
+            <Select
+              placeholder="Chọn loại giảm giá"
+              value={filters.discountType || undefined}
+              onChange={(value) => setFilters({ ...filters, discountType: value })}
+              className="w-full mt-1"
+              allowClear
             >
-              Tạo Voucher
-            </Button>
-          </Space>
-        }
-      >
-        {/* Filters */}
-        <Space style={{ marginBottom: 16, width: '100%' }} wrap>
-          <Input
-            placeholder="Tìm theo mã voucher"
-            prefix={<SearchOutlined />}
-            value={filters.code}
-            onChange={(e) => setFilters({ ...filters, code: e.target.value })}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Select
-            placeholder="Loại giảm giá"
-            value={filters.discountType || undefined}
-            onChange={(value) => setFilters({ ...filters, discountType: value })}
-            style={{ width: 160 }}
-            allowClear
-          >
-            <Option value="PERCENTAGE">Phần trăm</Option>
-            <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
-          </Select>
-          <Select
-            placeholder="Trạng thái"
-            value={filters.isActive || undefined}
-            onChange={(value) => setFilters({ ...filters, isActive: value })}
-            style={{ width: 150 }}
-            allowClear
-          >
-            <Option value="true">Hoạt động</Option>
-            <Option value="false">Không hoạt động</Option>
-          </Select>
-          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            Tìm kiếm
-          </Button>
-          <Button onClick={handleReset}>Đặt lại</Button>
-        </Space>
-
-        {/* Table */}
-        <Table
-          columns={columns}
-          dataSource={vouchers}
-          rowKey="voucherId"
-          loading={loading}
-          pagination={pagination}
-          onChange={handleTableChange}
-          scroll={{ x: 1400 }}
-          bordered
-        />
+              <Option value="PERCENTAGE">Phần trăm</Option>
+              <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Text strong>Trạng thái</Text>
+            <Select
+              placeholder="Chọn trạng thái"
+              value={filters.isActive || undefined}
+              onChange={(value) => setFilters({ ...filters, isActive: value })}
+              className="w-full mt-1"
+              allowClear
+            >
+              <Option value="true">Hoạt động</Option>
+              <Option value="false">Hết hạn</Option>
+            </Select>
+          </Col>
+          <Col xs={24} md={6} className="flex items-end">
+            <Space className="w-full">
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={handleSearch}
+                className="bg-vietnam-green hover:!bg-emerald-800"
+              >
+                Tìm kiếm
+              </Button>
+              <Button onClick={handleReset}>Đặt lại</Button>
+            </Space>
+          </Col>
+        </Row>
       </Card>
+      {/* Filters */}
+      {/* <Space style={{ marginBottom: 16, width: '100%' }} wrap>
+        <Input
+          placeholder="Tìm theo mã voucher"
+          prefix={<SearchOutlined />}
+          value={filters.code}
+          onChange={(e) => setFilters({ ...filters, code: e.target.value })}
+          style={{ width: 200 }}
+          allowClear
+        />
+        <Select
+          placeholder="Loại giảm giá"
+          value={filters.discountType || undefined}
+          onChange={(value) => setFilters({ ...filters, discountType: value })}
+          style={{ width: 160 }}
+          allowClear
+        >
+          <Option value="PERCENTAGE">Phần trăm</Option>
+          <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
+        </Select>
+        <Select
+          placeholder="Trạng thái"
+          value={filters.isActive || undefined}
+          onChange={(value) => setFilters({ ...filters, isActive: value })}
+          style={{ width: 150 }}
+          allowClear
+        >
+          <Option value="true">Hoạt động</Option>
+          <Option value="false">Không hoạt động</Option>
+        </Select>
+        <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+          Tìm kiếm
+        </Button>
+        <Button onClick={handleReset}>Đặt lại</Button>
+      </Space> */}
 
+      {/* <Col xs={24} md={4}>
+            <Space>
+              <Button icon={<ReloadOutlined />} onClick={fetchAllChecklists} loading={loading}>Tải lại</Button>
+              <Button onClick={handleReset}>Reset</Button>
+            </Space>
+          </Col> */}
+
+      {/* Table */}
+      <Table
+        columns={columns}
+        dataSource={vouchers}
+        rowKey="voucherId"
+        loading={loading}
+        pagination={pagination}
+        onChange={handleTableChange}
+        scroll={{ x: 1400 }}
+        bordered
+      />
       {/* Create Voucher Modal */}
       <Modal
         open={createModalVisible}

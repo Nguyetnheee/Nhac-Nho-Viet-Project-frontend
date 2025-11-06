@@ -1,15 +1,16 @@
 // src/pages/staff/CustomerManagement.js
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Card, message, Tag, Typography, Modal } from 'antd';
-import { 
-  SearchOutlined, 
+import { Table, Button, Input, Card, message, Tag, Typography, Modal, Space, Tooltip } from 'antd';
+import {
+  SearchOutlined,
   ReloadOutlined,
   TeamOutlined,
   EyeOutlined,
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import staffService from '../../services/staffService';
 
@@ -28,17 +29,17 @@ const CustomerManagement = () => {
       console.log('Đang tải danh sách khách hàng từ API...');
       const response = await staffService.getCustomers();
       console.log('API Response:', response);
-      
+
       // Xử lý dữ liệu từ backend
       // Backend trả về: id, username, email, phone, customerName, gender, address, createdAt, updatedAt
       let customerList = [];
-      
+
       if (Array.isArray(response)) {
         customerList = response;
       } else if (response?.data && Array.isArray(response.data)) {
         customerList = response.data;
       }
-      
+
       const mappedCustomers = customerList.map(customer => ({
         id: customer.id,
         username: customer.username,
@@ -50,15 +51,15 @@ const CustomerManagement = () => {
         createdAt: customer.createdAt || new Date().toISOString(),
         updatedAt: customer.updatedAt || new Date().toISOString()
       }));
-      
+
       setCustomers(mappedCustomers);
       message.success(`Đã tải ${mappedCustomers.length} khách hàng thành công`);
     } catch (error) {
       console.error('Error loading customers:', error);
-      
+
       // Thông báo lỗi dễ hiểu cho người dùng
       let errorMessage = 'Không thể tải danh sách khách hàng. ';
-      
+
       if (error.response) {
         // Lỗi từ server
         if (error.response.status === 404) {
@@ -77,7 +78,7 @@ const CustomerManagement = () => {
         // Lỗi khác
         errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
       }
-      
+
       message.error(errorMessage);
       setCustomers([]);
     } finally {
@@ -100,7 +101,7 @@ const CustomerManagement = () => {
 
   const filteredCustomers = customers.filter(customer => {
     if (!searchText) return true;
-    
+
     const searchLower = searchText.toLowerCase();
     return (
       customer.customerName?.toLowerCase().includes(searchLower) ||
@@ -129,7 +130,7 @@ const CustomerManagement = () => {
       'FEMALE': { text: 'Nữ', color: 'pink' },
       'OTHER': { text: 'Khác', color: 'default' }
     };
-    
+
     const genderInfo = genderMap[gender?.toUpperCase()] || { text: 'Chưa rõ', color: 'default' };
     return <Tag color={genderInfo.color}>{genderInfo.text}</Tag>;
   };
@@ -215,36 +216,64 @@ const CustomerManagement = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Card
+    <div >
+
+      <Card className="shadow-lg rounded-xl border-t-4 border-vietnam-gold mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            <Title level={2} className="font-serif !text-vietnam-green !mb-1">
+              <Space>Quản lý Khách hàng</Space>
+            </Title>
+            <Text type="secondary">Quản lý và xem thông tin khách hàng</Text>
+          </div>
+          <Space>
+            <Tooltip title="Làm mới">
+              <Button icon={<ReloadOutlined />} onClick={loadCustomers} loading={loading}>
+                Tải lại
+              </Button>
+            </Tooltip>
+            {/* <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAdd}
+              className="bg-vietnam-green hover:!bg-emerald-800"
+            >
+              Thêm sản phẩm
+            </Button> */}
+          </Space>
+        </div>
+      </Card>
+      {/* <Card
         bordered={false}
         style={{
           borderRadius: '8px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         }}
-      >
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          marginBottom: '24px',
-          borderBottom: '2px solid #f0f0f0',
-          paddingBottom: '16px'
-        }}>
+      > */}
+        <div 
+        // style={{
+        //   display: 'flex',
+        //   alignItems: 'center',
+        //   justifyContent: 'space-between',
+        //   marginBottom: '24px',
+        //   borderBottom: '2px solid #f0f0f0',
+        //   paddingBottom: '16px'
+        // }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <TeamOutlined style={{ fontSize: '32px', color: '#1890ff' }} />
+            {/* <TeamOutlined style={{ fontSize: '32px', color: '#1890ff' }} /> */}
             <div>
-              <Title level={2} style={{ margin: 0 }}>
+              {/* <Title level={2} style={{ margin: 0 }}>
                 Quản lý Khách hàng
               </Title>
-              <Text type="secondary">Quản lý và xem thông tin khách hàng</Text>
+              <Text type="secondary">Quản lý và xem thông tin khách hàng</Text> */}
             </div>
           </div>
         </div>
 
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
+        <div style={{
+          display: 'flex',
+          gap: '12px',
           marginBottom: '16px',
           flexWrap: 'wrap'
         }}>
@@ -255,13 +284,13 @@ const CustomerManagement = () => {
             style={{ flex: 1, minWidth: '300px' }}
             allowClear
           />
-          <Button
+          {/* <Button
             icon={<ReloadOutlined />}
             onClick={loadCustomers}
             loading={loading}
           >
             Tải lại
-          </Button>
+          </Button> */}
         </div>
 
         <div style={{ marginBottom: '16px' }}>
@@ -289,7 +318,7 @@ const CustomerManagement = () => {
             filterConfirm: 'OK',
           }}
         />
-      </Card>
+      {/* </Card> */}
 
       {/* Modal Chi tiết khách hàng */}
       <Modal
@@ -310,13 +339,13 @@ const CustomerManagement = () => {
       >
         {selectedCustomer && (
           <div style={{ padding: '16px 0' }}>
-            <div style={{ 
-              display: 'grid', 
+            <div style={{
+              display: 'grid',
               gap: '16px',
               gridTemplateColumns: 'auto 1fr'
             }}>
               <div style={{ display: 'contents' }}>
-                <Text strong>ID:</Text>
+                <Text strong>STT:</Text>
                 <Text>{selectedCustomer.id}</Text>
 
                 <Text strong>Tên đăng nhập:</Text>
@@ -327,13 +356,13 @@ const CustomerManagement = () => {
 
                 <Text strong>Email:</Text>
                 <Text copyable>
-                  <MailOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
+                  {/* <MailOutlined style={{ marginRight: '8px', color: '#52c41a' }} /> */}
                   {selectedCustomer.email}
                 </Text>
 
                 <Text strong>Số điện thoại:</Text>
                 <Text copyable>
-                  <PhoneOutlined style={{ marginRight: '8px', color: '#faad14' }} />
+                  {/* <PhoneOutlined style={{ marginRight: '8px', color: '#faad14' }} /> */}
                   {selectedCustomer.phone}
                 </Text>
 
@@ -342,7 +371,7 @@ const CustomerManagement = () => {
 
                 <Text strong>Địa chỉ:</Text>
                 <Text>
-                  <EnvironmentOutlined style={{ marginRight: '8px', color: '#ff4d4f' }} />
+                  {/* <EnvironmentOutlined style={{ marginRight: '8px', color: '#ff4d4f' }} /> */}
                   {selectedCustomer.address}
                 </Text>
 
