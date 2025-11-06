@@ -10,6 +10,13 @@ export const publicApi = axios.create({
   },
 });
 
+// Gắn token
+publicApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 // Export named export để consistent với cách import
 export const checklistService = {
   // Lấy tất cả checklists
