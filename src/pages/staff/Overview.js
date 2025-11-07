@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Space, Spin, message, Typography } from 'antd';
+import { Card, Row, Col, Statistic, Table, Tag, Space, Spin, message, Typography, Input } from 'antd';
 import {
   ShoppingCartOutlined,
   UserOutlined,
@@ -88,50 +88,75 @@ const Overview = () => {
   const fetchRecentUsers = async () => {
     try {
       const response = await staffService.getCustomers();
-      // API 返回格式: response.data 是数组
+      // staffService.getCustomers() đã trả về response.data, nên response có thể là mảng trực tiếp
       let users = [];
-      if (response?.data) {
-        if (Array.isArray(response.data)) {
-          users = response.data;
-        } else if (Array.isArray(response.data.data)) {
-          users = response.data.data;
-        }
+      if (Array.isArray(response)) {
+        users = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        users = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        users = response.data.data;
       }
 
-      // 更新用户列表（获取全部数据）
-      setRecentUsers(users.map((user, index) => ({
-        key: user.id || index,
-        id: user.id || index,
-        username: user.username || 'N/A',
-        customerName: user.customerName || user.name || 'N/A',
-        email: user.email || 'N/A',
-        phone: user.phone || 'N/A',
-        gender: user.gender || 'N/A',
-        address: user.address || 'N/A'
-      })));
+      // Debug: Log để kiểm tra dữ liệu
+      console.log('📊 Raw response from staffService.getCustomers():', response);
+      console.log('📋 Processed users array:', users);
+      if (users.length > 0) {
+        console.log('👤 First user sample:', users[0]);
+        console.log('📅 First user createdAt:', users[0]?.createdAt, 'Type:', typeof users[0]?.createdAt);
+        console.log('📅 First user updatedAt:', users[0]?.updatedAt, 'Type:', typeof users[0]?.updatedAt);
+        console.log('🔍 All keys in first user:', Object.keys(users[0]));
+        console.log('🔍 Full first user object:', JSON.stringify(users[0], null, 2));
+      }
 
-      // 更新总客户数（使用所有用户，不只是前10个）
+      // Map đầy đủ tất cả các field từ API
+      setRecentUsers(users.map((user, index) => {
+        // Kiểm tra các tên field có thể có (createdAt, created_at, createDate, etc.)
+        // Đảm bảo chỉ lấy string, không lấy null hoặc object
+        let createdAt = user.createdAt || user.created_at || user.createDate || user.dateCreated || null;
+        const updatedAt = user.updatedAt || user.updated_at || user.updateDate || user.dateUpdated || null;
+        
+        // Chuyển đổi createdAt thành string nếu nó là object/null hoặc không phải string hợp lệ
+        if (createdAt && typeof createdAt !== 'string') {
+          // Nếu là object, thử chuyển thành string
+          if (createdAt instanceof Date) {
+            createdAt = createdAt.toISOString();
+          } else if (typeof createdAt === 'object' && createdAt !== null) {
+            // Nếu là object phức tạp, bỏ qua và dùng null
+            createdAt = null;
+          }
+        }
+        
+        // Nếu createdAt là null/undefined/empty string nhưng updatedAt có giá trị, dùng updatedAt làm fallback
+        if ((!createdAt || createdAt === 'null' || createdAt === 'undefined') && updatedAt && typeof updatedAt === 'string') {
+          createdAt = updatedAt; // Dùng updatedAt nếu createdAt không có
+        }
+        
+        // Đảm bảo cả hai đều là string hoặc null
+        const finalCreatedAt = (createdAt && typeof createdAt === 'string') ? createdAt : null;
+        const finalUpdatedAt = (updatedAt && typeof updatedAt === 'string') ? updatedAt : null;
+        
+        return {
+          key: user.id || index,
+          id: user.id || index,
+          username: user.username || 'N/A',
+          email: user.email || 'N/A',
+          phone: user.phone || 'N/A',
+          customerName: user.customerName || 'N/A',
+          gender: user.gender || 'N/A',
+          address: user.address || 'N/A',
+          createdAt: finalCreatedAt,
+          updatedAt: finalUpdatedAt
+        };
+      }));
+
+      // Cập nhật tổng số khách hàng
       setStats(prev => ({ ...prev, totalCustomers: users.length }));
     } catch (error) {
-      console.error('Error fetching recent users:', error);
+      console.error('❌ Error fetching recent users:', error);
+      console.error('Error details:', error.response?.data || error.message);
       setRecentUsers([]);
-      // 即使出错也要确保 stats 被更新
       setStats(prev => ({ ...prev, totalCustomers: 0 }));
-      
-      // Thông báo lỗi dễ hiểu cho người dùng (tùy chọn - có thể bỏ comment nếu muốn hiển thị)
-      // let errorMessage = 'Không thể tải danh sách khách hàng. ';
-      // if (error.response) {
-      //   if (error.response.status === 404) {
-      //     errorMessage += 'Không tìm thấy dữ liệu.';
-      //   } else if (error.response.status === 401 || error.response.status === 403) {
-      //     errorMessage += 'Bạn không có quyền xem thông tin này.';
-      //   } else if (error.response.status >= 500) {
-      //     errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-      //   }
-      // } else if (error.request) {
-      //   errorMessage += 'Không thể kết nối với hệ thống.';
-      // }
-      // message.warning(errorMessage);
     }
   };
 
@@ -153,32 +178,6 @@ const Overview = () => {
           shipperName: order.shipperName || 'Chưa phân công'
         })));
 
-        // Derive unique recent customers from orders
-        const uniqueMap = new Map();
-        orders.forEach((o) => {
-          const name = o.receiverName || o.customerName || 'N/A';
-          const phone = o.phone || 'N/A';
-          const key = `${name}-${phone}`;
-          if (!uniqueMap.has(key)) {
-            uniqueMap.set(key, {
-              id: uniqueMap.size + 1,
-              username: name,
-              customerName: name,
-              email: 'N/A',
-              phone: phone,
-              gender: 'N/A',
-              address: o.address || 'N/A'
-            });
-          }
-        });
-
-        const uniqueCustomers = Array.from(uniqueMap.values());
-        setRecentUsers(uniqueCustomers.map((u) => ({
-          key: u.id,
-          ...u
-        })));
-        // Update stats card: totalCustomers = number of unique purchasers recently
-        setStats(prev => ({ ...prev, totalCustomers: uniqueCustomers.length }));
       }
     } catch (error) {
       console.error('Error fetching recent orders:', error);
@@ -275,12 +274,31 @@ const Overview = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString || dateString === 'N/A') return 'N/A';
+    // Kiểm tra null, undefined, 'N/A', hoặc không phải string
+    if (!dateString || 
+        dateString === 'N/A' || 
+        dateString === null || 
+        dateString === undefined ||
+        typeof dateString !== 'string') {
+      return 'N/A';
+    }
+    
+    // Kiểm tra string rỗng hoặc chỉ có khoảng trắng
+    if (dateString.trim() === '' || dateString === 'null' || dateString === 'undefined') {
+      return 'N/A';
+    }
+    
     try {
       const date = new Date(dateString);
+      // Kiểm tra xem date có hợp lệ không
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateString);
+        return 'N/A';
+      }
       return date.toLocaleDateString('vi-VN');
-    } catch {
-      return dateString;
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'N/A';
     }
   };
 
@@ -298,6 +316,7 @@ const Overview = () => {
       'COMPLETED': { color: 'green', text: 'Đã hoàn thành' },
       'CANCELLED': { color: 'red', text: 'Đã hủy' },
       'PAID': { color: 'green', text: 'Đã thanh toán' },
+      'SHIPPING': { color: 'cyan', text: 'Đang giao' },
       'ACTIVE': { color: 'green', text: 'Hoạt động' },
       'INACTIVE': { color: 'default', text: 'Không hoạt động' }
     };
@@ -330,7 +349,8 @@ const Overview = () => {
       'CONFIRMED': 'Đã xác nhận',
       'COMPLETED': 'Đã hoàn thành',
       'CANCELLED': 'Đã hủy',
-      'PAID': 'Đã thanh toán'
+      'PAID': 'Đã thanh toán',
+      'SHIPPING': 'Đang giao'
     };
 
     // Màu sắc cho từng trạng thái
@@ -340,6 +360,7 @@ const Overview = () => {
       'CONFIRMED': '#2f54eb',       // Xanh biển - Đã xác nhận
       'COMPLETED': '#1890ff',       // Xanh đậm - Đã hoàn thành
       'PAID': '#73d13d',            // Xanh lá - Đã thanh toán
+      'SHIPPING': '#13c2c2',        // Cyan - Đang giao
     };
 
     return Object.entries(statusCount).map(([status, value]) => ({
@@ -475,26 +496,31 @@ const Overview = () => {
       title: 'Tên đăng nhập',
       dataIndex: 'username',
       key: 'username',
-    },
-    {
-      title: 'Tên khách hàng',
-      dataIndex: 'customerName',
-      key: 'customerName',
+      width: 150,
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
+      width: 200,
     },
     {
       title: 'Số điện thoại',
       dataIndex: 'phone',
       key: 'phone',
+      width: 150,
+    },
+    {
+      title: 'Tên khách hàng',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      width: 180,
     },
     {
       title: 'Giới tính',
       dataIndex: 'gender',
       key: 'gender',
+      width: 120,
       render: (gender) => {
         const genderMap = {
           'male': { text: 'Nam', color: 'blue' },
@@ -505,7 +531,10 @@ const Overview = () => {
           'khác': { text: 'Khác', color: 'default' },
           'Nam': { text: 'Nam', color: 'blue' },
           'Nữ': { text: 'Nữ', color: 'pink' },
-          'Khác': { text: 'Khác', color: 'default' }
+          'Khác': { text: 'Khác', color: 'default' },
+          'MALE': { text: 'Nam', color: 'blue' },
+          'FEMALE': { text: 'Nữ', color: 'pink' },
+          'OTHER': { text: 'Khác', color: 'default' }
         };
         const genderInfo = genderMap[gender] || genderMap[gender?.toLowerCase()] || { text: gender || 'N/A', color: 'default' };
         return <Tag color={genderInfo.color}>{genderInfo.text}</Tag>;
@@ -516,6 +545,21 @@ const Overview = () => {
       dataIndex: 'address',
       key: 'address',
       ellipsis: true,
+      width: 200,
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 150,
+      render: (text) => formatDate(text),
+    },
+    {
+      title: 'Ngày cập nhật',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      width: 150,
+      render: (text) => formatDate(text),
     },
   ];
 
@@ -1037,6 +1081,7 @@ const Overview = () => {
                   locale: { items_per_page: '/ trang' },
                 }}
                 size="small"
+                scroll={{ x: 'max-content' }}
               />
             </Card>
           </Col>
@@ -1090,6 +1135,12 @@ const Overview = () => {
                 }}
                 size="small"
                 scroll={{ x: true }}
+                locale={{
+                  filterConfirm: 'OK',
+                  filterReset: 'Đặt lại',
+                  filterEmptyText: 'Không có bộ lọc',
+                  emptyText: 'Không có dữ liệu',
+                }}
               />
             </Card>
           </Col>

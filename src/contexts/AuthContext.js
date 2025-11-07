@@ -9,6 +9,7 @@ import {
   loginStaff,
   loginCustomer
 } from '../services/apiAuth';
+import shipperService from '../services/shipperService';
 
 const AuthContext = createContext();
 
@@ -42,8 +43,10 @@ export const AuthProvider = ({ children }) => {
       let data;
       const normalizedRole = role?.toUpperCase();
       
-      if (normalizedRole === 'STAFF' || normalizedRole === 'ADMIN' || normalizedRole === 'SHIPPER') {
+      if (normalizedRole === 'STAFF' || normalizedRole === 'ADMIN') {
         data = await fetchStaffProfile();
+      } else if (normalizedRole === 'SHIPPER') {
+        data = await shipperService.getProfile();
       } else {
         data = await fetchCustomerProfile();
       }
@@ -356,9 +359,11 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       const role = localStorage.getItem('role');
-      const endpoint = role === 'STAFF' || role === 'SHIPPER' || role === 'ADMIN'
+      const endpoint = role === 'STAFF' || role === 'ADMIN'
         ? '/api/staff/profile'
-        : '/api/customer/profile';
+        : role === 'SHIPPER'
+          ? '/api/shipper/profile'
+          : '/api/customer/profile';
 
       // Chuẩn bị payload theo đúng format API yêu cầu
       const payload = {
