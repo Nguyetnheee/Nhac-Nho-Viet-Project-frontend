@@ -87,11 +87,37 @@ const shipperService = {
   getPendingOrders: async () => {
     try {
       console.log('Fetching pending orders for shipper...');
+      
+      // Debug: Check token and headers
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      console.log('Token exists:', !!token);
+      console.log('Current role:', role);
+      console.log('Token (first 20 chars):', token?.substring(0, 20));
+      
       const response = await api.get('/api/shipper/orders/pending');
       console.log('Pending orders response:', response.data);
-      return response.data;
+      
+      // Backend trả về array trực tiếp, không cần response.data.data
+      const orders = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return orders;
     } catch (error) {
       console.error('Error fetching pending orders:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.response?.data?.message || error.message,
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      });
+      
+      // Throw error với message rõ ràng hơn
+      if (error.response?.status === 403) {
+        const backendMessage = error.response?.data?.message || error.response?.data?.error || 'Không có quyền truy cập';
+        throw new Error(`403 Forbidden: ${backendMessage}`);
+      }
       throw error;
     }
   },

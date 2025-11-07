@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { orderService } from '../services/orderService';
+// Removed generic orderService; we use shipper-specific endpoints instead
 import shipperService from '../services/shipperService';
 import { 
   Layout, 
@@ -77,35 +77,51 @@ const ShipperDashboard = () => {
   const fetchOrders = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      
-      const response = await orderService.getAllOrders();
-      
-      // Lọc các đơn hàng được gán cho shipper này
-      const myOrders = response.data.filter(order => {
-        // Giả sử order có shipperId hoặc shipperName
-        const isMyOrder = order.shipperId === user?.id || 
-                         order.shipperId === shipperProfile?.id ||
-                         order.shipperId === shipperProfile?.shipperId;
-        return isMyOrder && ['CONFIRMED', 'SHIPPING', 'DELIVERED'].includes(order.status);
-      });
+
+      // Gọi các API dành riêng cho shipper
+      const [pending, active, completed] = await Promise.all([
+        shipperService.getPendingOrders().catch(() => []),
+        shipperService.getActiveOrders().catch(() => []),
+        shipperService.getCompletedOrders().catch(() => [])
+      ]);
+
+      // Chuẩn hoá dữ liệu theo format bảng hiện tại
+      const normalize = (items = [], fallbackStatus) =>
+        (items || []).map((o) => ({
+          orderId: o.orderId,
+          customerName: o.receiverName || o.customerName,
+          phoneNumber: o.phone || o.phoneNumber,
+          deliveryAddress: o.address || o.deliveryAddress,
+          totalAmount: o.totalPrice ?? o.totalAmount,
+          createdAt: o.orderDate || o.createdAt,
+          status: (o.status || fallbackStatus || '').toUpperCase(),
+          note: o.note,
+          items: o.items,
+          email: o.email,
+        }));
+
+      const pendingNorm = normalize(pending, 'PENDING');
+      const activeNorm = normalize(active, 'SHIPPING');
+      const completedNorm = normalize(completed, 'COMPLETED');
+
+      const merged = [...pendingNorm, ...activeNorm, ...completedNorm];
 
       // Kiểm tra đơn hàng mới
-      const previousOrderIds = orders.map(o => o.orderId);
-      const newOrders = myOrders.filter(o => !previousOrderIds.includes(o.orderId));
-      
+      const previousOrderIds = orders.map((o) => o.orderId);
+      const newOrders = merged.filter((o) => !previousOrderIds.includes(o.orderId));
       if (newOrders.length > 0 && orders.length > 0) {
-        setNewOrdersCount(prev => prev + newOrders.length);
+        setNewOrdersCount((prev) => prev + newOrders.length);
         showNewOrderNotification(newOrders);
       }
 
-      setOrders(myOrders);
+      setOrders(merged);
     } catch (error) {
       console.error('Error fetching orders:', error);
       if (!silent) {
-        notification.error({
-          message: 'Lỗi',
-          description: 'Không thể tải danh sách đơn hàng',
-        });
+        const msg = error.response?.status === 403
+          ? 'Bạn không có quyền truy cập đơn hàng. Vui lòng kiểm tra quyền SHIPPER của tài khoản.'
+          : 'Không thể tải danh sách đơn hàng';
+        notification.error({ message: 'Lỗi', description: msg });
       }
     } finally {
       if (!silent) setLoading(false);
@@ -154,6 +170,7 @@ const ShipperDashboard = () => {
 
   const getStatusColor = (status) => {
     const colors = {
+      PENDING: 'blue',
       CONFIRMED: 'blue',
       SHIPPING: 'orange',
       DELIVERED: 'green',
@@ -165,6 +182,7 @@ const ShipperDashboard = () => {
 
   const getStatusText = (status) => {
     const texts = {
+      PENDING: 'Chờ nhận',
       CONFIRMED: 'Đã xác nhận',
       SHIPPING: 'Đang giao',
       DELIVERED: 'Đã giao',

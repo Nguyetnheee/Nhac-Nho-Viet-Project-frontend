@@ -33,7 +33,7 @@ import shipperService from '../services/shipperService';
 const { TabPane } = Tabs;
 
 const ShipperOrderManagement = () => {
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('active');
   const [pendingOrders, setPendingOrders] = useState([]);
   const [activeOrders, setActiveOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
@@ -69,15 +69,15 @@ const ShipperOrderManagement = () => {
       switch (tab) {
         case 'pending':
           response = await shipperService.getPendingOrders();
-          setPendingOrders(response || []);
+          setPendingOrders(Array.isArray(response) ? response : []);
           break;
         case 'active':
           response = await shipperService.getActiveOrders();
-          setActiveOrders(response || []);
+          setActiveOrders(Array.isArray(response) ? response : []);
           break;
         case 'completed':
           response = await shipperService.getCompletedOrders();
-          setCompletedOrders(response || []);
+          setCompletedOrders(Array.isArray(response) ? response : []);
           break;
         default:
           break;
@@ -89,7 +89,23 @@ const ShipperOrderManagement = () => {
     } catch (error) {
       console.error('Error loading orders:', error);
       if (!silent) {
-        message.error('Không thể tải danh sách đơn hàng: ' + (error.response?.data?.message || error.message));
+        // Hiển thị thông báo lỗi chi tiết hơn
+        let errorMessage = 'Không thể tải danh sách đơn hàng';
+        
+        if (error.response?.status === 403) {
+          errorMessage = 'Không có quyền truy cập danh sách đơn hàng. Vui lòng kiểm tra lại quyền của tài khoản.';
+          if (error.response?.data?.message) {
+            errorMessage += ` (${error.response.data.message})`;
+          }
+        } else if (error.response?.status === 401) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+        
+        message.error(errorMessage);
       }
     } finally {
       if (!silent) setLoading(false);
