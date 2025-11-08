@@ -320,6 +320,13 @@ export const checklistService = {
       return response.data;
     } catch (error) {
       console.error(`❌ Error updating user checklist ${userChecklistId}:`, error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        requestData: data,
+        url: error.config?.url
+      });
       throw error;
     }
   },

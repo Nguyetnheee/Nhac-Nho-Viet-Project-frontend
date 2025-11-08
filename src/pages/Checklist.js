@@ -47,7 +47,6 @@ const Checklist = () => {
     pageSize: 10, 
     total: 0 
   });
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState({ ritualId: null, title: '', reminderDate: null });
   const [rituals, setRituals] = useState([]);
@@ -64,8 +63,6 @@ const Checklist = () => {
   const [availableItems, setAvailableItems] = useState([]); // Danh sách items có sẵn để thêm
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [newItemForm] = Form.useForm();
-  const [isEditingChecklist, setIsEditingChecklist] = useState(false);
-  const [editChecklistForm] = Form.useForm();
   const [editingItemId, setEditingItemId] = useState(null); // ID của item đang được edit
   const [editingItemForm] = Form.useForm();
   const [savingChecklist, setSavingChecklist] = useState(false);
@@ -238,11 +235,11 @@ const Checklist = () => {
           title: 'Lỗi xác thực', 
           content: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.' 
         });
-        return;
-      }
+      return;
+    }
 
       // Prepare payload
-      const payload = {
+    const payload = {
         userId: Number(userId),
         ritualId: Number(values.ritualId),
         title: values.title.trim(),
@@ -334,12 +331,6 @@ const Checklist = () => {
         console.log('✅ Loaded checklist items with checked status:', items);
         setChecklistItems(items);
         
-        // Initialize edit form với giá trị hiện tại
-        editChecklistForm.setFieldsValue({
-          title: data.title || '',
-          reminderDate: data.reminderDate ? dayjs(data.reminderDate) : null
-        });
-        
         // Load available items để thêm vào checklist
         const allItems = await checklistService.getChecklistItems();
         setAvailableItems(allItems || []);
@@ -358,9 +349,7 @@ const Checklist = () => {
     setChecklistDetail(null);
     setChecklistItems([]);
     setAvailableItems([]);
-    setIsEditingChecklist(false);
     setEditingItemId(null);
-    editChecklistForm.resetFields();
     editingItemForm.resetFields();
   };
 
@@ -499,56 +488,6 @@ const Checklist = () => {
     });
   };
 
-  // Edit Checklist Handlers
-  const handleStartEditChecklist = () => {
-    setIsEditingChecklist(true);
-    editChecklistForm.setFieldsValue({
-      title: checklistDetail?.title || '',
-      reminderDate: checklistDetail?.reminderDate ? dayjs(checklistDetail.reminderDate) : null
-    });
-  };
-
-  const handleCancelEditChecklist = () => {
-    setIsEditingChecklist(false);
-    editChecklistForm.resetFields();
-  };
-
-  const handleSaveChecklist = async () => {
-    try {
-      const values = await editChecklistForm.validateFields();
-      
-      setSavingChecklist(true);
-      const response = await checklistService.updateUserChecklist(
-        checklistDetail.userChecklistId,
-        {
-          title: values.title.trim(),
-          reminderDate: values.reminderDate ? values.reminderDate.toISOString() : null
-        }
-      );
-
-      // Update local state
-      setChecklistDetail(prev => ({
-        ...prev,
-        title: values.title.trim(),
-        reminderDate: values.reminderDate ? values.reminderDate.toISOString() : null
-      }));
-
-      message.success('Đã cập nhật checklist!');
-      setIsEditingChecklist(false);
-      
-      // Refresh checklist list
-      await fetchUserChecklists(userListPagination.current, userListPagination.pageSize);
-    } catch (error) {
-      if (error.errorFields) {
-        // Validation error
-        return;
-      }
-      console.error('Error updating checklist:', error);
-      message.error('Không thể cập nhật checklist!');
-    } finally {
-      setSavingChecklist(false);
-    }
-  };
 
   // Edit Item Handlers
   const handleStartEditItem = (item) => {
@@ -720,11 +659,6 @@ const Checklist = () => {
                 Danh Sách Danh Mục Của Tôi
               </Title>
               <div className="flex items-center gap-2">
-                {selectedRowKeys.length > 0 && (
-                  <Tag color="blue" className="text-sm">
-                    Đã chọn: {selectedRowKeys.length}
-                  </Tag>
-                )}
                 <Button 
                   icon={<ReloadOutlined />} 
                   onClick={() => fetchUserChecklists(userListPagination.current, userListPagination.pageSize)}
@@ -743,7 +677,7 @@ const Checklist = () => {
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description={
-                  <div>
+              <div>
                     <h3 className="text-2xl font-bold text-vietnam-green mb-2">Chưa có danh mục nào</h3>
                     <p className="text-gray-600">Nhấn "Thêm danh mục" để bắt đầu.</p>
                   </div>
@@ -768,20 +702,10 @@ const Checklist = () => {
                     fetchUserChecklists(1, size);
                   }
                 }}
-                rowSelection={{
-                  selectedRowKeys,
-                  onChange: (selectedKeys) => {
-                    setSelectedRowKeys(selectedKeys);
-                  },
-                  getCheckboxProps: (record) => ({
-                    name: `checklist-${record.userChecklistId || record.id}`,
-                  }),
-                }}
                 onRow={(record) => ({
                   onClick: (e) => {
-                    // Không trigger khi click vào checkbox hoặc button
-                    if (e.target.closest('.ant-checkbox-wrapper') || 
-                        e.target.closest('button') || 
+                    // Không trigger khi click vào button
+                    if (e.target.closest('button') || 
                         e.target.closest('.ant-space')) {
                       return;
                     }
@@ -940,9 +864,9 @@ const Checklist = () => {
               { required: true, message: 'Vui lòng chọn lễ hội!' }
             ]}
           >
-            <Select
+                <Select
               placeholder="Chọn lễ hội để tạo checklist"
-              size="large"
+                  size="large"
               loading={ritualsLoading}
               showSearch
               filterOption={(input, option) =>
@@ -953,8 +877,8 @@ const Checklist = () => {
                 <Option key={ritual.ritualId} value={ritual.ritualId}>
                   {ritual.ritualName}
                 </Option>
-              ))}
-            </Select>
+                  ))}
+                </Select>
           </Form.Item>
 
           <Form.Item
@@ -967,7 +891,7 @@ const Checklist = () => {
           >
             <Input
               placeholder="Ví dụ: Checklist Lễ Tết 2025"
-              size="large"
+                  size="large"
               maxLength={200}
               showCount
             />
@@ -994,7 +918,7 @@ const Checklist = () => {
               <strong>Lưu ý:</strong> Sau khi tạo checklist, hệ thống sẽ tự động copy danh sách vật phẩm mặc định 
               từ lễ hội bạn đã chọn. Bạn có thể chỉnh sửa checklist sau đó.
             </p>
-          </div>
+              </div>
         </Form>
       </Modal>
 
@@ -1019,14 +943,14 @@ const Checklist = () => {
         ) : checklistDetail ? (
           <div
             className="relative rounded-xl overflow-hidden"
-            style={{
-              backgroundImage: "url('/checklist-background.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
+                style={{
+                  backgroundImage: "url('/checklist-background.jpg')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
               minHeight: '500px'
-            }}
-          >
-            {/* Overlay */}
+                }}
+              >
+                {/* Overlay */}
             <div 
               className="absolute inset-0 bg-white/90 backdrop-blur-sm"
               style={{ zIndex: 0 }}
@@ -1036,104 +960,46 @@ const Checklist = () => {
               {/* Header */}
               <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-amber-300">
                 <div className="flex-1">
-                  {isEditingChecklist ? (
-                    <Form form={editChecklistForm} layout="vertical" className="mb-3">
-                      <Form.Item
-                        name="title"
-                        rules={[
-                          { required: true, message: 'Vui lòng nhập tiêu đề!' },
-                          { max: 200, message: 'Tiêu đề không được quá 200 ký tự!' }
-                        ]}
-                        className="mb-2"
-                      >
-                        <Input 
-                          placeholder="Tiêu đề checklist"
-                          size="large"
-                          maxLength={200}
-                        />
-                      </Form.Item>
-                      <Form.Item name="reminderDate" className="mb-0">
-                        <DatePicker
-                          placeholder="Chọn ngày nhắc nhở"
-                          style={{ width: '100%' }}
-                          format="DD/MM/YYYY"
-                          disabledDate={(current) => current && current < dayjs().startOf('day')}
-                        />
-                      </Form.Item>
-                      <Space className="mt-2">
-                        <Button
-                          type="primary"
-                          icon={<SaveOutlined />}
-                          onClick={handleSaveChecklist}
-                          loading={savingChecklist}
-                          className="bg-vietnam-gold hover:!bg-yellow-500"
-                        >
-                          Lưu
-                        </Button>
-                        <Button
-                          icon={<CloseOutlined />}
-                          onClick={handleCancelEditChecklist}
-                        >
-                          Hủy
-                        </Button>
-                      </Space>
-                    </Form>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between mb-2">
-                        <Title level={2} className="!text-vietnam-green !mb-0">
-                          {checklistDetail.title || 'Checklist'}
-                        </Title>
-                        <Space>
-                          <Button
-                            type="text"
-                            icon={<EditOutlined />}
-                            onClick={handleStartEditChecklist}
-                            className="text-vietnam-green hover:!text-vietnam-green"
-                          >
-                            Chỉnh sửa
-                          </Button>
-                          <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleDeleteChecklist(checklistDetail.userChecklistId)}
-                            loading={savingChecklist}
-                          >
-                            Xóa
-                          </Button>
-                        </Space>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Tag color="green" className="text-sm">
-                          {checklistDetail.ritualName || `Lễ hội ID: ${checklistDetail.ritualId}`}
-                        </Tag>
-                        <Text type="secondary" className="text-sm">
-                          Tạo bởi: {checklistDetail.userName || 'N/A'}
-                        </Text>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {!isEditingChecklist && (
-                  <div className="text-right">
-                    {checklistDetail.reminderDate && (
-                      <div>
-                        <Text type="secondary" className="text-xs block mb-1">Ngày nhắc nhở</Text>
-                        <Tag 
-                          color={
-                            dayjs(checklistDetail.reminderDate).isBefore(dayjs(), 'day') ? 'red' :
-                            dayjs(checklistDetail.reminderDate).isSame(dayjs(), 'day') ? 'orange' : 'blue'
-                          }
-                          className="text-sm font-semibold"
-                        >
-                          {dayjs(checklistDetail.reminderDate).format('DD/MM/YYYY')}
-                        </Tag>
-                      </div>
-                    )}
+                  <div className="flex items-center justify-between mb-2">
+                    <Title level={2} className="!text-vietnam-green !mb-0">
+                      {checklistDetail.title || 'Checklist'}
+                    </Title>
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDeleteChecklist(checklistDetail.userChecklistId)}
+                      loading={savingChecklist}
+                    >
+                      Xóa
+                    </Button>
                   </div>
-                )}
+                  <div className="flex items-center gap-3">
+                    <Tag color="green" className="text-sm">
+                      {checklistDetail.ritualName || `Lễ hội ID: ${checklistDetail.ritualId}`}
+                    </Tag>
+                    <Text type="secondary" className="text-sm">
+                      Tạo bởi: {checklistDetail.userName || 'N/A'}
+                    </Text>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {checklistDetail.reminderDate && (
+                    <div>
+                      <Text type="secondary" className="text-xs block mb-1">Ngày nhắc nhở</Text>
+                      <Tag 
+                        color={
+                          dayjs(checklistDetail.reminderDate).isBefore(dayjs(), 'day') ? 'red' :
+                          dayjs(checklistDetail.reminderDate).isSame(dayjs(), 'day') ? 'orange' : 'blue'
+                        }
+                        className="text-sm font-semibold"
+                      >
+                        {dayjs(checklistDetail.reminderDate).format('DD/MM/YYYY')}
+                      </Tag>
+                    </div>
+                  )}
               </div>
+          </div>
 
               {/* Items List - Todolist Style */}
               <div className="mb-4">
@@ -1150,7 +1016,7 @@ const Checklist = () => {
                   >
                     Thêm vật phẩm
                   </Button>
-                </div>
+            </div>
 
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {checklistItems.length === 0 ? (
@@ -1233,7 +1099,7 @@ const Checklist = () => {
                                   </>
                                 )}
                               </Space>
-                            </div>
+          </div>
                             {editingItemId === item.userChecklistItemId ? (
                               <Form form={editingItemForm} layout="vertical" className="mt-2">
                                 <Form.Item
@@ -1265,13 +1131,13 @@ const Checklist = () => {
                                   <span>
                                     <strong>Số lượng:</strong> {item.quantity} {item.unit || ''}
                                   </span>
-                                </div>
+            </div>
                                 {item.note && (
                                   <div className="mt-2 text-sm text-gray-500 italic">
                                     <strong>Ghi chú:</strong> {item.note}
-                                  </div>
-                                )}
-                              </>
+            </div>
+          )}
+        </>
                             )}
                           </div>
                         </div>
