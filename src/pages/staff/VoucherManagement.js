@@ -20,6 +20,8 @@ import {
   Form,
   Switch,
   Typography,
+  Descriptions,
+  Spin,
 } from 'antd';
 import {
   PlusOutlined,
@@ -32,7 +34,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import { getAllVouchers, createVoucher } from '../../services/voucherService';
+import { getAllVouchers, createVoucher, getVoucherById } from '../../services/voucherService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -51,8 +54,12 @@ const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -240,6 +247,59 @@ const VoucherManagement = () => {
     setTimeout(() => fetchVouchers(), 100);
   };
 
+  const handleViewDetail = async (record) => {
+    console.log('👁️ View detail clicked, record:', record);
+    console.log('📊 Current detailModalVisible state:', detailModalVisible);
+    
+    // Hiển thị modal ngay lập tức với dữ liệu từ record
+    setDetailModalVisible(true);
+    setSelectedVoucher(record); // Hiển thị dữ liệu từ record trước
+    setDetailLoading(true);
+    
+    console.log('✅ Modal state set to visible, selectedVoucher set');
+
+    try {
+      // Tìm voucherId từ nhiều field có thể có
+      const voucherId = record.voucherId || record.id || record.voucher?.voucherId;
+      
+      console.log('🔍 Voucher ID found:', voucherId, 'from record:', {
+        voucherId: record.voucherId,
+        id: record.id,
+        'voucher.voucherId': record.voucher?.voucherId
+      });
+      
+      if (!voucherId) {
+        console.warn('⚠️ No voucher ID found, using record data');
+        message.warning('Không tìm thấy ID voucher, hiển thị thông tin từ danh sách');
+        setDetailLoading(false);
+        return;
+      }
+
+      // Gọi API để lấy chi tiết đầy đủ
+      console.log('📤 Calling API getVoucherById with ID:', voucherId);
+      const voucherData = await getVoucherById(voucherId);
+      console.log('✅ Voucher detail fetched:', voucherData);
+      
+      setSelectedVoucher(voucherData);
+      message.success('Tải thông tin voucher thành công');
+    } catch (error) {
+      console.error('❌ Error fetching voucher detail:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status
+      });
+      const errorMsg = error?.response?.data?.message || error?.message || 'Không thể tải thông tin voucher từ server';
+      message.warning(`${errorMsg}. Đang hiển thị thông tin từ danh sách.`);
+      
+      // Giữ nguyên dữ liệu từ record đã set ở trên
+      // setSelectedVoucher(record); // Không cần vì đã set ở đầu function
+    } finally {
+      setDetailLoading(false);
+      console.log('🏁 Detail loading finished');
+    }
+  };
+
   const columns = [
     {
       title: 'Mã Voucher',
@@ -334,32 +394,48 @@ const VoucherManagement = () => {
       key: 'action',
       fixed: 'right',
       width: 150,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="Xem chi tiết">
-            <Button
-              type="link"
-              icon={<EyeOutlined />}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              type="link"
-              danger
-              icon={<DeleteOutlined />}
-              size="small"
-            />
-          </Tooltip>
-        </Space>
-      ),
+      render: (_, record) => {
+        console.log('🔍 Rendering action buttons for record:', record.voucherId || record.id);
+        return (
+          <Space size="small" onClick={(e) => e.stopPropagation()}>
+            <Tooltip title="Xem chi tiết">
+              <Button
+                type="link"
+                icon={<EyeOutlined />}
+                size="small"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Button clicked! Record:', record);
+                  console.log('🔘 Voucher ID:', record.voucherId || record.id);
+                  try {
+                    handleViewDetail(record);
+                  } catch (error) {
+                    console.error('❌ Error in handleViewDetail:', error);
+                    message.error('Có lỗi xảy ra khi xem chi tiết voucher');
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              />
+            </Tooltip>
+            <Tooltip title="Chỉnh sửa">
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+              />
+            </Tooltip>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -558,6 +634,16 @@ const VoucherManagement = () => {
         onChange={handleTableChange}
         scroll={{ x: 1400 }}
         bordered
+        onRow={(record) => {
+          return {
+            onClick: (e) => {
+              // Chỉ prevent nếu click vào row, không phải button
+              if (e.target.closest('button')) {
+                return; // Let button handle its own click
+              }
+            },
+          };
+        }}
       />
       {/* Create Voucher Modal */}
       <Modal
@@ -575,6 +661,20 @@ const VoucherManagement = () => {
           initialValues={{ discountType: 'PERCENTAGE', isActive: true }}
           onFinish={async (values) => {
             try {
+              // Lấy staff ID từ user object
+              const staffId = user?.id || user?.staffId || user?.staff_id || 0;
+              
+              // Xử lý date range
+              let startDate, endDate;
+              if (values.dateRange && values.dateRange[0] && values.dateRange[1]) {
+                startDate = values.dateRange[0].toISOString();
+                endDate = values.dateRange[1].toISOString();
+              } else {
+                // Fallback nếu không có dateRange
+                startDate = values.startDate?.toISOString?.() || new Date().toISOString();
+                endDate = values.endDate?.toISOString?.() || new Date().toISOString();
+              }
+
               const payload = {
                 code: values.code?.trim(),
                 description: values.description || '',
@@ -583,19 +683,23 @@ const VoucherManagement = () => {
                 minOrderAmount: Number(values.minOrderAmount || 0),
                 maxDiscountAmount: Number(values.maxDiscountAmount || 0),
                 usageLimit: Number(values.usageLimit || 0),
-                startDate: values.dateRange?.[0]?.toISOString?.() || values.startDate?.toISOString?.(),
-                endDate: values.dateRange?.[1]?.toISOString?.() || values.endDate?.toISOString?.(),
-                isActive: values.isActive,
+                startDate: startDate,
+                endDate: endDate,
+                isActive: values.isActive !== undefined ? values.isActive : true,
+                createdBy: Number(staffId),
               };
+              
+              console.log('📤 Creating voucher with payload:', payload);
               await createVoucher(payload);
               message.success('Tạo voucher thành công');
               setCreateModalVisible(false);
               form.resetFields();
               fetchVouchers();
             } catch (e) {
+              console.error('❌ Error creating voucher:', e);
               const msg = e?.message || 'Không thể tạo voucher';
               message.error(msg);
-              if (e?.status === 401) {
+              if (e?.response?.status === 401) {
                 // Token hết hạn: chuyển tới trang đăng nhập STAFF
                 setTimeout(() => navigate('/admin-login'), 600);
               }
@@ -663,6 +767,177 @@ const VoucherManagement = () => {
             </Col>
           </Row>
         </Form>
+      </Modal>
+
+      {/* Detail Voucher Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <EyeOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+            <span>Chi tiết Voucher</span>
+          </div>
+        }
+        open={detailModalVisible}
+        onCancel={() => {
+          console.log('❌ Modal cancelled');
+          setDetailModalVisible(false);
+          setSelectedVoucher(null);
+        }}
+        onOk={() => {
+          setDetailModalVisible(false);
+          setSelectedVoucher(null);
+        }}
+        footer={[
+          <Button 
+            key="close" 
+            onClick={() => {
+              console.log('❌ Close button clicked');
+              setDetailModalVisible(false);
+              setSelectedVoucher(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={700}
+        maskClosable={true}
+        destroyOnClose={false}
+      >
+        {detailLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px' }}>Đang tải thông tin voucher...</div>
+          </div>
+        ) : selectedVoucher ? (
+          <Descriptions bordered column={2} size="middle">
+            <Descriptions.Item label="Mã Voucher" span={2}>
+              <Tag color="blue" style={{ fontSize: '14px', fontWeight: 'bold', padding: '4px 12px' }}>
+                {selectedVoucher.code}
+              </Tag>
+            </Descriptions.Item>
+            
+            <Descriptions.Item label="Mô tả" span={2}>
+              {selectedVoucher.description || 'Không có mô tả'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Loại giảm giá">
+              <Tag color={selectedVoucher.discountType === 'PERCENTAGE' ? 'green' : 'orange'}>
+                {selectedVoucher.discountType === 'PERCENTAGE' ? 'Phần trăm' : 'Số tiền cố định'}
+              </Tag>
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Giá trị giảm">
+              <span style={{ fontWeight: 'bold', color: '#ff4d4f', fontSize: '16px' }}>
+                {selectedVoucher.discountType === 'PERCENTAGE'
+                  ? `${selectedVoucher.discountValue}%`
+                  : `${selectedVoucher.discountValue?.toLocaleString()}đ`}
+              </span>
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Đơn tối thiểu">
+              {selectedVoucher.minOrderAmount && selectedVoucher.minOrderAmount > 0
+                ? `${selectedVoucher.minOrderAmount.toLocaleString()}đ`
+                : 'Không giới hạn'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Giảm tối đa">
+              {selectedVoucher.maxDiscountAmount && selectedVoucher.maxDiscountAmount > 0
+                ? `${selectedVoucher.maxDiscountAmount.toLocaleString()}đ`
+                : 'Không giới hạn'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Số lần sử dụng">
+              {selectedVoucher.usageLimit && selectedVoucher.usageLimit > 0
+                ? `${selectedVoucher.usedCount || 0} / ${selectedVoucher.usageLimit}`
+                : `${selectedVoucher.usedCount || 0} (Không giới hạn)`}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Đã sử dụng">
+              <Tag color={selectedVoucher.usedCount > 0 ? 'orange' : 'default'}>
+                {selectedVoucher.usedCount || 0} lần
+              </Tag>
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Trạng thái">
+              {(() => {
+                const now = new Date();
+                const endDate = selectedVoucher.endDate ? new Date(selectedVoucher.endDate) : null;
+                const isExpired = endDate && endDate < now;
+
+                if (isExpired) {
+                  return <Tag color="red" icon={<CloseCircleOutlined />}>Hết hạn</Tag>;
+                }
+                return selectedVoucher.isActive ? (
+                  <Tag color="success" icon={<CheckCircleOutlined />}>Hoạt động</Tag>
+                ) : (
+                  <Tag color="default">Không hoạt động</Tag>
+                );
+              })()}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Hợp lệ">
+              {selectedVoucher.isValid !== undefined ? (
+                selectedVoucher.isValid ? (
+                  <Tag color="success" icon={<CheckCircleOutlined />}>Hợp lệ</Tag>
+                ) : (
+                  <Tag color="error" icon={<CloseCircleOutlined />}>Không hợp lệ</Tag>
+                )
+              ) : (
+                <Text type="secondary">N/A</Text>
+              )}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Ngày bắt đầu" span={2}>
+              {selectedVoucher.startDate
+                ? (() => {
+                    const date = new Date(selectedVoucher.startDate);
+                    return formatDate(selectedVoucher.startDate) + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  })()
+                : 'N/A'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Ngày kết thúc" span={2}>
+              {selectedVoucher.endDate
+                ? (() => {
+                    const date = new Date(selectedVoucher.endDate);
+                    return formatDate(selectedVoucher.endDate) + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  })()
+                : 'N/A'}
+            </Descriptions.Item>
+
+            {selectedVoucher.voucherId && (
+              <Descriptions.Item label="ID Voucher">
+                #{selectedVoucher.voucherId}
+              </Descriptions.Item>
+            )}
+
+            {selectedVoucher.createdBy && (
+              <Descriptions.Item label="Người tạo">
+                {selectedVoucher.createdByName ? (
+                  <span>{selectedVoucher.createdByName} (ID: {selectedVoucher.createdBy})</span>
+                ) : (
+                  <span>ID: {selectedVoucher.createdBy}</span>
+                )}
+              </Descriptions.Item>
+            )}
+
+            {selectedVoucher.createdAt && (
+              <Descriptions.Item label="Ngày tạo" span={2}>
+                {formatDate(selectedVoucher.createdAt)}
+              </Descriptions.Item>
+            )}
+
+            {selectedVoucher.updatedAt && (
+              <Descriptions.Item label="Ngày cập nhật" span={2}>
+                {formatDate(selectedVoucher.updatedAt)}
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Text type="secondary">Không có thông tin voucher</Text>
+          </div>
+        )}
       </Modal>
     </div>
   );
