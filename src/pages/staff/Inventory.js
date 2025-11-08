@@ -96,11 +96,39 @@ const Inventory = () => {
   }, []);
 
   useEffect(() => {
-    filterData();
-  }, [searchText, selectedUnit, data, units]);
+    // Logic filterData được di chuyển vào đây để tránh lỗi dependency
+    let filtered = [...data];
+
+    if (searchText) {
+      filtered = filtered.filter((item) =>
+        item.itemName?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    if (selectedUnit) {
+      // Sử dụng logic getUnitKey trực tiếp để tránh dependency issue
+      filtered = filtered.filter((item) => {
+        const unit = item.unit;
+        if (!unit) return false;
+        let unitKey;
+        if (typeof unit === "string") {
+          unitKey = unitLabelToKey[unit] || unit;
+        } else {
+          unitKey = unit.name || unit.key || unitLabelToKey[unit.displayName || unit.value] || unit.displayName || unit.value;
+        }
+        return unitKey === selectedUnit;
+      });
+    }
+
+    setFilteredData(filtered);
+  }, [searchText, selectedUnit, data, unitLabelToKey]);
 
   useEffect(() => {
-    calculateStats();
+    // Logic calculateStats được di chuyển vào đây để tránh lỗi dependency
+    const total = data.length;
+    const lowStock = data.filter((item) => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
+    const outOfStock = data.filter((item) => item.stockQuantity === 0).length;
+    setStats({ total, lowStock, outOfStock });
   }, [data]);
 
   const fetchInventoryData = async () => {
@@ -137,28 +165,6 @@ const Inventory = () => {
     }
   };
 
-  const filterData = () => {
-    let filtered = [...data];
-
-    if (searchText) {
-      filtered = filtered.filter((item) =>
-        item.itemName?.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    if (selectedUnit) {
-      filtered = filtered.filter((item) => getUnitKey(item.unit) === selectedUnit);
-    }
-
-    setFilteredData(filtered);
-  };
-
-  const calculateStats = () => {
-    const total = data.length;
-    const lowStock = data.filter((item) => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
-    const outOfStock = data.filter((item) => item.stockQuantity === 0).length;
-    setStats({ total, lowStock, outOfStock });
-  };
 
   const handleAdd = () => {
     setEditingItem(null);

@@ -114,10 +114,7 @@ const OrderManagement = () => {
   }, [shippers, orders]);
 
   useEffect(() => {
-    calculateStatistics();
-  }, [orders]);
-
-  const calculateStatistics = () => {
+    // Logic calculateStatistics được di chuyển vào đây để tránh lỗi dependency
     const stats = {
       total: orders.length,
       pending: orders.filter(o => o.status === 'PENDING').length,
@@ -126,7 +123,7 @@ const OrderManagement = () => {
       shipping: orders.filter(o => o.status === 'SHIPPING').length,
     };
     setStatistics(stats);
-  };
+  }, [orders]);
 
   const fetchOrders = async () => {
     try {
