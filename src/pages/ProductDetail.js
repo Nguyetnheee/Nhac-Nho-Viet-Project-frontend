@@ -4,7 +4,7 @@ import { trayService } from '../services/trayService';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastContainer';
-
+import { WarningOutlined } from '@ant-design/icons';
 const ProductDetail = () => {
   const { id } = useParams(); // Lấy ID theo tên param trong route /trays/:id
   const { addToCart } = useCart();
@@ -148,10 +148,25 @@ const ProductDetail = () => {
 
             <button
               onClick={handleAddToCart}
-              className="w-full bg-vietnam-green text-white py-3 px-6 rounded-md hover:bg-emerald-700 transition-colors duration-300 font-bold text-lg shadow-lg"
+              disabled={product.productStatus === 'UNAVAILABLE'}
+              className={`w-full py-3 px-6 rounded-md transition-colors duration-300 font-bold text-lg shadow-lg ${
+                product.productStatus === 'UNAVAILABLE'
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-vietnam-green text-white hover:bg-emerald-700'
+              }`}
             >
               {isAuthenticated ? 'Thêm vào giỏ hàng' : 'Đăng nhập để mua hàng'}
             </button>
+
+            {/* Banner thông báo hết hàng */}
+            {product.productStatus === 'UNAVAILABLE' && (
+              <div className="mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-md">
+                <p className="text-red-700 font-semibold text-center">
+                  <WarningOutlined />
+                  <span> Sản phẩm này tạm thời hết hàng, vui lòng quay lại sau</span>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Additional Details */}
