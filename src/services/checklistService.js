@@ -127,7 +127,7 @@ export const checklistService = {
   getUnits: async () => {
     try {
       console.log('Fetching all units...');
-      const response = await publicApi.get('/api/units');
+      const response = await publicApi.get('/api/units/enums');
       console.log('Units loaded:', response.data);
       return response.data;
     } catch (error) {
