@@ -83,6 +83,90 @@ export const getVoucherById = async (voucherId) => {
 };
 
 /**
+ * 🗑️ XÓA VOUCHER - Xóa voucher (Requires STAFF authentication)
+ * DELETE /api/vouchers/{id}
+ * @param {number} voucherId - ID của voucher cần xóa
+ * @returns {Promise} Response data từ backend
+ */
+export const deleteVoucher = async (voucherId) => {
+  try {
+    console.log('📤 [STAFF AUTH REQUIRED] Deleting voucher:', voucherId);
+    
+    const response = await api.delete(`/api/vouchers/${voucherId}`);
+    
+    console.log('✅ Voucher deleted successfully:', response.data);
+    
+    // Xử lý response có thể có nhiều format
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+    
+    return response.data;
+  } catch (error) {
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể xóa voucher. Vui lòng thử lại.";
+    
+    console.error('❌ Delete voucher error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * ✏️ CẬP NHẬT VOUCHER - Cập nhật thông tin voucher (Requires STAFF authentication)
+ * PUT /api/vouchers/{id}
+ * @param {number} voucherId - ID của voucher cần cập nhật
+ * @param {Object} voucherData - Dữ liệu voucher cần cập nhật
+ * @param {string} voucherData.description - Mô tả
+ * @param {string} voucherData.discountType - Loại giảm giá (PERCENTAGE hoặc FIXED_AMOUNT)
+ * @param {number} voucherData.discountValue - Giá trị giảm
+ * @param {number} voucherData.minOrderAmount - Đơn tối thiểu (0 = không giới hạn)
+ * @param {number} voucherData.maxDiscountAmount - Giảm tối đa (0 = không giới hạn)
+ * @param {number} voucherData.usageLimit - Số lần sử dụng (0 = không giới hạn)
+ * @param {string} voucherData.startDate - Ngày bắt đầu (ISO string)
+ * @param {string} voucherData.endDate - Ngày kết thúc (ISO string)
+ * @param {boolean} voucherData.isActive - Trạng thái hoạt động
+ * @returns {Promise} Response data từ backend
+ */
+export const updateVoucher = async (voucherId, voucherData) => {
+  try {
+    console.log('📤 [STAFF AUTH REQUIRED] Updating voucher:', voucherId, voucherData);
+    
+    const response = await api.put(`/api/vouchers/${voucherId}`, voucherData);
+    
+    console.log('✅ Voucher updated successfully:', response.data);
+    
+    // Xử lý response có thể có nhiều format
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+    
+    return response.data;
+  } catch (error) {
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể cập nhật voucher. Vui lòng thử lại.";
+    
+    console.error('❌ Update voucher error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    throw new Error(errorMessage);
+  }
+};
+
+/**
  * ➕ TẠO VOUCHER MỚI - Tạo voucher mới (Requires STAFF authentication)
  * POST /api/vouchers
  * @param {Object} voucherData - Dữ liệu voucher
