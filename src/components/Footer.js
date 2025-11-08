@@ -4,13 +4,15 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   return (
     <footer className="bg-vietnam-green text-white ritual-pattern">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-4">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-vietnam-gold rounded-full flex items-center justify-center">
-                <span className="text-vietnam-green font-bold text-lg">N</span>
+              <div className=" bg-vietnam-gold rounded-full flex items-center justify-center">
+                {/* <span className="text-vietnam-green font-bold text-lg">N</span> */}
+                <img src={`${process.env.PUBLIC_URL}/android-icon-192x192.png`} alt="Nhắc Nhớ Việt" className="w-20 rounded-full object-cover border-2 border-vietnam-gold shadow-sm" />
+
               </div>
               <span className="font-serif text-xl font-bold">Nhắc Nhớ Việt</span>
             </div>
