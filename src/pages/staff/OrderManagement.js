@@ -19,6 +19,7 @@ import {
   Dropdown,
   Typography,
   ConfigProvider,
+  Image,
 } from 'antd';
 import {
   CheckCircleOutlined,
@@ -32,6 +33,7 @@ import {
   ClockCircleOutlined,
   MoreOutlined,
   WarningOutlined,
+  PictureOutlined,
 } from '@ant-design/icons';
 import staffService from '../../services/staffService';
 import viVN from 'antd/locale/vi_VN';
@@ -178,7 +180,9 @@ const OrderManagement = () => {
           shipperPhone: shipperPhone,
           createdAt: order.orderDate,
           updatedAt: order.updatedAt || order.orderDate,
+          proofImageUrl: order.proofImageUrl,
           proofUploadedAt: order.proofUploadedAt,
+          proofUploadedBy: order.proofUploadedBy,
           note: order.note,
           items: order.items || [],
         };
@@ -763,6 +767,36 @@ const OrderManagement = () => {
                     },
                   ]}
                 />
+              </Descriptions.Item>
+            )}
+            {selectedOrder.proofImageUrl && (
+              <Descriptions.Item label="Hình ảnh bằng chứng giao hàng" span={2}>
+                <div style={{ marginTop: 8 }}>
+                  <Image
+                    src={selectedOrder.proofImageUrl}
+                    alt="Proof of delivery"
+                    width={300}
+                    style={{
+                      borderRadius: 8,
+                      border: '1px solid #d9d9d9',
+                    }}
+                    preview={{
+                      mask: 'Xem ảnh',
+                    }}
+                  />
+                  <div style={{ marginTop: 8, fontSize: '12px', color: '#888' }}>
+                    {selectedOrder.proofUploadedAt && (
+                      <div>
+                        <PictureOutlined /> Đã tải lên: {formatDate(selectedOrder.proofUploadedAt)}
+                      </div>
+                    )}
+                    {selectedOrder.proofUploadedBy && (
+                      <div style={{ marginTop: 4 }}>
+                        Bởi: {selectedOrder.proofUploadedBy === 'shipper' ? 'Shipper' : selectedOrder.proofUploadedBy}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </Descriptions.Item>
             )}
           </Descriptions>

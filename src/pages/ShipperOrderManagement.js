@@ -15,6 +15,7 @@ import {
   Col,
   Empty,
   Spin,
+  Image,
 } from 'antd';
 import { translateToVietnamese } from '../utils/errorMessages';
 import {
@@ -27,6 +28,7 @@ import {
   EnvironmentOutlined,
   PhoneOutlined,
   UserOutlined,
+  PictureOutlined,
 } from '@ant-design/icons';
 import shipperService from '../services/shipperService';
 
@@ -567,6 +569,29 @@ const ShipperOrderManagement = () => {
             {selectedOrder.note && (
               <Descriptions.Item label="Ghi chú">
                 {selectedOrder.note}
+              </Descriptions.Item>
+            )}
+            {selectedOrder.proofImageUrl && (
+              <Descriptions.Item label="Hình ảnh bằng chứng giao hàng">
+                <div style={{ marginTop: 8 }}>
+                  <Image
+                    src={selectedOrder.proofImageUrl}
+                    alt="Proof of delivery"
+                    width={300}
+                    style={{
+                      borderRadius: 8,
+                      border: '1px solid #d9d9d9',
+                    }}
+                    preview={{
+                      mask: 'Xem ảnh',
+                    }}
+                  />
+                  {selectedOrder.proofUploadedAt && (
+                    <div style={{ marginTop: 8, fontSize: '12px', color: '#888' }}>
+                      <PictureOutlined /> Đã tải lên: {formatDate(selectedOrder.proofUploadedAt)}
+                    </div>
+                  )}
+                </div>
               </Descriptions.Item>
             )}
           </Descriptions>
