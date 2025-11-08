@@ -165,6 +165,7 @@ const OrderManagement = () => {
 
         const mapped = {
           orderId: order.orderId,
+          orderCode: order.orderCode,
           customerName: order.receiverName,
           phoneNumber: order.phone,
           email: order.email || 'N/A',
@@ -177,6 +178,7 @@ const OrderManagement = () => {
           shipperPhone: shipperPhone,
           createdAt: order.orderDate,
           updatedAt: order.updatedAt || order.orderDate,
+          proofUploadedAt: order.proofUploadedAt,
           note: order.note,
           items: order.items || [],
         };
@@ -196,7 +198,23 @@ const OrderManagement = () => {
       console.log('✅ Mapped orders:', mappedOrders);
       console.log(`✅ Total orders: ${mappedOrders.length}`);
 
-      setOrders(mappedOrders);
+      // Sort orders by most recent update (orderDate or proofUploadedAt, whichever is later)
+      const sortedOrders = mappedOrders.sort((a, b) => {
+        // Get the most recent date for each order
+        const getLatestDate = (order) => {
+          const orderDate = new Date(order.createdAt);
+          const proofDate = order.proofUploadedAt ? new Date(order.proofUploadedAt) : null;
+          return proofDate && proofDate > orderDate ? proofDate : orderDate;
+        };
+
+        const dateA = getLatestDate(a);
+        const dateB = getLatestDate(b);
+        
+        // Sort descending (most recent first)
+        return dateB - dateA;
+      });
+
+      setOrders(sortedOrders);
       message.success(`Tải ${mappedOrders.length} đơn hàng thành công`);
     } catch (error) {
       message.error('Không thể tải danh sách đơn hàng: ' + (error.response?.data?.message || error.message));
@@ -348,12 +366,12 @@ const OrderManagement = () => {
 
   const columns = [
     {
-      title: 'Mã đơn',
-      dataIndex: 'orderId',
-      key: 'orderId',
-      width: 120,
+      title: 'Mã đơn hàng',
+      dataIndex: 'orderCode',
+      key: 'orderCode',
+      width: 180,
       fixed: 'left',
-      render: (text) => <strong>#{text}</strong>,
+      render: (text) => <strong style={{ color: '#1890ff' }}>{text || 'N/A'}</strong>,
     },
     {
       title: 'Khách hàng',
@@ -636,7 +654,7 @@ const OrderManagement = () => {
         dataSource={orders}
         rowKey="orderId"
         loading={loading}
-        scroll={{ x: 1500 }}
+        scroll={{ x: 1560 }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
@@ -665,8 +683,11 @@ const OrderManagement = () => {
       >
         {selectedOrder && (
           <Descriptions bordered column={2}>
-            <Descriptions.Item label="Mã đơn hàng" span={2}>
+            <Descriptions.Item label="Mã đơn hàng (ID)" span={2}>
               <strong>#{selectedOrder.orderId}</strong>
+            </Descriptions.Item>
+            <Descriptions.Item label="Mã đơn hàng (Code)" span={2}>
+              <strong style={{ color: '#1890ff' }}>{selectedOrder.orderCode || 'N/A'}</strong>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái" span={2}>
               <Tag color={getStatusColor(selectedOrder.status)} style={{ fontWeight: 'bold', fontSize: '14px' }}>
