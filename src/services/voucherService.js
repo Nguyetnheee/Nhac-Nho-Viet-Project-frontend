@@ -35,6 +35,54 @@ export const getAllVouchers = async (params = {}) => {
 };
 
 /**
+ * 👁️ XEM CHI TIẾT VOUCHER - Lấy thông tin chi tiết voucher theo ID (Requires STAFF authentication)
+ * GET /api/vouchers/{id}
+ * @param {number} voucherId - ID của voucher
+ * @returns {Promise} Response data từ backend
+ */
+export const getVoucherById = async (voucherId) => {
+  try {
+    console.log('📤 [STAFF AUTH REQUIRED] Fetching voucher by ID:', voucherId);
+    
+    const response = await api.get(`/api/vouchers/${voucherId}`);
+    
+    console.log('✅ Raw API response:', response.data);
+    
+    // Xử lý response có thể có nhiều format:
+    // Format 1: { data: {...}, success: true }
+    // Format 2: {...} (direct data)
+    let voucherData = response.data;
+    
+    if (response.data && response.data.data && typeof response.data.data === 'object') {
+      // Response được wrap trong { data: {...}, success: true }
+      voucherData = response.data.data;
+      console.log('✅ Extracted voucher data from wrapped response:', voucherData);
+    } else if (response.data && response.data.success !== undefined) {
+      // Có thể response.data là { data: {...}, success: true }
+      voucherData = response.data.data || response.data;
+    }
+    
+    console.log('✅ Final voucher data:', voucherData);
+    
+    return voucherData;
+  } catch (error) {
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể tải thông tin voucher. Vui lòng thử lại.";
+    
+    console.error('❌ Fetch voucher by ID error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    throw new Error(errorMessage);
+  }
+};
+
+/**
  * ➕ TẠO VOUCHER MỚI - Tạo voucher mới (Requires STAFF authentication)
  * POST /api/vouchers
  * @param {Object} voucherData - Dữ liệu voucher
