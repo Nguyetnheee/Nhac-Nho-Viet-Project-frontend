@@ -423,14 +423,6 @@ const PendingOrderDetail = () => {
                   Tiếp tục mua sắm
                 </button>
 
-                {/* Nút phụ - Xem giỏ hàng */}
-                <button
-                  onClick={() => navigate('/cart')}
-                  className="w-full bg-white border-2 border-vietnam-green text-vietnam-green px-6 py-3 rounded-lg font-semibold hover:bg-vietnam-cream transition-colors flex items-center justify-center gap-2"
-                >
-                  <ShoppingCartOutlined />
-                  Xem giỏ hàng
-                </button>
 
                 {/* Link xem tất cả đơn hàng */}
                 <button

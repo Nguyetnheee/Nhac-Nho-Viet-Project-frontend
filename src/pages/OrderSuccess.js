@@ -270,7 +270,7 @@ const OrderSuccess = () => {
       // Thông báo dễ hiểu cho người dùng
       let errorMessage = 'Không thể tải thông tin đơn hàng';
       if (error.response?.status === 403) {
-        errorMessage = `Bạn không có quyền xem đơn hàng này. Vui lòng liên hệ bộ phận hỗ trợ`;
+        errorMessage = `xem đơn hàng này. Vui lòng liên hệ bộ phận hỗ trợ`;
       } else if (error.response?.status === 401) {
         errorMessage = 'Thời gian đăng nhập đã hết. Vui lòng đăng nhập lại để tiếp tục.';
         setTimeout(() => {
