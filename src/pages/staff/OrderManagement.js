@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
   Button,
@@ -70,23 +70,23 @@ const OrderManagement = () => {
     console.log('🔄 useEffect triggered - Shippers:', shippers.length, 'Orders:', orders.length);
     
     if (shippers.length > 0 && orders.length > 0) {
-      const ordersNeedingMapping = orders.filter(order => order.shipperId && !order.shipperName);
-      console.log(`📊 Orders needing shipper mapping: ${ordersNeedingMapping.length}`);
-      
-      if (ordersNeedingMapping.length > 0) {
-        console.log('Orders needing mapping:', ordersNeedingMapping.map(o => ({
-          orderId: o.orderId,
-          shipperId: o.shipperId,
-          shipperName: o.shipperName
-        })));
-      }
-      
-      const needsUpdate = ordersNeedingMapping.length > 0;
-      
-      if (needsUpdate) {
-        console.log('🔄 Mapping shipper names to orders...');
-        setOrders(prevOrders =>
-          prevOrders.map(order => {
+      setOrders(prevOrders => {
+        const ordersNeedingMapping = prevOrders.filter(order => order.shipperId && !order.shipperName);
+        console.log(`📊 Orders needing shipper mapping: ${ordersNeedingMapping.length}`);
+        
+        if (ordersNeedingMapping.length > 0) {
+          console.log('Orders needing mapping:', ordersNeedingMapping.map(o => ({
+            orderId: o.orderId,
+            shipperId: o.shipperId,
+            shipperName: o.shipperName
+          })));
+        }
+        
+        const needsUpdate = ordersNeedingMapping.length > 0;
+        
+        if (needsUpdate) {
+          console.log('🔄 Mapping shipper names to orders...');
+          return prevOrders.map(order => {
             // Nếu có shipperId nhưng chưa có shipperName
             if (order.shipperId && !order.shipperName) {
               // Tìm từ danh sách shippers
@@ -107,11 +107,13 @@ const OrderManagement = () => {
               }
             }
             return order;
-          })
-        );
-      }
+          });
+        }
+        
+        return prevOrders;
+      });
     }
-  }, [shippers, orders]);
+  }, [shippers]);
 
   useEffect(() => {
     // Logic calculateStatistics được di chuyển vào đây để tránh lỗi dependency
