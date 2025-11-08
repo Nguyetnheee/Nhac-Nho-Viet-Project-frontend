@@ -254,6 +254,192 @@ export const checklistService = {
       console.error(`❌ Error deleting checklist ${checklistId}:`, error);
       throw error;
     }
+  },
+
+  // ========== USER CHECKLIST APIs ==========
+  
+  // Tạo user checklist mới
+  createUserChecklist: async (data) => {
+    try {
+      console.log('➕ Creating new user checklist...', data);
+      const response = await publicApi.post('/api/user-checklists', data);
+      console.log('✅ User checklist created:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error creating user checklist:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
+  },
+
+  // Lấy tất cả user checklists của user hiện tại
+  getUserChecklists: async (params = {}) => {
+    try {
+      console.log('🔍 Fetching user checklists with params:', params);
+      
+      // Build query string
+      const queryParams = new URLSearchParams();
+      if (params.userId) queryParams.append('userId', params.userId);
+      if (params.ritualId) queryParams.append('ritualId', params.ritualId);
+      if (params.title) queryParams.append('title', params.title);
+      if (params.page !== undefined) queryParams.append('page', params.page);
+      if (params.size !== undefined) queryParams.append('size', params.size);
+      if (params.deleted !== undefined) queryParams.append('deleted', params.deleted);
+      if (params.sort) {
+        // sort có thể là array hoặc string
+        if (Array.isArray(params.sort)) {
+          params.sort.forEach(s => queryParams.append('sort', s));
+        } else {
+          queryParams.append('sort', params.sort);
+        }
+      }
+      
+      const queryString = queryParams.toString();
+      const url = `/api/user-checklists${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await publicApi.get(url);
+      console.log('✅ User checklists loaded:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error getting user checklists:', error);
+      throw error;
+    }
+  },
+
+  // Cập nhật user checklist
+  updateUserChecklist: async (userChecklistId, data) => {
+    try {
+      console.log(`✏️ Updating user checklist ${userChecklistId}...`, data);
+      const response = await publicApi.put(`/api/user-checklists/${userChecklistId}`, data);
+      console.log('✅ User checklist updated:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error updating user checklist ${userChecklistId}:`, error);
+      throw error;
+    }
+  },
+
+  // Xóa user checklist
+  deleteUserChecklist: async (userChecklistId) => {
+    try {
+      console.log(`🗑️ Deleting user checklist ${userChecklistId}...`);
+      const response = await publicApi.delete(`/api/user-checklists/${userChecklistId}`);
+      console.log('✅ User checklist deleted:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error deleting user checklist ${userChecklistId}:`, error);
+      throw error;
+    }
+  },
+
+  // Lấy chi tiết user checklist theo ID
+  getUserChecklistById: async (userChecklistId) => {
+    try {
+      console.log(`🔍 Fetching user checklist ${userChecklistId}...`);
+      const response = await publicApi.get(`/api/user-checklists/${userChecklistId}`);
+      console.log('✅ User checklist detail loaded:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error getting user checklist ${userChecklistId}:`, error);
+      throw error;
+    }
+  },
+
+  // ========== USER CHECKLIST ITEMS APIs ==========
+
+  // Lấy user checklist items
+  getUserChecklistItems: async (userChecklistId) => {
+    try {
+      console.log(`🔍 Fetching user checklist items for ${userChecklistId}...`);
+      const response = await publicApi.get(`/api/user-checklist-items?userChecklistId=${userChecklistId}`);
+      console.log('✅ User checklist items loaded:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error getting user checklist items:`, error);
+      throw error;
+    }
+  },
+
+  // Tạo user checklist item mới
+  createUserChecklistItem: async (data) => {
+    try {
+      console.log('➕ Creating new user checklist item...', data);
+      const response = await publicApi.post('/api/user-checklist-items', data);
+      console.log('✅ User checklist item created:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error creating user checklist item:', error);
+      throw error;
+    }
+  },
+
+  // Cập nhật user checklist item
+  updateUserChecklistItem: async (userChecklistItemId, data) => {
+    try {
+      console.log(`✏️ Updating user checklist item ${userChecklistItemId}...`, data);
+      const response = await publicApi.put(`/api/user-checklist-items/${userChecklistItemId}`, data);
+      console.log('✅ User checklist item updated:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error updating user checklist item ${userChecklistItemId}:`, error);
+      throw error;
+    }
+  },
+
+  // Cập nhật user checklist item bằng itemId (endpoint mới)
+  updateUserChecklistItemByItemId: async (itemId, data) => {
+    try {
+      console.log(`✏️ Updating user checklist item by itemId ${itemId}...`, data);
+      const response = await publicApi.put(`/api/user-checklists/items/${itemId}`, data);
+      console.log('✅ User checklist item updated by itemId:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error updating user checklist item by itemId ${itemId}:`, error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
+  },
+
+  // Xóa user checklist item
+  deleteUserChecklistItem: async (userChecklistItemId) => {
+    try {
+      console.log(`🗑️ Deleting user checklist item ${userChecklistItemId}...`);
+      const response = await publicApi.delete(`/api/user-checklist-items/${userChecklistItemId}`);
+      console.log('✅ User checklist item deleted:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error deleting user checklist item ${userChecklistItemId}:`, error);
+      throw error;
+    }
+  },
+
+  // Khôi phục user checklist đã xóa
+  restoreUserChecklist: async (userChecklistId) => {
+    try {
+      console.log(`♻️ Restoring user checklist ${userChecklistId}...`);
+      const response = await publicApi.put(`/api/user-checklists/${userChecklistId}/restore`);
+      console.log('✅ User checklist restored:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error restoring user checklist ${userChecklistId}:`, error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
   }
 };
 
