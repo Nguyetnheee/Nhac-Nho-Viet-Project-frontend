@@ -275,27 +275,14 @@ const TrayManagement = () => {
     {
       title: 'Hành động',
       key: 'action',
-      width: 260,
+      width: 150,
       render: (_, record) => (
-        <Space size="small">
-          <Button
-            // type="primary"
-            icon={<EditOutlined />}
-            // size="middle"
-            onClick={() => handleEdit(record.productId)}
-          >
-            Sửa
-          </Button>
-          <Button
-            // type="primary"
-            danger
-            icon={<DeleteOutlined />}
-            // size="small"
-            onClick={() => handleDelete(record)}
-          >
-            Xóa
-          </Button>
-        </Space>
+        <Button
+          icon={<EditOutlined />}
+          onClick={() => handleEdit(record.productId)}
+        >
+          Sửa
+        </Button>
       ),
     },
   ];
