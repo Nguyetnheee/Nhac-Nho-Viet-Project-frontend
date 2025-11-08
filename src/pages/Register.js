@@ -38,8 +38,13 @@ const Register = () => {
         return '';
       case 'email': {
         if (!value.trim()) return 'Email là bắt buộc';
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-        if (!re.test(value)) return 'Email không hợp lệ';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(value)) return 'Email không hợp lệ';
+        // Chỉ chấp nhận @gmail.com hoặc @yahoo.com
+        const emailDomain = value.toLowerCase().split('@')[1];
+        if (emailDomain !== 'gmail.com' && emailDomain !== 'yahoo.com') {
+          return 'Email không hợp lệ. Chỉ chấp nhận email @gmail.com hoặc @yahoo.com';
+        }
         return '';
       }
       case 'password': {
