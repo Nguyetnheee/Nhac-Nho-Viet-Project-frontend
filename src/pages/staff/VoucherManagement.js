@@ -22,6 +22,7 @@ import {
   Typography,
   Descriptions,
   Spin,
+  Popconfirm,
 } from 'antd';
 import {
   PlusOutlined,
@@ -34,7 +35,9 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import { getAllVouchers, createVoucher, getVoucherById } from '../../services/voucherService';
+// Import dayjs - Ant Design v5 uses dayjs for DatePicker
+import dayjs from 'dayjs';
+import { getAllVouchers, createVoucher, getVoucherById, updateVoucher, deleteVoucher } from '../../services/voucherService';
 import { useAuth } from '../../contexts/AuthContext';
 
 const { RangePicker } = DatePicker;
@@ -54,10 +57,13 @@ const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [editingVoucher, setEditingVoucher] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [pagination, setPagination] = useState({
@@ -300,6 +306,91 @@ const VoucherManagement = () => {
     }
   };
 
+  const handleEdit = async (record) => {
+    console.log('✏️ Edit clicked, record:', record);
+    
+    try {
+      // Lấy voucherId
+      const voucherId = record.voucherId || record.id;
+      
+      if (!voucherId) {
+        message.error('Không tìm thấy ID voucher');
+        return;
+      }
+
+      // Gọi API để lấy chi tiết đầy đủ
+      const voucherData = await getVoucherById(voucherId);
+      console.log('✅ Voucher data for editing:', voucherData);
+      
+      setEditingVoucher(voucherData);
+      
+      // Set form values - convert to dayjs for DatePicker
+      const startDate = voucherData.startDate ? dayjs(voucherData.startDate) : null;
+      const endDate = voucherData.endDate ? dayjs(voucherData.endDate) : null;
+      
+      editForm.setFieldsValue({
+        description: voucherData.description || '',
+        discountType: voucherData.discountType || 'PERCENTAGE',
+        discountValue: voucherData.discountValue || 0,
+        minOrderAmount: voucherData.minOrderAmount || 0,
+        maxDiscountAmount: voucherData.maxDiscountAmount || 0,
+        usageLimit: voucherData.usageLimit || 0,
+        dateRange: startDate && endDate ? [startDate, endDate] : null,
+        isActive: voucherData.isActive !== undefined ? voucherData.isActive : true,
+      });
+      
+      setEditModalVisible(true);
+    } catch (error) {
+      console.error('❌ Error loading voucher for edit:', error);
+      const errorMsg = error?.message || 'Không thể tải thông tin voucher';
+      message.error(errorMsg);
+      
+      // Fallback: dùng dữ liệu từ record - convert to dayjs
+      setEditingVoucher(record);
+      const startDate = record.startDate ? dayjs(record.startDate) : null;
+      const endDate = record.endDate ? dayjs(record.endDate) : null;
+      
+      editForm.setFieldsValue({
+        description: record.description || '',
+        discountType: record.discountType || 'PERCENTAGE',
+        discountValue: record.discountValue || 0,
+        minOrderAmount: record.minOrderAmount || 0,
+        maxDiscountAmount: record.maxDiscountAmount || 0,
+        usageLimit: record.usageLimit || 0,
+        dateRange: startDate && endDate ? [startDate, endDate] : null,
+        isActive: record.isActive !== undefined ? record.isActive : true,
+      });
+      
+      setEditModalVisible(true);
+    }
+  };
+
+  const handleDelete = async (record) => {
+    console.log('🗑️ Delete clicked, record:', record);
+    
+    const voucherId = record.voucherId || record.id;
+    const voucherCode = record.code || 'N/A';
+    
+    if (!voucherId) {
+      message.error('Không tìm thấy ID voucher');
+      return;
+    }
+
+    try {
+      await deleteVoucher(voucherId);
+      message.success(`Đã xóa voucher ${voucherCode} thành công`);
+      fetchVouchers(); // Refresh danh sách
+    } catch (error) {
+      console.error('❌ Error deleting voucher:', error);
+      const errorMsg = error?.response?.data?.message || error?.message || 'Không thể xóa voucher';
+      message.error(errorMsg);
+      if (error?.response?.status === 401) {
+        // Token hết hạn: chuyển tới trang đăng nhập STAFF
+        setTimeout(() => navigate('/admin-login'), 600);
+      }
+    }
+  };
+
   const columns = [
     {
       title: 'Mã Voucher',
@@ -423,16 +514,37 @@ const VoucherManagement = () => {
                 type="link"
                 icon={<EditOutlined />}
                 size="small"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('✏️ Edit button clicked for record:', record);
+                  handleEdit(record);
+                }}
+                style={{ cursor: 'pointer' }}
               />
             </Tooltip>
-            <Tooltip title="Xóa">
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-                size="small"
-              />
-            </Tooltip>
+            <Popconfirm
+              title="Xóa voucher"
+              description={`Bạn có chắc chắn muốn xóa voucher "${record.code}"?`}
+              onConfirm={() => handleDelete(record)}
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="Xóa">
+                <Button
+                  type="link"
+                  danger
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  style={{ cursor: 'pointer' }}
+                />
+              </Tooltip>
+            </Popconfirm>
           </Space>
         );
       },
@@ -664,15 +776,18 @@ const VoucherManagement = () => {
               // Lấy staff ID từ user object
               const staffId = user?.id || user?.staffId || user?.staff_id || 0;
               
-              // Xử lý date range
+              // Xử lý date range - values.dateRange là dayjs objects
               let startDate, endDate;
               if (values.dateRange && values.dateRange[0] && values.dateRange[1]) {
-                startDate = values.dateRange[0].toISOString();
-                endDate = values.dateRange[1].toISOString();
+                // dayjs objects - sử dụng toISOString() nếu có, không thì dùng format()
+                const start = values.dateRange[0];
+                const end = values.dateRange[1];
+                startDate = dayjs.isDayjs(start) ? start.toISOString() : (start.toISOString ? start.toISOString() : dayjs(start).toISOString());
+                endDate = dayjs.isDayjs(end) ? end.toISOString() : (end.toISOString ? end.toISOString() : dayjs(end).toISOString());
               } else {
                 // Fallback nếu không có dateRange
-                startDate = values.startDate?.toISOString?.() || new Date().toISOString();
-                endDate = values.endDate?.toISOString?.() || new Date().toISOString();
+                startDate = new Date().toISOString();
+                endDate = new Date().toISOString();
               }
 
               const payload = {
@@ -739,6 +854,149 @@ const VoucherManagement = () => {
                 <Input type="number" min={0} step={1000} placeholder="0 = không giới hạn" />
               </Form.Item>
             </Col>
+            <Col span={12}>
+              <Form.Item label="Giảm tối đa" name="maxDiscountAmount">
+                <Input type="number" min={0} step={1000} placeholder="0 = không giới hạn" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Thời gian áp dụng" name="dateRange" rules={[{ required: true, message: 'Chọn thời gian' }]}>
+                <RangePicker showTime style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Mô tả" name="description">
+                <Input.TextArea rows={3} placeholder="Mô tả ngắn về voucher" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Kích hoạt" name="isActive" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      {/* Edit Voucher Modal */}
+      <Modal
+        open={editModalVisible}
+        title={<span style={{ color: '#166534' }}>Chỉnh sửa Voucher {editingVoucher?.code}</span>}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setEditingVoucher(null);
+          editForm.resetFields();
+        }}
+        onOk={() => editForm.submit()}
+        okText="Cập nhật"
+        cancelText="Hủy"
+        width={820}
+      >
+        <Form
+          form={editForm}
+          layout="vertical"
+          onFinish={async (values) => {
+            try {
+              if (!editingVoucher) {
+                message.error('Không tìm thấy thông tin voucher');
+                return;
+              }
+
+              const voucherId = editingVoucher.voucherId || editingVoucher.id;
+              if (!voucherId) {
+                message.error('Không tìm thấy ID voucher');
+                return;
+              }
+
+              // Xử lý date range - values.dateRange là dayjs objects
+              let startDate, endDate;
+              if (values.dateRange && values.dateRange[0] && values.dateRange[1]) {
+                // dayjs objects - sử dụng toISOString() nếu có, không thì dùng format()
+                const start = values.dateRange[0];
+                const end = values.dateRange[1];
+                startDate = dayjs.isDayjs(start) ? start.toISOString() : (start.toISOString ? start.toISOString() : dayjs(start).toISOString());
+                endDate = dayjs.isDayjs(end) ? end.toISOString() : (end.toISOString ? end.toISOString() : dayjs(end).toISOString());
+              } else {
+                // Fallback nếu không có dateRange
+                startDate = editingVoucher.startDate || new Date().toISOString();
+                endDate = editingVoucher.endDate || new Date().toISOString();
+              }
+
+              const payload = {
+                description: values.description || '',
+                discountType: values.discountType,
+                discountValue: Number(values.discountValue),
+                minOrderAmount: Number(values.minOrderAmount || 0),
+                maxDiscountAmount: Number(values.maxDiscountAmount || 0),
+                usageLimit: Number(values.usageLimit || 0),
+                startDate: startDate,
+                endDate: endDate,
+                isActive: values.isActive !== undefined ? values.isActive : true,
+              };
+              
+              console.log('📤 Updating voucher with payload:', payload);
+              await updateVoucher(voucherId, payload);
+              message.success('Cập nhật voucher thành công');
+              setEditModalVisible(false);
+              setEditingVoucher(null);
+              editForm.resetFields();
+              fetchVouchers();
+            } catch (e) {
+              console.error('❌ Error updating voucher:', e);
+              const msg = e?.response?.data?.message || e?.message || 'Không thể cập nhật voucher';
+              message.error(msg);
+              if (e?.response?.status === 401) {
+                // Token hết hạn: chuyển tới trang đăng nhập STAFF
+                setTimeout(() => navigate('/admin-login'), 600);
+              }
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Mã voucher (không thể thay đổi)">
+                <Input 
+                  value={editingVoucher?.code || ''} 
+                  disabled 
+                  style={{ backgroundColor: '#f5f5f5' }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Loại giảm giá" name="discountType" rules={[{ required: true }]}>
+                <Select>
+                  <Option value="PERCENTAGE">Phần trăm</Option>
+                  <Option value="FIXED_AMOUNT">Số tiền cố định</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Giá trị giảm" name="discountValue" rules={[{ required: true, message: 'Nhập giá trị' }]}>
+                <Input type="number" min={0} step={1} placeholder="% hoặc số tiền" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Số lần sử dụng" name="usageLimit">
+                <Input type="number" min={0} step={1} placeholder="0 = không giới hạn" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Đơn tối thiểu" name="minOrderAmount">
+                <Input type="number" min={0} step={1000} placeholder="0 = không giới hạn" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Giảm tối đa" name="maxDiscountAmount">
                 <Input type="number" min={0} step={1000} placeholder="0 = không giới hạn" />
