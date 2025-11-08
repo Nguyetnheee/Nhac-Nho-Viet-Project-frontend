@@ -203,6 +203,57 @@ export const checklistService = {
       console.error('Error getting grouped checklists:', error);
       throw error;
     }
+  },
+
+  // Tạo checklist mới
+  createChecklist: async (data) => {
+    try {
+      console.log('➕ Creating new checklist...', data);
+      const response = await publicApi.post('/api/checklists', data);
+      console.log('✅ Checklist created:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error creating checklist:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
+  },
+
+  // Cập nhật checklist
+  updateChecklist: async (checklistId, data) => {
+    try {
+      console.log(`✏️ Updating checklist ${checklistId}...`, data);
+      const response = await publicApi.put(`/api/checklists/${checklistId}`, data);
+      console.log('✅ Checklist updated:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error updating checklist ${checklistId}:`, error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
+  },
+
+  // Xóa checklist
+  deleteChecklist: async (checklistId) => {
+    try {
+      console.log(`🗑️ Deleting checklist ${checklistId}...`);
+      const response = await publicApi.delete(`/api/checklists/${checklistId}`);
+      console.log('✅ Checklist deleted:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error deleting checklist ${checklistId}:`, error);
+      throw error;
+    }
   }
 };
 
