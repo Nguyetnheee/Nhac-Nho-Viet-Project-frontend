@@ -1,10 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { scrollToTop } from '../utils/scrollUtils';
-import { Select, Pagination, Spin, Empty, Modal, Input, DatePicker } from 'antd';
-import { PlusCircleOutlined, InfoCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { 
+  Select, 
+  Pagination, 
+  Spin, 
+  Empty, 
+  Modal, 
+  Input, 
+  DatePicker, 
+  Form, 
+  message, 
+  Table, 
+  Tag, 
+  Card, 
+  Typography, 
+  Button,
+  Checkbox,
+  InputNumber,
+  Space,
+  Divider
+} from 'antd';
+import { PlusCircleOutlined, InfoCircleOutlined, ReloadOutlined, CheckCircleOutlined, PlusOutlined, DeleteOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { checklistService } from '../services/checklistService';
+import { ritualService } from '../services/ritualService';
+
+const { Title, Text } = Typography;
 
 const { Option } = Select;
 
@@ -15,12 +39,36 @@ const Checklist = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // User-created checklists (will be loaded via GET later). For now, display created ones immediately.
+  // User-created checklists
   const [userChecklists, setUserChecklists] = useState([]);
   const [userListLoading, setUserListLoading] = useState(false);
-  const [userListPage, setUserListPage] = useState({ page: 0, size: 9, total: 0 });
+  const [userListPagination, setUserListPagination] = useState({ 
+    current: 1, 
+    pageSize: 10, 
+    total: 0 
+  });
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ userChecklistId: '', itemId: '', quantity: 1, note: '' });
+  const [formData, setFormData] = useState({ ritualId: null, title: '', reminderDate: null });
+  const [rituals, setRituals] = useState([]);
+  const [ritualsLoading, setRitualsLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form] = Form.useForm();
+  
+  // Detail modal states
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [checklistDetail, setChecklistDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [savingItem, setSavingItem] = useState(false);
+  const [availableItems, setAvailableItems] = useState([]); // Danh sách items có sẵn để thêm
+  const [addItemModalOpen, setAddItemModalOpen] = useState(false);
+  const [newItemForm] = Form.useForm();
+  const [isEditingChecklist, setIsEditingChecklist] = useState(false);
+  const [editChecklistForm] = Form.useForm();
+  const [editingItemId, setEditingItemId] = useState(null); // ID của item đang được edit
+  const [editingItemForm] = Form.useForm();
+  const [savingChecklist, setSavingChecklist] = useState(false);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -49,7 +97,83 @@ const Checklist = () => {
     setChecklistsByRitual([]);
     setLoading(false);
     scrollToTop(true);
-  }, [filters, pagination.current]);
+    // Fetch rituals for dropdown (chỉ fetch 1 lần khi mount)
+    fetchRituals();
+  }, []);
+
+  // Fetch user checklists khi user thay đổi
+  useEffect(() => {
+    if (user?.id || user?.userId) {
+      fetchUserChecklists(1, 10);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.userId]);
+
+  const fetchRituals = async () => {
+    setRitualsLoading(true);
+    try {
+      const data = await ritualService.getAllRituals();
+      setRituals(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching rituals:', error);
+      message.error('Không thể tải danh sách lễ hội!');
+    } finally {
+      setRitualsLoading(false);
+    }
+  };
+
+  const fetchUserChecklists = async (page = 1, pageSize = 10) => {
+    if (!user?.id && !user?.userId) {
+      return; // Không fetch nếu chưa đăng nhập
+    }
+    setUserListLoading(true);
+    try {
+      const userId = user?.id || user?.userId;
+      const params = {
+        userId: Number(userId),
+        page: page - 1, // API dùng 0-based index
+        size: pageSize,
+        sort: ['createdAt', 'desc']
+      };
+      
+      const response = await checklistService.getUserChecklists(params);
+      
+      // Xử lý response - có thể là array hoặc object với content
+      let checklists = [];
+      let total = 0;
+      
+      if (Array.isArray(response)) {
+        checklists = response;
+        total = response.length;
+      } else if (response?.content) {
+        // Paginated response
+        checklists = response.content || [];
+        total = response.totalElements || response.total || 0;
+      } else if (response?.data) {
+        checklists = Array.isArray(response.data) ? response.data : [];
+        total = response.total || checklists.length;
+      } else {
+        checklists = [];
+        total = 0;
+      }
+      
+      setUserChecklists(checklists);
+      setUserListPagination(prev => ({
+        ...prev,
+        current: page,
+        pageSize: pageSize,
+        total: total
+      }));
+    } catch (error) {
+      console.error('Error fetching user checklists:', error);
+      // Không hiển thị error nếu chưa có checklist nào (có thể là 404)
+      if (error.response?.status !== 404) {
+        message.error('Không thể tải danh sách checklist!');
+      }
+    } finally {
+      setUserListLoading(false);
+    }
+  };
 
   // Hủy nối các API cũ cho checklist; không fetch từ server ở phiên bản này
 
@@ -83,44 +207,435 @@ const Checklist = () => {
   };
 
   // Create user checklist (POST /api/user-checklists)
-  const openCreateModal = () => setCreateModalOpen(true);
+  const openCreateModal = () => {
+    form.resetFields();
+    setFormData({ ritualId: null, title: '', reminderDate: null });
+    setCreateModalOpen(true);
+  };
+
   const closeCreateModal = () => {
     setCreateModalOpen(false);
-    setFormData({ title: '', reminderDate: null });
+    form.resetFields();
+    setFormData({ ritualId: null, title: '', reminderDate: null });
   };
 
   const handleCreate = async () => {
     if (!user?.id && !user?.userId) {
-      Modal.warning({ title: 'Vui lòng đăng nhập', content: 'Bạn cần đăng nhập để tạo checklist.' });
+      Modal.warning({ 
+        title: 'Vui lòng đăng nhập', 
+        content: 'Bạn cần đăng nhập để tạo danh mục cá nhân.' 
+      });
       return;
     }
-    // Validate fields for creating user checklist item
-    if (!formData.userChecklistId || !formData.itemId) {
-      Modal.warning({ title: 'Thiếu thông tin', content: 'Cần nhập UserChecklist ID và Item ID.' });
-      return;
-    }
-
-    const payload = {
-      userChecklistId: Number(formData.userChecklistId),
-      itemId: Number(formData.itemId),
-      quantity: Number(formData.quantity || 1),
-      note: formData.note || '',
-    };
 
     try {
-      const res = await api.post('/api/user-checklist-items', payload);
-      const created = res.data?.data || res.data || payload;
-      // Thêm vào danh sách hiển thị tạm thời
-      setUserChecklists(prev => [created, ...prev]);
+      // Validate form
+      const values = await form.validateFields();
+      
+      const userId = user?.id || user?.userId;
+      if (!userId) {
+        Modal.warning({ 
+          title: 'Lỗi xác thực', 
+          content: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.' 
+        });
+        return;
+      }
+
+      // Prepare payload
+      const payload = {
+        userId: Number(userId),
+        ritualId: Number(values.ritualId),
+        title: values.title.trim(),
+        reminderDate: values.reminderDate ? values.reminderDate.toISOString() : null
+      };
+
+      setCreating(true);
+      const response = await checklistService.createUserChecklist(payload);
+      
+      // Success
+      message.success('Tạo danh mục cá nhân thành công!');
       closeCreateModal();
-      Modal.success({ title: 'Đã thêm mục', content: 'Mục checklist của bạn đã được lưu.' });
+      
+      // Refresh danh sách checklist
+      await fetchUserChecklists(userListPagination.current, userListPagination.pageSize);
+      
+      // Show success modal with checklist info
+      Modal.success({
+        title: 'Tạo checklist thành công!',
+        content: (
+          <div>
+            <p><strong>Tiêu đề:</strong> {payload.title}</p>
+            <p><strong>Lễ hội ID:</strong> {payload.ritualId}</p>
+            {response?.userChecklistId && (
+              <p><strong>Checklist ID:</strong> {response.userChecklistId}</p>
+            )}
+            <p className="mt-2 text-sm text-gray-600">
+              Checklist của bạn đã được lưu. Bạn có thể thêm vật phẩm vào checklist này.
+            </p>
+          </div>
+        ),
+        width: 500
+      });
     } catch (error) {
-      console.error('❌ Create user checklist item failed:', error);
-      console.error('Backend error payload:', error.response?.data);
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Vui lòng kiểm tra lại thông tin nhập';
-      Modal.error({ title: 'Không thể thêm mục', content: msg });
+      console.error('❌ Create user checklist failed:', error);
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error 
+        || error.message 
+        || 'Không thể tạo checklist. Vui lòng thử lại.';
+      
+      Modal.error({ 
+        title: 'Không thể tạo checklist', 
+        content: errorMessage 
+      });
+    } finally {
+      setCreating(false);
     }
   };
+
+  // Detail Modal Handlers
+  const handleOpenDetailModal = async (userChecklistId) => {
+    setDetailModalOpen(true);
+    setDetailLoading(true);
+    setChecklistDetail(null);
+    setChecklistItems([]);
+    
+    try {
+      // Load checklist detail và items song song
+      const [checklistResponse, itemsResponse] = await Promise.all([
+        checklistService.getUserChecklistById(userChecklistId),
+        checklistService.getUserChecklistItems(userChecklistId)
+      ]);
+      
+      // Xử lý response structure
+      const data = checklistResponse?.data || checklistResponse;
+      
+      if (data) {
+        setChecklistDetail(data);
+        
+        // Xử lý items response - có thể là array hoặc object
+        let items = [];
+        if (Array.isArray(itemsResponse)) {
+          items = itemsResponse;
+        } else if (itemsResponse?.data) {
+          items = Array.isArray(itemsResponse.data) ? itemsResponse.data : [];
+        } else if (itemsResponse?.content) {
+          items = Array.isArray(itemsResponse.content) ? itemsResponse.content : [];
+        } else if (data.items) {
+          // Fallback: dùng items từ checklist detail nếu không có response riêng
+          items = data.items || [];
+        }
+        
+        // Đảm bảo mỗi item có checked status (mặc định false nếu không có)
+        items = items.map(item => ({
+          ...item,
+          checked: item.checked !== undefined ? item.checked : false
+        }));
+        
+        console.log('✅ Loaded checklist items with checked status:', items);
+        setChecklistItems(items);
+        
+        // Initialize edit form với giá trị hiện tại
+        editChecklistForm.setFieldsValue({
+          title: data.title || '',
+          reminderDate: data.reminderDate ? dayjs(data.reminderDate) : null
+        });
+        
+        // Load available items để thêm vào checklist
+        const allItems = await checklistService.getChecklistItems();
+        setAvailableItems(allItems || []);
+      }
+    } catch (error) {
+      console.error('Error loading checklist detail:', error);
+      message.error('Không thể tải chi tiết checklist!');
+      setDetailModalOpen(false);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleCloseDetailModal = () => {
+    setDetailModalOpen(false);
+    setChecklistDetail(null);
+    setChecklistItems([]);
+    setAvailableItems([]);
+    setIsEditingChecklist(false);
+    setEditingItemId(null);
+    editChecklistForm.resetFields();
+    editingItemForm.resetFields();
+  };
+
+  const handleToggleItemChecked = async (item, checked) => {
+    if (!item.userChecklistItemId) {
+      message.warning('Không thể cập nhật item chưa được lưu!');
+      return;
+    }
+
+    try {
+      setSavingItem(true);
+      
+      console.log('🔄 Toggling item checked:', {
+        userChecklistItemId: item.userChecklistItemId,
+        checked: checked,
+        item: item
+      });
+      
+      // Quay lại dùng endpoint cũ: PUT /api/user-checklist-items/{userChecklistItemId}
+      // Endpoint này dùng userChecklistItemId (ID duy nhất) nên chính xác hơn
+      const response = await checklistService.updateUserChecklistItem(item.userChecklistItemId, {
+        checked: checked
+      });
+      
+      console.log('✅ Item checked status updated successfully:', response);
+      
+      // Update local state
+      setChecklistItems(prev => prev.map(i => 
+        i.userChecklistItemId === item.userChecklistItemId 
+          ? { ...i, checked } 
+          : i
+      ));
+      
+      // Không hiển thị message để tránh spam khi user tick nhiều items liên tiếp
+      // message.success(checked ? 'Đã đánh dấu hoàn thành!' : 'Đã bỏ đánh dấu!');
+    } catch (error) {
+      console.error('❌ Error updating item checked status:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        userChecklistItemId: item.userChecklistItemId
+      });
+      
+      // Revert checkbox state nếu có lỗi
+      setChecklistItems(prev => prev.map(i => 
+        i.userChecklistItemId === item.userChecklistItemId 
+          ? { ...i, checked: !checked } 
+          : i
+      ));
+      
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error
+        || 'Không thể cập nhật trạng thái!';
+      message.error(errorMessage);
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  const handleAddNewItem = () => {
+    if (!checklistDetail?.userChecklistId) {
+      message.error('Không tìm thấy checklist!');
+      return;
+    }
+    newItemForm.resetFields();
+    setAddItemModalOpen(true);
+  };
+
+  const handleSaveNewItem = async () => {
+    try {
+      const values = await newItemForm.validateFields();
+      const selectedItem = availableItems.find(i => i.itemId === values.itemId);
+
+      setSavingItem(true);
+      const response = await checklistService.createUserChecklistItem({
+        userChecklistId: checklistDetail.userChecklistId,
+        itemId: Number(values.itemId),
+        quantity: Number(values.quantity),
+        note: values.note || '',
+        checked: false
+      });
+
+      // Add to local state
+      const newItem = {
+        userChecklistItemId: response?.data?.userChecklistItemId || response?.userChecklistItemId,
+        itemId: selectedItem.itemId,
+        itemName: selectedItem.itemName,
+        unit: selectedItem.unit,
+        quantity: Number(values.quantity),
+        checked: false,
+        note: values.note || '',
+        stockQuantity: selectedItem.stockQuantity || 0
+      };
+
+      setChecklistItems(prev => [...prev, newItem]);
+      message.success('Đã thêm vật phẩm vào checklist!');
+      setAddItemModalOpen(false);
+      newItemForm.resetFields();
+    } catch (error) {
+      if (error.errorFields) {
+        // Validation error
+        return;
+      }
+      console.error('Error adding item:', error);
+      message.error('Không thể thêm vật phẩm!');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  const handleDeleteItem = async (item) => {
+    if (!item.userChecklistItemId) {
+      // Item mới chưa lưu, chỉ xóa khỏi local state
+      setChecklistItems(prev => prev.filter(i => i !== item));
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: `Bạn có chắc muốn xóa "${item.itemName}" khỏi checklist?`,
+      onOk: async () => {
+        try {
+          setSavingItem(true);
+          await checklistService.deleteUserChecklistItem(item.userChecklistItemId);
+          setChecklistItems(prev => prev.filter(i => i.userChecklistItemId !== item.userChecklistItemId));
+          message.success('Đã xóa vật phẩm!');
+        } catch (error) {
+          console.error('Error deleting item:', error);
+          message.error('Không thể xóa vật phẩm!');
+        } finally {
+          setSavingItem(false);
+        }
+      }
+    });
+  };
+
+  // Edit Checklist Handlers
+  const handleStartEditChecklist = () => {
+    setIsEditingChecklist(true);
+    editChecklistForm.setFieldsValue({
+      title: checklistDetail?.title || '',
+      reminderDate: checklistDetail?.reminderDate ? dayjs(checklistDetail.reminderDate) : null
+    });
+  };
+
+  const handleCancelEditChecklist = () => {
+    setIsEditingChecklist(false);
+    editChecklistForm.resetFields();
+  };
+
+  const handleSaveChecklist = async () => {
+    try {
+      const values = await editChecklistForm.validateFields();
+      
+      setSavingChecklist(true);
+      const response = await checklistService.updateUserChecklist(
+        checklistDetail.userChecklistId,
+        {
+          title: values.title.trim(),
+          reminderDate: values.reminderDate ? values.reminderDate.toISOString() : null
+        }
+      );
+
+      // Update local state
+      setChecklistDetail(prev => ({
+        ...prev,
+        title: values.title.trim(),
+        reminderDate: values.reminderDate ? values.reminderDate.toISOString() : null
+      }));
+
+      message.success('Đã cập nhật checklist!');
+      setIsEditingChecklist(false);
+      
+      // Refresh checklist list
+      await fetchUserChecklists(userListPagination.current, userListPagination.pageSize);
+    } catch (error) {
+      if (error.errorFields) {
+        // Validation error
+        return;
+      }
+      console.error('Error updating checklist:', error);
+      message.error('Không thể cập nhật checklist!');
+    } finally {
+      setSavingChecklist(false);
+    }
+  };
+
+  // Edit Item Handlers
+  const handleStartEditItem = (item) => {
+    setEditingItemId(item.userChecklistItemId);
+    editingItemForm.setFieldsValue({
+      quantity: item.quantity,
+      note: item.note || ''
+    });
+  };
+
+  const handleCancelEditItem = () => {
+    setEditingItemId(null);
+    editingItemForm.resetFields();
+  };
+
+  const handleSaveItem = async (item) => {
+    try {
+      const values = await editingItemForm.validateFields();
+      
+      if (!item.userChecklistItemId) {
+        message.error('Không tìm thấy userChecklistItemId để cập nhật!');
+        return;
+      }
+      
+      setSavingItem(true);
+      
+      // Quay lại dùng endpoint cũ: PUT /api/user-checklist-items/{userChecklistItemId}
+      await checklistService.updateUserChecklistItem(item.userChecklistItemId, {
+        quantity: Number(values.quantity),
+        note: values.note || ''
+      });
+
+      // Update local state
+      setChecklistItems(prev => prev.map(i => 
+        i.userChecklistItemId === item.userChecklistItemId
+          ? { ...i, quantity: Number(values.quantity), note: values.note || '' }
+          : i
+      ));
+
+      message.success('Đã cập nhật vật phẩm!');
+      setEditingItemId(null);
+      editingItemForm.resetFields();
+    } catch (error) {
+      if (error.errorFields) {
+        // Validation error
+        return;
+      }
+      console.error('Error updating item:', error);
+      const errorMessage = error.response?.data?.message 
+        || 'Không thể cập nhật vật phẩm!';
+      message.error(errorMessage);
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  // Delete Checklist Handler
+  const handleDeleteChecklist = async (userChecklistId) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa checklist',
+      content: 'Bạn có chắc muốn xóa checklist này? Hành động này không thể hoàn tác.',
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          setSavingChecklist(true);
+          await checklistService.deleteUserChecklist(userChecklistId);
+          message.success('Đã xóa checklist!');
+          
+          // Đóng modal nếu đang mở
+          if (detailModalOpen && checklistDetail?.userChecklistId === userChecklistId) {
+            handleCloseDetailModal();
+          }
+          
+          // Refresh danh sách
+          await fetchUserChecklists(userListPagination.current, userListPagination.pageSize);
+        } catch (error) {
+          console.error('Error deleting checklist:', error);
+          message.error('Không thể xóa checklist!');
+        } finally {
+          setSavingChecklist(false);
+        }
+      }
+    });
+  };
+
 
   return (
     <div className="min-h-screen bg-vietnam-cream font-sans transition-all duration-300">
@@ -150,81 +665,16 @@ const Checklist = () => {
               <div className="flex items-start gap-3">
                 <InfoCircleOutlined className="text-2xl text-vietnam-gold mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold">Tạo checklist cá nhân</h3>
-                  <p className="text-green-100 text-sm">Checklist sẽ được lưu vào hệ thống và chỉ hiển thị cho tài khoản của bạn.</p>
+                  <h3 className="text-xl font-semibold">Tạo danh mục cá nhân</h3>
+                  <p className="text-green-100 text-sm">Danh mục sẽ được lưu vào hệ thống và chỉ hiển thị cho tài khoản của bạn.</p>
                 </div>
               </div>
               <button
                 onClick={openCreateModal}
                 className="inline-flex items-center justify-center gap-2 bg-vietnam-gold text-stone-900 px-5 py-3 rounded-lg font-semibold hover:bg-yellow-500 transition-colors"
               >
-                <PlusCircleOutlined /> Thêm checklist
+                <PlusCircleOutlined /> Thêm danh mục
               </button>
-            </div>
-          </div>
-
-          {/* Bộ Lọc */}
-          <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30 hover:shadow-[0_20px_50px_rgba(218,165,32,0.3)] transition-all duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Lọc theo Tên Nghi Lễ */}
-              <div>
-                <label className="block text-white text-sm font-bold mb-3 text-left tracking-wide">
-                  Tên Nghi Lễ
-                </label>
-                <Select
-                  allowClear
-                  placeholder="Chọn nghi lễ"
-                  style={{ width: '100%' }}
-                  size="large"
-                  value={filters.ritualName || undefined}
-                  onChange={(value) => handleFilterChange('ritualName', value)}
-                  className="custom-select-filter"
-                >
-                  {filterOptions.ritualNames.map(name => (
-                    <Option key={name} value={name}>{name}</Option>
-                  ))}
-                </Select>
-              </div>
-
-              {/* Lọc theo Tên Vật Phẩm */}
-              <div>
-                <label className="block text-white text-sm font-bold mb-3 text-left tracking-wide">
-                  Tên Vật Phẩm
-                </label>
-                <Select
-                  allowClear
-                  placeholder="Chọn vật phẩm"
-                  style={{ width: '100%' }}
-                  size="large"
-                  value={filters.itemName || undefined}
-                  onChange={(value) => handleFilterChange('itemName', value)}
-                  className="custom-select-filter"
-                >
-                  {filterOptions.itemNames.map(name => (
-                    <Option key={name} value={name}>{name}</Option>
-                  ))}
-                </Select>
-              </div>
-
-              {/* Lọc theo Đơn Vị */}
-              <div>
-                <label className="block text-white text-sm font-bold mb-3 text-left tracking-wide">
-                  Đơn Vị
-                </label>
-                <Select
-                  allowClear
-                  placeholder="Chọn đơn vị"
-                  style={{ width: '100%' }}
-                  size="large"
-                  value={filters.unit || undefined}
-                  onChange={(value) => handleFilterChange('unit', value)}
-                  className="custom-select-filter"
-                >
-                  {filterOptions.units.map(unit => (
-                    <Option key={unit} value={unit}>{unit}</Option>
-                  ))}
-                </Select>
-              </div>
             </div>
           </div>
         </div>
@@ -232,127 +682,729 @@ const Checklist = () => {
 
       {/* CHECKLIST CỦA TÔI */}
       <section className="py-12 max-w-6xl mx-auto px-6">
-
-        {loading || userListLoading ? (
-          <div className="flex justify-center items-center py-10">
-            <Spin size="large" />
-          </div>
-        ) : userChecklists.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={<div>
-              <h3 className="text-2xl font-bold text-vietnam-green mb-2">Chưa có checklist nào</h3>
-              <p className="text-gray-600">Nhấn "Thêm checklist" để bắt đầu.</p>
-            </div>}
-          />
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6"> 
-            {userChecklists.map((item) => (
-              <div
-                key={item.id}
-                className="relative rounded-xl overflow-hidden shadow-2xl border border-amber-300/60 transition-transform duration-300 hover:scale-[1.03] hover:shadow-3xl"
-                style={{
-                  backgroundImage: "url('/checklist-background.jpg')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
-              >
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-white/65 backdrop-blur-[1px]"></div>
-
-                {/* Nội dung checklist */}
-                <div className="relative z-10 p-4 md:p-5 text-stone-800 text-sm flex flex-col h-full">
-                  {/* Tiêu đề màu vàng */}
-                  <h3 className="text-xl font-bold text-amber-600 drop-shadow mb-4 border-b pb-2 border-amber-300/60">
-                    Mục checklist #{item.id || item.itemId}
-                  </h3>
-                  
-                  <div className="space-y-2 text-sm text-stone-700">
-                    <p><span className="font-semibold">UserChecklist ID:</span> {item.userChecklistId}</p>
-                    <p><span className="font-semibold">Item ID:</span> {item.itemId}</p>
-                    <p><span className="font-semibold">Số lượng:</span> {item.quantity}</p>
-                    {item.note && <p><span className="font-semibold">Ghi chú:</span> {item.note}</p>}
-                  </div>
-                  
-                  <div className="mt-6 pt-4 border-t border-amber-300/60 text-right mt-auto">
-                    <span className="text-xs text-stone-500">Mục checklist của tôi</span>
-                  </div>
-                </div>
+        <div 
+          className="relative shadow-2xl rounded-xl border-2 border-amber-200 overflow-hidden"
+          style={{
+            backgroundImage: "url('/checklist-background.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "local",
+            minHeight: '400px'
+          }}
+        >
+          {/* Overlay với màu nhẹ để text dễ đọc */}
+          <div 
+            className="absolute inset-0 bg-white/85 backdrop-blur-sm"
+            style={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 0
+            }}
+          ></div>
+          
+          <Card 
+            className="relative"
+            style={{ 
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
+              zIndex: 1
+            }}
+            bodyStyle={{ padding: '24px' }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <Title level={3} className="!text-vietnam-green !mb-0">
+                Danh Sách Danh Mục Của Tôi
+              </Title>
+              <div className="flex items-center gap-2">
+                {selectedRowKeys.length > 0 && (
+                  <Tag color="blue" className="text-sm">
+                    Đã chọn: {selectedRowKeys.length}
+                  </Tag>
+                )}
+                <Button 
+                  icon={<ReloadOutlined />} 
+                  onClick={() => fetchUserChecklists(userListPagination.current, userListPagination.pageSize)}
+                  loading={userListLoading}
+                >
+                  Làm mới
+                </Button>
               </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {userListPage.total > userListPage.size && (
-            <div className="flex justify-center mt-10">
-              <Pagination
-                current={userListPage.page + 1}
-                pageSize={userListPage.size}
-                total={userListPage.total}
-                onChange={(page, size) => setUserListPage({ page: page - 1, size, total: userListPage.total })}
-                showTotal={(total) => `Tổng ${total} checklist`}
-              />
             </div>
-          )}
-        </>
-        )}
+
+            {userListLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Spin size="large" />
+              </div>
+            ) : userChecklists.length === 0 ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <div>
+                    <h3 className="text-2xl font-bold text-vietnam-green mb-2">Chưa có danh mục nào</h3>
+                    <p className="text-gray-600">Nhấn "Thêm danh mục" để bắt đầu.</p>
+                  </div>
+                }
+              />
+            ) : (
+              <Table
+                dataSource={userChecklists}
+                rowKey={(record) => record.userChecklistId || record.id}
+                loading={userListLoading}
+                pagination={{
+                  current: userListPagination.current,
+                  pageSize: userListPagination.pageSize,
+                  total: userListPagination.total,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} checklist`,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '20', '50'],
+                  onChange: (page, pageSize) => {
+                    fetchUserChecklists(page, pageSize);
+                  },
+                  onShowSizeChange: (current, size) => {
+                    fetchUserChecklists(1, size);
+                  }
+                }}
+                rowSelection={{
+                  selectedRowKeys,
+                  onChange: (selectedKeys) => {
+                    setSelectedRowKeys(selectedKeys);
+                  },
+                  getCheckboxProps: (record) => ({
+                    name: `checklist-${record.userChecklistId || record.id}`,
+                  }),
+                }}
+                onRow={(record) => ({
+                  onClick: (e) => {
+                    // Không trigger khi click vào checkbox hoặc button
+                    if (e.target.closest('.ant-checkbox-wrapper') || 
+                        e.target.closest('button') || 
+                        e.target.closest('.ant-space')) {
+                      return;
+                    }
+                    // Mở modal chi tiết
+                    handleOpenDetailModal(record.userChecklistId || record.id);
+                  },
+                  className: 'checklist-table-row',
+                  style: {
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                  }
+                })}
+                columns={[
+                  {
+                    title: 'Tiêu Đề',
+                    dataIndex: 'title',
+                    key: 'title',
+                    render: (text, record) => (
+                      <div>
+                        <Text strong className="text-lg text-vietnam-green">
+                          {text || `Checklist #${record.userChecklistId || record.id}`}
+                        </Text>
+                      </div>
+                    ),
+                    width: '30%',
+                  },
+                  {
+                    title: 'Lễ Hội',
+                    dataIndex: 'ritualId',
+                    key: 'ritualId',
+                    render: (ritualId) => {
+                      const ritual = rituals.find(r => r.ritualId === ritualId);
+                      return ritual ? (
+                        <Tag color="green" className="text-sm">
+                          {ritual.ritualName}
+                        </Tag>
+                      ) : (
+                        <Text type="secondary">ID: {ritualId}</Text>
+                      );
+                    },
+                    width: '25%',
+                  },
+                  {
+                    title: 'Ngày Nhắc Nhở',
+                    dataIndex: 'reminderDate',
+                    key: 'reminderDate',
+                    render: (date) => {
+                      if (!date) return <Text type="secondary">Không có</Text>;
+                      const formatted = dayjs(date).format('DD/MM/YYYY');
+                      const isPast = dayjs(date).isBefore(dayjs(), 'day');
+                      const isToday = dayjs(date).isSame(dayjs(), 'day');
+                      
+                      return (
+                        <Tag color={isPast ? 'red' : isToday ? 'orange' : 'blue'}>
+                          {formatted}
+                        </Tag>
+                      );
+                    },
+                    width: '20%',
+                  },
+                  {
+                    title: 'Ngày Tạo',
+                    dataIndex: 'createdAt',
+                    key: 'createdAt',
+                    render: (date) => {
+                      if (!date) return <Text type="secondary">-</Text>;
+                      return dayjs(date).format('DD/MM/YYYY HH:mm');
+                    },
+                    width: '20%',
+                  },
+                  {
+                    title: 'Trạng Thái',
+                    key: 'status',
+                    render: (_, record) => (
+                      <Tag color="processing" icon={<CheckCircleOutlined />}>
+                        Hoạt động
+                      </Tag>
+                    ),
+                    width: '12%',
+                  },
+                  {
+                    title: 'Thao Tác',
+                    key: 'actions',
+                    width: '15%',
+                    render: (_, record) => (
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteChecklist(record.userChecklistId || record.id);
+                        }}
+                        loading={savingChecklist}
+                      >
+                        Xóa
+                      </Button>
+                    ),
+                  },
+                ]}
+                className="checklist-table"
+                style={{
+                  background: 'transparent',
+                }}
+              />
+            )}
+          </Card>
+        </div>
       </section>
-      {/* Modal tạo checklist mới */}
+      {/* Modal tạo checklist cá nhân mới */}
       <Modal
         centered
         open={createModalOpen}
         onCancel={closeCreateModal}
         onOk={handleCreate}
-        okText="Tạo checklist"
+        okText="Tạo danh mục"
         cancelText="Hủy"
+        confirmLoading={creating}
         className="nnv-create-checklist-modal"
-        title={<div className="flex items-center gap-2 text-vietnam-green"><PlusCircleOutlined /> <span className="font-semibold">Thêm mục danh mục mới</span></div>}
-        okButtonProps={{ style: { background: '#d4af37', borderColor: '#d4af37', color: '#1f2937', fontWeight: 600 } }}
-        cancelButtonProps={{ style: { borderColor: '#065f46', color: '#065f46' } }}
-        styles={{ body: { background: 'linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.92))' } }}
+        title={
+          <div className="flex items-center gap-2 text-vietnam-green">
+            <PlusCircleOutlined /> 
+            <span className="font-semibold">Tạo Danh Mục Cá Nhân</span>
+          </div>
+        }
+        okButtonProps={{ 
+          style: { 
+            background: '#d4af37', 
+            borderColor: '#d4af37', 
+            color: '#1f2937', 
+            fontWeight: 600 
+          } 
+        }}
+        cancelButtonProps={{ 
+          style: { 
+            borderColor: '#065f46', 
+            color: '#065f46' 
+          } 
+        }}
+        styles={{ 
+          body: { 
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.92))' 
+          } 
+        }}
+        width={600}
       >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-vietnam-green">Tiêu đề lễ</label>
+        <Form
+          form={form}
+          layout="vertical"
+          autoComplete="off"
+        >
+          <Form.Item
+            label={<span className="text-vietnam-green font-medium">Chọn Lễ Hội</span>}
+            name="ritualId"
+            rules={[
+              { required: true, message: 'Vui lòng chọn lễ hội!' }
+            ]}
+          >
+            <Select
+              placeholder="Chọn lễ hội để tạo checklist"
+              size="large"
+              loading={ritualsLoading}
+              showSearch
+              filterOption={(input, option) =>
+                option?.children?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {rituals.map(ritual => (
+                <Option key={ritual.ritualId} value={ritual.ritualId}>
+                  {ritual.ritualName}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label={<span className="text-vietnam-green font-medium">Tiêu Đề Checklist</span>}
+            name="title"
+            rules={[
+              { required: true, message: 'Vui lòng nhập tiêu đề checklist!' },
+              { max: 200, message: 'Tiêu đề không được quá 200 ký tự!' }
+            ]}
+          >
             <Input
-              value={formData.userChecklistId}
-              onChange={(e) => setFormData(prev => ({ ...prev, userChecklistId: e.target.value.replace(/[^0-9]/g, '') }))}
-              placeholder="Nhập tiêu đề danh sách của bạn"
-              inputMode="numeric"
+              placeholder="Ví dụ: Checklist Lễ Tết 2025"
+              size="large"
+              maxLength={200}
+              showCount
             />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-vietnam-green">Tên vật phẩm</label>
-              <Input
-                value={formData.itemId}
-                onChange={(e) => setFormData(prev => ({ ...prev, itemId: e.target.value.replace(/[^0-9]/g, '') }))}
-                placeholder="Nhập tên vật phẩm"
-                inputMode="numeric"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-vietnam-green">Số lượng</label>
-              <Input
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value.replace(/[^0-9]/g, '') || 1 }))}
-                placeholder="1"
-                inputMode="numeric"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-vietnam-green">Ghi chú</label>
-            <Input.TextArea
-              rows={3}
-              value={formData.note}
-              onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-              placeholder="Ghi chú cho mục checklist (tuỳ chọn)"
+          </Form.Item>
+
+          <Form.Item
+            label={<span className="text-vietnam-green font-medium">Ngày Nhắc Nhở (Tùy chọn)</span>}
+            name="reminderDate"
+            tooltip="Chọn ngày bạn muốn được nhắc nhở về checklist này"
+          >
+            <DatePicker
+              placeholder="Chọn ngày nhắc nhở"
+              size="large"
+              style={{ width: '100%' }}
+              format="DD/MM/YYYY"
+              disabledDate={(current) => current && current < dayjs().startOf('day')}
+              showTime={false}
             />
+          </Form.Item>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+            <p className="text-sm text-blue-800 mb-0">
+              <InfoCircleOutlined className="mr-2" />
+              <strong>Lưu ý:</strong> Sau khi tạo checklist, hệ thống sẽ tự động copy danh sách vật phẩm mặc định 
+              từ lễ hội bạn đã chọn. Bạn có thể chỉnh sửa checklist sau đó.
+            </p>
           </div>
-        </div>
+        </Form>
       </Modal>
+
+      {/* Modal Chi Tiết Checklist - Todolist Style */}
+      <Modal
+        open={detailModalOpen}
+        onCancel={handleCloseDetailModal}
+        footer={null}
+        width={800}
+        className="checklist-detail-modal"
+        styles={{
+          body: {
+            padding: 0,
+            background: 'transparent'
+          }
+        }}
+      >
+        {detailLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Spin size="large" />
+          </div>
+        ) : checklistDetail ? (
+          <div
+            className="relative rounded-xl overflow-hidden"
+            style={{
+              backgroundImage: "url('/checklist-background.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: '500px'
+            }}
+          >
+            {/* Overlay */}
+            <div 
+              className="absolute inset-0 bg-white/90 backdrop-blur-sm"
+              style={{ zIndex: 0 }}
+            ></div>
+            
+            <div style={{ position: 'relative', zIndex: 1, padding: '32px' }}>
+              {/* Header */}
+              <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-amber-300">
+                <div className="flex-1">
+                  {isEditingChecklist ? (
+                    <Form form={editChecklistForm} layout="vertical" className="mb-3">
+                      <Form.Item
+                        name="title"
+                        rules={[
+                          { required: true, message: 'Vui lòng nhập tiêu đề!' },
+                          { max: 200, message: 'Tiêu đề không được quá 200 ký tự!' }
+                        ]}
+                        className="mb-2"
+                      >
+                        <Input 
+                          placeholder="Tiêu đề checklist"
+                          size="large"
+                          maxLength={200}
+                        />
+                      </Form.Item>
+                      <Form.Item name="reminderDate" className="mb-0">
+                        <DatePicker
+                          placeholder="Chọn ngày nhắc nhở"
+                          style={{ width: '100%' }}
+                          format="DD/MM/YYYY"
+                          disabledDate={(current) => current && current < dayjs().startOf('day')}
+                        />
+                      </Form.Item>
+                      <Space className="mt-2">
+                        <Button
+                          type="primary"
+                          icon={<SaveOutlined />}
+                          onClick={handleSaveChecklist}
+                          loading={savingChecklist}
+                          className="bg-vietnam-gold hover:!bg-yellow-500"
+                        >
+                          Lưu
+                        </Button>
+                        <Button
+                          icon={<CloseOutlined />}
+                          onClick={handleCancelEditChecklist}
+                        >
+                          Hủy
+                        </Button>
+                      </Space>
+                    </Form>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <Title level={2} className="!text-vietnam-green !mb-0">
+                          {checklistDetail.title || 'Checklist'}
+                        </Title>
+                        <Space>
+                          <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={handleStartEditChecklist}
+                            className="text-vietnam-green hover:!text-vietnam-green"
+                          >
+                            Chỉnh sửa
+                          </Button>
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleDeleteChecklist(checklistDetail.userChecklistId)}
+                            loading={savingChecklist}
+                          >
+                            Xóa
+                          </Button>
+                        </Space>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Tag color="green" className="text-sm">
+                          {checklistDetail.ritualName || `Lễ hội ID: ${checklistDetail.ritualId}`}
+                        </Tag>
+                        <Text type="secondary" className="text-sm">
+                          Tạo bởi: {checklistDetail.userName || 'N/A'}
+                        </Text>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {!isEditingChecklist && (
+                  <div className="text-right">
+                    {checklistDetail.reminderDate && (
+                      <div>
+                        <Text type="secondary" className="text-xs block mb-1">Ngày nhắc nhở</Text>
+                        <Tag 
+                          color={
+                            dayjs(checklistDetail.reminderDate).isBefore(dayjs(), 'day') ? 'red' :
+                            dayjs(checklistDetail.reminderDate).isSame(dayjs(), 'day') ? 'orange' : 'blue'
+                          }
+                          className="text-sm font-semibold"
+                        >
+                          {dayjs(checklistDetail.reminderDate).format('DD/MM/YYYY')}
+                        </Tag>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Items List - Todolist Style */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-4">
+                  <Title level={4} className="!text-vietnam-green !mb-0">
+                    Danh sách vật phẩm
+                  </Title>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddNewItem}
+                    loading={savingItem}
+                    className="bg-vietnam-gold hover:!bg-yellow-500 !border-vietnam-gold"
+                  >
+                    Thêm vật phẩm
+                  </Button>
+                </div>
+
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  {checklistItems.length === 0 ? (
+                    <Empty
+                      description="Chưa có vật phẩm nào"
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    />
+                  ) : (
+                    checklistItems.map((item, index) => (
+                      <div
+                        key={item.userChecklistItemId || index}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          item.checked 
+                            ? 'bg-green-50 border-green-300 opacity-75' 
+                            : 'bg-white border-amber-200 hover:border-amber-400'
+                        }`}
+                        style={{
+                          textDecoration: item.checked ? 'line-through' : 'none'
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={item.checked}
+                            onChange={(e) => handleToggleItemChecked(item, e.target.checked)}
+                            disabled={savingItem}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <Text 
+                                strong 
+                                className={`text-base ${
+                                  item.checked ? 'text-gray-500' : 'text-vietnam-green'
+                                }`}
+                              >
+                                {item.itemName}
+                              </Text>
+                              <Space>
+                                {editingItemId === item.userChecklistItemId ? (
+                                  <>
+                                    <Button
+                                      type="text"
+                                      size="small"
+                                      icon={<SaveOutlined />}
+                                      onClick={() => handleSaveItem(item)}
+                                      loading={savingItem}
+                                      className="text-green-600"
+                                    >
+                                      Lưu
+                                    </Button>
+                                    <Button
+                                      type="text"
+                                      size="small"
+                                      icon={<CloseOutlined />}
+                                      onClick={handleCancelEditItem}
+                                    >
+                                      Hủy
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Button
+                                      type="text"
+                                      size="small"
+                                      icon={<EditOutlined />}
+                                      onClick={() => handleStartEditItem(item)}
+                                      disabled={savingItem}
+                                      className="text-blue-600"
+                                    >
+                                      Sửa
+                                    </Button>
+                                    <Button
+                                      type="text"
+                                      danger
+                                      size="small"
+                                      icon={<DeleteOutlined />}
+                                      onClick={() => handleDeleteItem(item)}
+                                      loading={savingItem}
+                                    />
+                                  </>
+                                )}
+                              </Space>
+                            </div>
+                            {editingItemId === item.userChecklistItemId ? (
+                              <Form form={editingItemForm} layout="vertical" className="mt-2">
+                                <Form.Item
+                                  name="quantity"
+                                  rules={[
+                                    { required: true, message: 'Vui lòng nhập số lượng!' },
+                                    { type: 'number', min: 1, message: 'Số lượng phải lớn hơn 0!' }
+                                  ]}
+                                  className="mb-2"
+                                >
+                                  <InputNumber
+                                    placeholder="Số lượng"
+                                    min={1}
+                                    style={{ width: '100%' }}
+                                    addonAfter={item.unit || ''}
+                                  />
+                                </Form.Item>
+                                <Form.Item name="note">
+                                  <Input.TextArea
+                                    placeholder="Ghi chú (tùy chọn)"
+                                    rows={2}
+                                    maxLength={200}
+                                  />
+                                </Form.Item>
+                              </Form>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  <span>
+                                    <strong>Số lượng:</strong> {item.quantity} {item.unit || ''}
+                                  </span>
+                                </div>
+                                {item.note && (
+                                  <div className="mt-2 text-sm text-gray-500 italic">
+                                    <strong>Ghi chú:</strong> {item.note}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Footer Info */}
+              <Divider className="my-4" />
+              <div className="flex justify-between items-center text-sm text-gray-500">
+                <span>
+                  Tạo ngày: {dayjs(checklistDetail.createdAt).format('DD/MM/YYYY HH:mm')}
+                </span>
+                <span>
+                  Tổng: {checklistItems.length} vật phẩm | 
+                  Đã hoàn thành: {checklistItems.filter(i => i.checked).length}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Empty description="Không tìm thấy checklist" />
+        )}
+      </Modal>
+
+      {/* Modal Thêm Item Mới */}
+      <Modal
+        title="Thêm Vật Phẩm Mới"
+        open={addItemModalOpen}
+        onOk={handleSaveNewItem}
+        onCancel={() => {
+          setAddItemModalOpen(false);
+          newItemForm.resetFields();
+        }}
+        okText="Thêm"
+        cancelText="Hủy"
+        confirmLoading={savingItem}
+        okButtonProps={{ className: 'bg-vietnam-gold hover:!bg-yellow-500' }}
+      >
+        <Form
+          form={newItemForm}
+          layout="vertical"
+        >
+          <Form.Item
+            label="Chọn Vật Phẩm"
+            name="itemId"
+            rules={[{ required: true, message: 'Vui lòng chọn vật phẩm!' }]}
+          >
+            <Select
+              placeholder="Chọn vật phẩm"
+              showSearch
+              filterOption={(input, option) =>
+                option?.children?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {availableItems.map(item => (
+                <Option key={item.itemId} value={item.itemId}>
+                  {item.itemName} {item.unit ? `(${item.unit})` : ''}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Số Lượng"
+            name="quantity"
+            rules={[
+              { required: true, message: 'Vui lòng nhập số lượng!' },
+              { type: 'number', min: 1, message: 'Số lượng phải lớn hơn 0!' }
+            ]}
+          >
+            <InputNumber
+              placeholder="Nhập số lượng"
+              min={1}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Ghi Chú (Tùy chọn)"
+            name="note"
+          >
+            <Input.TextArea
+              placeholder="Nhập ghi chú"
+              rows={3}
+              maxLength={200}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Custom CSS cho hover effects */}
+      <style>{`
+        .checklist-table-row {
+          transition: all 0.3s ease;
+        }
+        
+        .checklist-table-row:hover {
+          background-color: rgba(212, 175, 55, 0.1) !important;
+          transform: translateX(4px);
+          box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+        }
+        
+        .checklist-table .ant-table-tbody > tr.ant-table-row-selected > td {
+          background-color: rgba(212, 175, 55, 0.15) !important;
+        }
+        
+        .checklist-table .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+          background-color: rgba(212, 175, 55, 0.25) !important;
+        }
+        
+        .checklist-table .ant-checkbox-wrapper {
+          z-index: 10;
+        }
+        
+        .checklist-table .ant-table-thead > tr > th {
+          background-color: rgba(255, 255, 255, 0.9) !important;
+          border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+          font-weight: 600;
+          color: #065f46;
+        }
+        
+        .checklist-table .ant-table-tbody > tr > td {
+          background-color: rgba(255, 255, 255, 0.7) !important;
+          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        .checklist-table .ant-pagination {
+          margin-top: 20px;
+        }
+      `}</style>
     </div>
   );
 };
