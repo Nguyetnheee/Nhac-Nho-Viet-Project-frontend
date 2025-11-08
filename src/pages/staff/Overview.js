@@ -309,6 +309,10 @@ const Overview = () => {
     }).format(amount || 0);
   };
 
+  const formatCurrencyVND = (amount) => {
+    return new Intl.NumberFormat('vi-VN').format(amount || 0) + ' VNĐ';
+  };
+
   const getStatusTag = (status) => {
     const statusMap = {
       'PENDING': { color: 'orange', text: 'Chờ xử lý' },
@@ -441,6 +445,11 @@ const Overview = () => {
       const shipperId = order.shipperId || order.shipper?.shipperId;
       const shipperName = order.shipperName || order.shipper?.shipperName || `Shipper ${shipperId || 'N/A'}`;
 
+      // Chỉ tính các đơn hàng có shipper được gán
+      if (!shipperName || shipperName === 'Shipper N/A' || shipperName === 'Shipper null') {
+        return; // Bỏ qua các đơn hàng chưa có shipper
+      }
+
       if (!shipperStats[shipperName]) {
         shipperStats[shipperName] = {
           total: 0,
@@ -450,22 +459,41 @@ const Overview = () => {
       }
 
       shipperStats[shipperName].total++;
-      if (order.status === 'DELIVERED') {
+      
+      // Tính completed: các đơn đã được gán cho shipper (CONFIRMED, SHIPPING, DELIVERED, COMPLETED)
+      if (order.status === 'CONFIRMED' || order.status === 'SHIPPING' || 
+          order.status === 'DELIVERED' || order.status === 'COMPLETED') {
+        shipperStats[shipperName].completed++;
+      }
+      
+      // Tính delivered: các đơn đã giao thành công (DELIVERED hoặc COMPLETED)
+      if (order.status === 'DELIVERED' || order.status === 'COMPLETED') {
         shipperStats[shipperName].delivered++;
-        shipperStats[shipperName].completed++;
-      } else if (order.status === 'SHIPPING' || order.status === 'CONFIRMED') {
-        shipperStats[shipperName].completed++;
       }
     });
 
     const shipperNames = Object.keys(shipperStats);
     const completedOrders = shipperNames.map(name => shipperStats[name].completed);
     const deliveredOrders = shipperNames.map(name => shipperStats[name].delivered);
-    const successRates = shipperNames.map(name =>
-      shipperStats[name].total > 0
-        ? ((shipperStats[name].delivered / shipperStats[name].total) * 100).toFixed(1)
-        : 0
-    );
+    
+    // Tính tỷ lệ thành công: (delivered / total) * 100
+    const successRates = shipperNames.map(name => {
+      const stats = shipperStats[name];
+      if (stats.total === 0) return 0;
+      
+      // Tính tỷ lệ dựa trên delivered/total
+      const rate = (stats.delivered / stats.total) * 100;
+      return parseFloat(rate.toFixed(1));
+    });
+
+    // Debug log để kiểm tra
+    console.log('📊 Shipper Performance Data:', {
+      shipperNames,
+      completedOrders,
+      deliveredOrders,
+      successRates,
+      stats: shipperStats
+    });
 
     return {
       shipperNames,
@@ -747,7 +775,7 @@ const Overview = () => {
                 value={getTotalRevenue()}
                 prefix={<GiftOutlined />}
                 valueStyle={{ color: '#eb2f96' }}
-                formatter={(value) => formatCurrency(value)}
+                formatter={(value) => formatCurrencyVND(value)}
               />
             </Card>
           </Col>
@@ -808,7 +836,7 @@ const Overview = () => {
                   tooltip: {
                     trigger: 'item',
                     formatter: (params) => {
-                      return `${params.name}<br/>${formatCurrency(params.value)} (${params.percent}%)`;
+                      return `${params.name}<br/>${formatCurrencyVND(params.value)} (${params.percent}%)`;
                     }
                   },
                   legend: {
@@ -829,7 +857,7 @@ const Overview = () => {
                       label: {
                         show: true,
                         formatter: (params) => {
-                          return formatCurrency(params.value);
+                          return formatCurrencyVND(params.value);
                         }
                       },
                       emphasis: {
@@ -838,7 +866,7 @@ const Overview = () => {
                           fontSize: 16,
                           fontWeight: 'bold',
                           formatter: (params) => {
-                            return formatCurrency(params.value);
+                            return formatCurrencyVND(params.value);
                           }
                         }
                       },

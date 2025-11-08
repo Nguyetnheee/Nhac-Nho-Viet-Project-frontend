@@ -509,8 +509,10 @@ const OrderManagement = () => {
           });
         }
 
-        // Thêm divider và "Hủy" nếu status là PAID hoặc CONFIRMED
-        if (isPaid || isConfirmed) {
+        // Chỉ cho phép hủy khi status là PENDING (chưa thanh toán)
+        // Không cho phép hủy khi đã xác nhận (CONFIRMED) trở đi
+        const isPending = statusUpper === 'PENDING' || record.status === 'Chờ thanh toán';
+        if (isPending) {
           menuItems.push(
             {
               type: 'divider'

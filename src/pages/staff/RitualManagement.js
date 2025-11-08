@@ -1,6 +1,6 @@
 // src/pages/admin/RitualManagement.js
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Spin, Card, Typography, Empty } from 'antd';
+import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Spin, Card, Typography, Empty, Upload } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, BookOutlined } from '@ant-design/icons';
 import { ritualService } from '../../services/ritualService';
 import ViewRitual from './ViewRitual';
@@ -18,6 +18,8 @@ const RitualManagement = () => {
   const [rituals, setRituals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   useEffect(() => {
     if (currentView === 'list') {
@@ -72,13 +74,35 @@ const RitualManagement = () => {
     setSelectedRitualId(null);
   };
 
+  const handleFileSelect = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Chỉ có thể tải lên file ảnh!');
+      return Upload.LIST_IGNORE;
+    }
+    
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('Ảnh phải nhỏ hơn 5MB!');
+      return Upload.LIST_IGNORE;
+    }
+
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPreviewUrl(e.target.result);
+    reader.readAsDataURL(file);
+    return false; // Prevent auto upload
+  };
+
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
     try {
-      await ritualService.createRitual(values);
+      await ritualService.createRitual(values, selectedFile);
       message.success('Thêm lễ hội thành công!');
       setIsModalVisible(false);
       form.resetFields();
+      setSelectedFile(null);
+      setPreviewUrl('');
       fetchRituals();
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Thêm lễ hội thất bại!';
@@ -167,7 +191,12 @@ const RitualManagement = () => {
       <Modal
         title="Thêm Lễ Hội Mới"
         visible={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => {
+          setIsModalVisible(false);
+          setSelectedFile(null);
+          setPreviewUrl('');
+          form.resetFields();
+        }}
         destroyOnClose
         footer={null}
         width={700}
@@ -198,15 +227,49 @@ const RitualManagement = () => {
           <Form.Item name="meaning" label="Ý nghĩa">
             <TextArea rows={4} placeholder="Nêu ý nghĩa của lễ hội..." />
           </Form.Item>
-          <Form.Item name="imageUrl" label="URL hình ảnh">
-            <Input placeholder="https://example.com/image.jpg" />
+          <Form.Item label="Hình ảnh lễ hội">
+            <Upload
+              listType="picture-card"
+              className="avatar-uploader"
+              showUploadList={false}
+              beforeUpload={handleFileSelect}
+            >
+              {previewUrl ? (
+                <img src={previewUrl} alt="preview" style={{ width: '100%' }} />
+              ) : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Chọn ảnh</div>
+                </div>
+              )}
+            </Upload>
+            {previewUrl && (
+              <Button 
+                size="small" 
+                onClick={() => {
+                  setSelectedFile(null);
+                  setPreviewUrl('');
+                }}
+                style={{ marginTop: 8 }}
+              >
+                Xóa ảnh
+              </Button>
+            )}
+            <Text type="secondary" className="block mt-2 text-xs">
+              Chọn ảnh JPG/PNG, nhỏ hơn 5MB.
+            </Text>
           </Form.Item>
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={isSubmitting} className="bg-vietnam-green hover:!bg-emerald-800">
                 Thêm lễ hội
               </Button>
-              <Button onClick={() => setIsModalVisible(false)}>Hủy</Button>
+              <Button onClick={() => {
+                setIsModalVisible(false);
+                setSelectedFile(null);
+                setPreviewUrl('');
+                form.resetFields();
+              }}>Hủy</Button>
             </Space>
           </Form.Item>
         </Form>

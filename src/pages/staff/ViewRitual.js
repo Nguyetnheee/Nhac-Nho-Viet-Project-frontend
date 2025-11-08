@@ -66,7 +66,7 @@ const ViewRitual = ({ ritualId, onBack, onEdit }) => {
           <div className="mb-4 md:mb-0">
             <Title level={2} className="font-serif !text-vietnam-green !mb-1">
               <Space>
-                <InfoCircleOutlined />
+                
                 Chi tiết Lễ hội
               </Space>
             </Title>
@@ -117,9 +117,6 @@ const ViewRitual = ({ ritualId, onBack, onEdit }) => {
                     mask: <Space><EyeOutlined /> Xem ảnh</Space>
                   }}
                 />
-                <Paragraph className="mt-4 text-gray-500 text-xs">
-                  URL: <Text copyable ellipsis>{ritual.imageUrl}</Text>
-                </Paragraph>
               </div>
             ) : (
               <Empty 
