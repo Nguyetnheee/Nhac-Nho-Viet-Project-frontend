@@ -94,7 +94,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -139,9 +139,9 @@ const Login = () => {
         } else {
           // Nếu là Admin/Staff/Shipper → Không cho phép đăng nhập
           console.log('⚠️ Customer Login: Invalid role for customer login:', result.role);
-          showWarning('Không có quyền truy cập!', 'Vui lòng sử dụng trang đăng nhập dành cho Admin/Staff.');
+          showError('Đăng nhập thất bại!', 'Tài khoản không thể đăng nhập ở trang này');
           // Logout ngay lập tức
-          await login.logout?.();
+          logout();
           setLoading(false);
           return;
         }

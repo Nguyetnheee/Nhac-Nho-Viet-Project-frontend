@@ -546,6 +546,12 @@ const Checklist = () => {
 
   // Delete Checklist Handler
   const handleDeleteChecklist = async (userChecklistId) => {
+    // Validate ID trước khi hiển thị modal
+    if (!userChecklistId) {
+      message.error('Không tìm thấy ID checklist để xóa!');
+      return;
+    }
+
     Modal.confirm({
       title: 'Xác nhận xóa checklist',
       content: 'Bạn có chắc muốn xóa checklist này? Hành động này không thể hoàn tác.',
@@ -567,7 +573,11 @@ const Checklist = () => {
           await fetchUserChecklists(userListPagination.current, userListPagination.pageSize);
         } catch (error) {
           console.error('Error deleting checklist:', error);
-          message.error('Không thể xóa checklist!');
+          const errorMessage = error.response?.data?.message 
+            || error.response?.data?.error
+            || error.message
+            || 'Không thể xóa checklist!';
+          message.error(errorMessage);
         } finally {
           setSavingChecklist(false);
         }

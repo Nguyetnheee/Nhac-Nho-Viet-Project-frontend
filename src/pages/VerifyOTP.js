@@ -169,10 +169,10 @@ const VerifyOTP = () => {
 
           {/* Title */}
           <h2 className="text-center text-2xl font-bold text-gray-800 mb-2">
-            Please check your email
+            Vui lòng kiểm tra email
           </h2>
           <p className="text-center text-gray-500 mb-8">
-            We've sent a code to <span className="font-medium text-gray-700">{email}</span>
+            Chúng tôi đã gửi mã xác thực đến tài khoản mail sau <span className="font-medium text-gray-700">{email}</span>
           </p>
 
           {/* OTP Input */}
@@ -218,14 +218,14 @@ const VerifyOTP = () => {
               disabled={loading}
               className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
             >
-              Cancel
+              Hoàn tác
             </button>
             <button
               onClick={handleVerify}
               disabled={loading || otp.some((d) => !d)}
               className="flex-1 px-6 py-3 bg-[#28a745] text-white rounded-lg font-medium hover:bg-[#218838] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Đang xác thực...' : 'Verify'}
+              {loading ? 'Đang xác thực...' : 'Đang xác nhận'}
             </button>
           </div>
         </div>

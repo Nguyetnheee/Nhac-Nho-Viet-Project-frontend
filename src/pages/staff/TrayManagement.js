@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Image, Modal, message, Input, ConfigProvider, Card, Typography, Row, Col, Select } from 'antd';
+import { Table, Button, Space, Tag, Image, Modal, message, Input, ConfigProvider, Card, Typography, Select, Spin, Descriptions, Divider } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
   ReloadOutlined,
+  EyeOutlined,
   // ExclamationCircleOutlined
 } from '@ant-design/icons';
 import viVN from 'antd/locale/vi_VN';
@@ -24,6 +25,11 @@ const TrayManagement = () => {
   const [searchText, setSearchText] = useState('');
   const { Title, Text } = Typography;
   const [isModalVisible, setIsModalVisible] = useState(false);
+  
+  // States for product detail modal
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [productDetailData, setProductDetailData] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Load danh sách sản phẩm
   const loadProducts = async () => {
@@ -50,6 +56,39 @@ const TrayManagement = () => {
     console.log('Editing product:', productId);
     setSelectedProductId(productId);
     setCurrentView('edit');
+  };
+
+  // Xử lý xem chi tiết mâm cúng
+  const handleViewDetail = async (productId) => {
+    setDetailModalVisible(true);
+    setDetailLoading(true);
+    setProductDetailData(null);
+    
+    try {
+      // Bước 1: Lấy productDetailId từ productId (sử dụng api có token cho staff)
+      const productDetailId = await productService.getProductDetailIdByProductId(productId);
+      
+      if (!productDetailId) {
+        message.error('Không tìm thấy chi tiết sản phẩm!');
+        setDetailModalVisible(false);
+        return;
+      }
+      
+      // Bước 2: Lấy chi tiết nguyên liệu
+      const detailData = await productService.getProductDetailIngredients(productDetailId);
+      setProductDetailData(detailData);
+    } catch (error) {
+      console.error('Error fetching product detail:', error);
+      const errorMessage = error.response?.status === 403 
+        ? 'Bạn không có quyền truy cập thông tin này!' 
+        : error.response?.status === 404
+        ? 'Không tìm thấy thông tin mâm cúng!'
+        : 'Không thể tải chi tiết mâm cúng!';
+      message.error(errorMessage);
+      setDetailModalVisible(false);
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   // Xử lý delete sản phẩm với confirm modal
@@ -275,14 +314,22 @@ const TrayManagement = () => {
     {
       title: 'Hành động',
       key: 'action',
-      width: 150,
+      width: 200,
       render: (_, record) => (
-        <Button
-          icon={<EditOutlined />}
-          onClick={() => handleEdit(record.productId)}
-        >
-          Sửa
-        </Button>
+        <Space>
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record.productId)}
+          >
+            Xem chi tiết
+          </Button>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record.productId)}
+          >
+            Sửa
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -393,6 +440,132 @@ const TrayManagement = () => {
         }}
         scroll={{ x: 1200 }}
       />
+
+      {/* Modal Chi Tiết Mâm Cúng */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <EyeOutlined />
+            <span>Chi tiết mâm cúng</span>
+          </div>
+        }
+        open={detailModalVisible}
+        onCancel={() => {
+          setDetailModalVisible(false);
+          setProductDetailData(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setDetailModalVisible(false);
+            setProductDetailData(null);
+          }}>
+            Đóng
+          </Button>
+        ]}
+        width={900}
+      >
+        {detailLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>Đang tải thông tin...</div>
+          </div>
+        ) : productDetailData ? (
+          <div>
+            {/* Thông tin cơ bản */}
+            <Descriptions title="Thông tin mâm cúng" bordered column={2} size="small">
+              <Descriptions.Item label="Tên mâm cúng" span={2}>
+                <Text strong>{productDetailData.productName || 'N/A'}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Mã sản phẩm">
+                {productDetailData.productId || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Giá">
+                <Text strong style={{ color: '#1890ff' }}>
+                  {productDetailData.price?.toLocaleString()} VNĐ
+                </Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Danh mục">
+                <Tag color="purple">{productDetailData.categoryName || 'N/A'}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Vùng miền">
+                <Tag color="blue">{productDetailData.regionName || 'N/A'}</Tag>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider />
+
+            {/* Bảng nguyên liệu */}
+            <div style={{ marginTop: 24 }}>
+              <Title level={4} style={{ marginBottom: 16 }}>
+                Nguyên liệu chi tiết của mâm cúng
+              </Title>
+              {productDetailData.checklists && productDetailData.checklists.length > 0 ? (
+                <Table
+                  dataSource={productDetailData.checklists}
+                  rowKey={(record, index) => `${record.checklistId}-${index}`}
+                  pagination={false}
+                  size="small"
+                  bordered
+                  columns={[
+                    {
+                      title: 'STT',
+                      key: 'index',
+                      width: 60,
+                      render: (_, __, index) => index + 1,
+                    },
+                    {
+                      title: 'Lễ hội',
+                      dataIndex: 'ritualName',
+                      key: 'ritualName',
+                      render: (text) => <Tag color="green">{text || 'N/A'}</Tag>,
+                    },
+                    {
+                      title: 'Tên nguyên liệu',
+                      dataIndex: 'itemName',
+                      key: 'itemName',
+                      render: (text) => <Text strong>{text || 'N/A'}</Text>,
+                    },
+                    {
+                      title: 'Số lượng',
+                      dataIndex: 'quantity',
+                      key: 'quantity',
+                      align: 'center',
+                      render: (quantity) => (
+                        <Text>{quantity !== null && quantity !== undefined ? quantity : 'N/A'}</Text>
+                      ),
+                    },
+                    {
+                      title: 'Đơn vị',
+                      dataIndex: 'unit',
+                      key: 'unit',
+                      align: 'center',
+                      render: (unit) => <Tag>{unit || '-'}</Tag>,
+                    },
+                    {
+                      title: 'Ghi chú',
+                      dataIndex: 'checkNote',
+                      key: 'checkNote',
+                      render: (note) => (
+                        <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                          {note || '-'}
+                        </Text>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  <Text type="secondary">Chưa có nguyên liệu nào cho mâm cúng này</Text>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            <Text type="secondary">Không có dữ liệu</Text>
+          </div>
+        )}
+      </Modal>
       {/* </div> */}
     </ConfigProvider>
   );
