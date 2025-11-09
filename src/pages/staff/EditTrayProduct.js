@@ -337,7 +337,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
               
               <Alert
                 message="Lưu ý"
-                description="Chỉ có thể gán các dan đã được tạo sẵn trong phần 'Quản lý danh mục'. Để tạo danh mục mới, vui lòng vào phần 'Quản lý danh mục'."
+                description="Chỉ có thể gán các danh mục đã được tạo sẵn trong phần 'Quản lý danh mục'. Để tạo danh mục mới, vui lòng vào phần 'Quản lý danh mục'."
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}
