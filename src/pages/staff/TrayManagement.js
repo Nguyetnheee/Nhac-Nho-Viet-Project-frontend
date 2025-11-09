@@ -16,6 +16,7 @@ import EditTrayProduct from './EditTrayProduct';
 
 // Import service
 import productService from '../../services/productService';
+import productDetailService from '../../services/productDetailService';
 
 const TrayManagement = () => {
   const [currentView, setCurrentView] = useState('list'); // 'list', 'create', 'edit'
@@ -66,7 +67,7 @@ const TrayManagement = () => {
     
     try {
       // Bước 1: Lấy productDetailId từ productId (sử dụng api có token cho staff)
-      const productDetailId = await productService.getProductDetailIdByProductId(productId);
+      const productDetailId = await productDetailService.getProductDetailIdByProductId(productId);
       
       if (!productDetailId) {
         message.error('Không tìm thấy chi tiết sản phẩm!');
@@ -75,7 +76,7 @@ const TrayManagement = () => {
       }
       
       // Bước 2: Lấy chi tiết nguyên liệu
-      const detailData = await productService.getProductDetailIngredients(productDetailId);
+      const detailData = await productDetailService.getProductDetailIngredients(productDetailId);
       setProductDetailData(detailData);
     } catch (error) {
       console.error('Error fetching product detail:', error);

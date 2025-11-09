@@ -1,7 +1,10 @@
+import api from './api'; // Sử dụng api có interceptor token cho các API yêu cầu STAFF
 import axios from "axios";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 
+// publicApi chỉ dùng cho các API public (không yêu cầu auth)
+// Các API yêu cầu STAFF sẽ dùng `api` từ './api'
 export const publicApi = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,19 +13,12 @@ export const publicApi = axios.create({
   },
 });
 
-// Gắn token
-publicApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
 // Export named export để consistent với cách import
 export const checklistService = {
-  // Lấy tất cả checklists
+  // Lấy tất cả checklists (yêu cầu STAFF)
   getAllChecklists: async () => {
     try {
-      const response = await publicApi.get('/api/checklists');
+      const response = await api.get('/api/checklists');
       console.log("Get all checklists:", response.data);
       return response.data;
     } catch (error) {
@@ -37,11 +33,11 @@ export const checklistService = {
     }
   },
 
-  // Alias cho getAllChecklists (để tương thích với code cũ)
+  // Alias cho getAllChecklists (để tương thích với code cũ) - yêu cầu STAFF
   getChecklists: async () => {
     try {
       console.log('🔍 Fetching all checklists...');
-      const response = await publicApi.get('/api/checklists');
+      const response = await api.get('/api/checklists');
       console.log('✅ All checklists loaded:', response.data);
       console.log('📊 Total items:', Array.isArray(response.data) ? response.data.length : 'Not an array');
       return response.data;
@@ -58,11 +54,11 @@ export const checklistService = {
     }
   },
 
-  // Lấy tất cả checklist items (sản phẩm trong kho)
+  // Lấy tất cả checklist items (sản phẩm trong kho) - yêu cầu STAFF
   getChecklistItems: async () => {
     try {
       console.log('🔍 Fetching all checklist items...');
-      const response = await publicApi.get('/api/checklist-items');
+      const response = await api.get('/api/checklist-items');
       console.log('✅ Checklist items loaded:', response.data);
       return response.data;
     } catch (error) {
@@ -71,11 +67,11 @@ export const checklistService = {
     }
   },
 
-  // Lấy chi tiết một checklist item
+  // Lấy chi tiết một checklist item (yêu cầu STAFF)
   getChecklistItemById: async (itemId) => {
     try {
       console.log(`🔍 Fetching checklist item ${itemId}...`);
-      const response = await publicApi.get(`/api/checklist-items/${itemId}`);
+      const response = await api.get(`/api/checklist-items/${itemId}`);
       console.log('✅ Checklist item loaded:', response.data);
       return response.data;
     } catch (error) {
@@ -84,11 +80,11 @@ export const checklistService = {
     }
   },
 
-  // Xóa một checklist item
+  // Xóa một checklist item (yêu cầu STAFF)
   deleteChecklistItem: async (itemId) => {
     try {
       console.log(`🗑️ Deleting checklist item ${itemId}...`);
-      const response = await publicApi.delete(`/api/checklist-items/${itemId}`);
+      const response = await api.delete(`/api/checklist-items/${itemId}`);
       console.log('✅ Checklist item deleted:', response.data);
       return response.data;
     } catch (error) {
@@ -97,11 +93,11 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật checklist item
+  // Cập nhật checklist item (yêu cầu STAFF)
   updateChecklistItem: async (itemId, data) => {
     try {
       console.log(`✏️ Updating checklist item ${itemId}...`, data);
-      const response = await publicApi.put(`/api/checklist-items/${itemId}`, data);
+      const response = await api.put(`/api/checklist-items/${itemId}`, data);
       console.log('✅ Checklist item updated:', response.data);
       return response.data;
     } catch (error) {
@@ -110,11 +106,11 @@ export const checklistService = {
     }
   },
 
-  // Tạo checklist item mới
+  // Tạo checklist item mới (yêu cầu STAFF)
   createChecklistItem: async (data) => {
     try {
       console.log('➕ Creating new checklist item...', data);
-      const response = await publicApi.post('/api/checklist-items', data);
+      const response = await api.post('/api/checklist-items', data);
       console.log('✅ Checklist item created:', response.data);
       return response.data;
     } catch (error) {
@@ -123,11 +119,11 @@ export const checklistService = {
     }
   },
 
-  // Lấy danh sách units
+  // Lấy danh sách units (yêu cầu STAFF)
   getUnits: async () => {
     try {
       console.log('Fetching all units...');
-      const response = await publicApi.get('/api/units/enums');
+      const response = await api.get('/api/units/enums');
       console.log('Units loaded:', response.data);
       return response.data;
     } catch (error) {
@@ -192,11 +188,11 @@ export const checklistService = {
     }
   },
 
-  // Lấy checklists đã group theo ritual name
+  // Lấy checklists đã group theo ritual name (yêu cầu STAFF)
   getGroupedChecklists: async () => {
     try {
       console.log('🔍 Fetching grouped checklists...');
-      const response = await publicApi.get('/api/checklists/grouped');
+      const response = await api.get('/api/checklists/grouped');
       console.log('Grouped checklists:', response.data);
       return response.data;
     } catch (error) {
@@ -205,11 +201,11 @@ export const checklistService = {
     }
   },
 
-  // Tạo checklist mới
+  // Tạo checklist mới (yêu cầu STAFF)
   createChecklist: async (data) => {
     try {
       console.log('➕ Creating new checklist...', data);
-      const response = await publicApi.post('/api/checklists', data);
+      const response = await api.post('/api/checklists', data);
       console.log('✅ Checklist created:', response.data);
       return response.data;
     } catch (error) {
@@ -224,11 +220,11 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật checklist
+  // Cập nhật checklist (yêu cầu STAFF)
   updateChecklist: async (checklistId, data) => {
     try {
       console.log(`✏️ Updating checklist ${checklistId}...`, data);
-      const response = await publicApi.put(`/api/checklists/${checklistId}`, data);
+      const response = await api.put(`/api/checklists/${checklistId}`, data);
       console.log('✅ Checklist updated:', response.data);
       return response.data;
     } catch (error) {
@@ -243,11 +239,11 @@ export const checklistService = {
     }
   },
 
-  // Xóa checklist
+  // Xóa checklist (yêu cầu STAFF)
   deleteChecklist: async (checklistId) => {
     try {
       console.log(`🗑️ Deleting checklist ${checklistId}...`);
-      const response = await publicApi.delete(`/api/checklists/${checklistId}`);
+      const response = await api.delete(`/api/checklists/${checklistId}`);
       console.log('✅ Checklist deleted:', response.data);
       return response.data;
     } catch (error) {
