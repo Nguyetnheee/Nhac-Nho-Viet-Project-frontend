@@ -1,10 +1,12 @@
 // src/pages/admin/RitualManagement.js
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Spin, Card, Typography, Empty, Upload } from 'antd';
+import { Table, Button, Space, Tag, Modal, Form, Input, Select, message, Spin, Card, Typography, Empty, Upload, DatePicker } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, BookOutlined } from '@ant-design/icons';
 import { ritualService } from '../../services/ritualService';
 import ViewRitual from './ViewRitual';
 import EditRitual from './EditRitual';
+import dayjs from 'dayjs';
+import { convertSolarToLunar } from '../../utils/lunarConverter';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -94,10 +96,33 @@ const RitualManagement = () => {
     return false; // Prevent auto upload
   };
 
+  // Handler để tự động tính ngày âm lịch khi chọn ngày dương lịch
+  const handleDateSolarChange = (date) => {
+    if (date) {
+      // Tự động tính ngày âm lịch
+      const lunarDate = convertSolarToLunar(date);
+      form.setFieldsValue({
+        dateSolar: date,
+        dateLunar: lunarDate
+      });
+    } else {
+      form.setFieldsValue({
+        dateSolar: null,
+        dateLunar: ''
+      });
+    }
+  };
+
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
     try {
-      await ritualService.createRitual(values, selectedFile);
+      // Chuyển đổi DatePicker value (dayjs object) thành string format YYYY-MM-DD
+      const submitValues = {
+        ...values,
+        dateSolar: values.dateSolar ? dayjs(values.dateSolar).format('YYYY-MM-DD') : values.dateSolar
+      };
+      
+      await ritualService.createRitual(submitValues, selectedFile);
       message.success('Thêm lễ hội thành công!');
       setIsModalVisible(false);
       form.resetFields();
@@ -215,10 +240,15 @@ const RitualManagement = () => {
           </Form.Item>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
             <Form.Item name="dateLunar" label="Ngày âm lịch">
-              <Input placeholder="Ví dụ: 15/07" />
+              <Input placeholder="Sẽ tự động tính khi chọn ngày dương lịch" readOnly />
             </Form.Item>
             <Form.Item name="dateSolar" label="Ngày dương lịch">
-              <Input type="date" />
+              <DatePicker 
+                format="YYYY-MM-DD"
+                style={{ width: '100%' }}
+                placeholder="Chọn ngày dương lịch"
+                onChange={handleDateSolarChange}
+              />
             </Form.Item>
           </div>
           <Form.Item name="description" label="Mô tả">

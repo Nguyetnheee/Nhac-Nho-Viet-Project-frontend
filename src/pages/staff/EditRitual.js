@@ -1,9 +1,11 @@
 // src/pages/admin/components/EditRitual.js
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Card, Space, Upload, message, Spin, Typography, Row, Col } from 'antd';
+import { Form, Input, Select, Button, Card, Space, Upload, message, Spin, Typography, Row, Col, DatePicker } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, BookOutlined } from '@ant-design/icons';
 import { ritualService } from '../../services/ritualService';
 import regionService from '../../services/regionService';
+import dayjs from 'dayjs';
+import { convertSolarToLunar } from '../../utils/lunarConverter';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -37,7 +39,7 @@ const EditRitual = ({ ritualId, onBack, onSave }) => {
           ritualName: ritualRes.ritualName,
           regionId: ritualRes.regionId,
           dateLunar: ritualRes.dateLunar,
-          dateSolar: ritualRes.dateSolar,
+          dateSolar: ritualRes.dateSolar ? dayjs(ritualRes.dateSolar) : null,
           description: ritualRes.description,
           meaning: ritualRes.meaning
         });
@@ -73,10 +75,33 @@ const EditRitual = ({ ritualId, onBack, onSave }) => {
     return false;
   };
 
+  // Handler để tự động tính ngày âm lịch khi chọn ngày dương lịch
+  const handleDateSolarChange = (date) => {
+    if (date) {
+      // Tự động tính ngày âm lịch
+      const lunarDate = convertSolarToLunar(date);
+      form.setFieldsValue({
+        dateSolar: date,
+        dateLunar: lunarDate
+      });
+    } else {
+      form.setFieldsValue({
+        dateSolar: null,
+        dateLunar: ''
+      });
+    }
+  };
+
   const handleSave = async (values) => {
     setSaving(true);
     try {
-      const response = await ritualService.updateRitual(ritualId, values, selectedFile);
+      // Chuyển đổi DatePicker value (dayjs object) thành string format YYYY-MM-DD
+      const submitValues = {
+        ...values,
+        dateSolar: values.dateSolar ? dayjs(values.dateSolar).format('YYYY-MM-DD') : values.dateSolar
+      };
+      
+      const response = await ritualService.updateRitual(ritualId, submitValues, selectedFile);
       message.success('Cập nhật lễ hội thành công!');
       if (onSave) onSave(response);
     } catch (error) {
@@ -126,13 +151,18 @@ const EditRitual = ({ ritualId, onBack, onSave }) => {
                   </Col>
                   <Col span={12}>
                     <Form.Item name="dateLunar" label="Ngày Âm lịch">
-                        <Input placeholder="VD: 1/1" />
+                        <Input placeholder="Sẽ tự động tính khi chọn ngày dương lịch" />
                     </Form.Item>
                   </Col>
                 </Row>
 
                 <Form.Item name="dateSolar" label="Ngày Dương lịch">
-                    <Input placeholder="VD: 01/01" />
+                    <DatePicker 
+                      format="YYYY-MM-DD"
+                      style={{ width: '100%' }}
+                      placeholder="Chọn ngày dương lịch"
+                      onChange={handleDateSolarChange}
+                    />
                 </Form.Item>
 
                 <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}>
