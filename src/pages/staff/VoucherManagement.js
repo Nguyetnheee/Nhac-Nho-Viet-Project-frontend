@@ -159,11 +159,19 @@ const VoucherManagement = () => {
           const notExpired = !endDate || endDate >= now;
           return Boolean(v.isActive) && notExpired;
         });
+      } else if (filters.isActive === 'inactive') {
+        // ✅ Lọc voucher không hoạt động (isActive=false và chưa hết hạn)
+        filteredData = voucherData.filter(v => {
+          const endDate = v.endDate ? new Date(v.endDate) : null;
+          const notExpired = !endDate || endDate >= now;
+          return !Boolean(v.isActive) && notExpired;
+        });
       } else if (filters.isActive === 'false') {
+        // ✅ Lọc voucher đã hết hạn
         filteredData = voucherData.filter(v => {
           const endDate = v.endDate ? new Date(v.endDate) : null;
           const isExpired = endDate && endDate < now;
-          return !Boolean(v.isActive) || isExpired;
+          return isExpired;
         });
       }
 
@@ -675,6 +683,7 @@ const VoucherManagement = () => {
               allowClear
             >
               <Option value="true">Hoạt động</Option>
+              <Option value="inactive">Không hoạt động</Option>
               <Option value="false">Hết hạn</Option>
             </Select>
           </Col>
