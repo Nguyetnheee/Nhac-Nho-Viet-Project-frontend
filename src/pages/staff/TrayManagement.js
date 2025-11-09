@@ -970,7 +970,7 @@ const TrayManagement = () => {
                   fontSize: 12,
                   color: '#888',
                 }}
-              >
+              >  
                 Mâm cúng:{' '}
                 <strong>
                   {
