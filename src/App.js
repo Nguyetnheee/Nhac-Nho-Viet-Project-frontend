@@ -9,6 +9,7 @@ import { ToastProvider } from "./components/ToastContainer";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import VoucherBanner from "./components/VoucherBanner";
+import FacebookFloatButton from "./components/FacebookFloatButton";
 
 function App() {
   // ⚠️ Khai báo useLocation
@@ -44,6 +45,9 @@ function App() {
 
                 {/* Footer hiển thị nếu KHÔNG phải là trang Dashboard */}
                 {!isDashboardRoute && <Footer />}
+                
+                {/* Facebook Float Button - chỉ hiển thị trên trang customer */}
+                {!isDashboardRoute && <FacebookFloatButton />}
               </div>
             </CartProvider>
           </ChecklistProvider>
