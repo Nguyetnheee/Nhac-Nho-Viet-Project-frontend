@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ToastContainer';
+import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
 
 // Thêm CSS animations vào component
 const styles = `
@@ -235,7 +236,7 @@ const AdminLogin = () => {
                                 {/* Username */}
                                 <div className="animate-slide-in-right animate-delay-200">
                                     <label htmlFor="username" className="mb-2 block text-sm font-medium text-gray-200">
-                                        Username
+                                        Tên đăng nhập
                                     </label>
                                     <input
                                         id="username"
@@ -245,14 +246,14 @@ const AdminLogin = () => {
                                         value={formData.username}
                                         onChange={handleChange}
                                         className="w-full rounded-lg border-2 border-vietnam-gold bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:bg-gray-50 focus:border-vietnam-gold focus:ring-2 focus:ring-vietnam-gold/30 shadow-sm hover:shadow-md"
-                                        placeholder="Nhập username"
+                                        placeholder="Nhập tên đăng nhập"
                                     />
                                 </div>
 
                                 {/* Password */}
                                 <div className="animate-slide-in-right animate-delay-300">
                                     <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-200">
-                                        Password
+                                        Mật khẩu
                                     </label>
                                     <div className="relative">
                                         <input
@@ -263,8 +264,17 @@ const AdminLogin = () => {
                                             value={formData.password}
                                             onChange={handleChange}
                                             className="w-full rounded-lg border-2 border-vietnam-gold bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:bg-gray-50 focus:border-vietnam-gold focus:ring-2 focus:ring-vietnam-gold/30 shadow-sm hover:shadow-md"
-                                            placeholder="••••••••"
+                                            placeholder="Nhập mật khẩu"
                                         />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPw(!showPw)}
+                                            className="absolute inset-y-0 right-3 my-auto text-slate-400 hover:text-slate-600 text-sm"
+                                        >
+                                            {showPw ? <EyeOutlined className="text-lg" /> : <EyeInvisibleOutlined className="text-lg" />}
+                                        </button>
+
                                     </div>
                                 </div>
 

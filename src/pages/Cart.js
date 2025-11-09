@@ -56,8 +56,8 @@ const Cart = () => {
   const [availableVouchers, setAvailableVouchers] = useState([]);
   const [loadingVouchers, setLoadingVouchers] = useState(false);
   const [voucherInvalidWarning, setVoucherInvalidWarning] = useState("");
+  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
 
-  // ✅ Sync local state với context khi component mount
   const appliedCoupon = appliedVoucher;
 
   // Load danh sách voucher khi component mount
@@ -78,6 +78,11 @@ const Cart = () => {
 
   // Validate voucher khi giá thay đổi
   useEffect(() => {
+    // ✅ Bỏ qua nếu đang apply voucher (tránh duplicate API calls)
+    if (isApplyingVoucher) {
+      return;
+    }
+
     const validateCurrentVoucher = async () => {
       if (!appliedCoupon?.code) {
         setVoucherInvalidWarning("");
@@ -85,8 +90,11 @@ const Cart = () => {
       }
 
       const currentTotal = getTotalPrice();
-      if (currentTotal <= 0) {
+      // ✅ Nếu giỏ hàng trống hoặc không có sản phẩm, tự động xóa voucher
+      if (currentTotal <= 0 || cartItems.length === 0) {
         setVoucherInvalidWarning("");
+        removeVoucher();
+        setCouponCode("");
         return;
       }
 
@@ -123,18 +131,30 @@ const Cart = () => {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totals?.subTotal, appliedCoupon?.code, cartItems.length]);
+  }, [totals?.subTotal, appliedCoupon?.code, cartItems.length, isApplyingVoucher]);
 
   // Hàm tái áp dụng voucher (khi giá thay đổi)
   const handleReapplyVoucher = async (voucherCode) => {
+    // ✅ Bỏ qua nếu đang apply voucher (tránh duplicate API calls)
+    if (isApplyingVoucher) {
+      return;
+    }
+
     try {
       const currentTotal = getTotalPrice();
       
-      // Validate lại
-      const validateResponse = await api.post('/api/vouchers/apply', {
-        voucherCode: voucherCode.toUpperCase(),
-        orderAmount: currentTotal
-      });
+      // ✅ Chỉ validate nếu voucher code khác với code đã apply
+      // Tránh validate lại nếu đã validate rồi
+      let validateResponse;
+      try {
+        validateResponse = await api.post('/api/vouchers/apply', {
+          voucherCode: voucherCode.toUpperCase(),
+          orderAmount: currentTotal
+        });
+      } catch (validateError) {
+        // Nếu validate fail, không cần reapply
+        throw validateError;
+      }
 
       // Áp dụng lại vào cart
       const token = localStorage.getItem('token');
@@ -212,6 +232,7 @@ const Cart = () => {
     }
 
     setIsApplyingCoupon(true);
+    setIsApplyingVoucher(true); // ✅ Set flag để tránh useEffect trigger
     setCouponError("");
 
     try {
@@ -398,6 +419,11 @@ const Cart = () => {
       console.log("🔄 Refreshing cart to sync with database...");
       await fetchCart();
       
+      // ✅ Reset flag sau khi hoàn thành (delay một chút để tránh useEffect trigger)
+      setTimeout(() => {
+        setIsApplyingVoucher(false);
+      }, 100);
+      
     } catch (error) {
       console.error("❌ Lỗi áp dụng voucher:", {
         message: error.message,
@@ -448,6 +474,7 @@ const Cart = () => {
       showError(errorMessage);
     } finally {
       setIsApplyingCoupon(false);
+      setIsApplyingVoucher(false); // ✅ Reset flag
     }
   };
 
@@ -722,7 +749,7 @@ const Cart = () => {
                       // Nút xóa khi đã áp dụng
                       <button
                         onClick={handleRemoveCoupon}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap h-[40px]"
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap h-[40px] mt-2"
                       >
                         Xóa
                       </button>

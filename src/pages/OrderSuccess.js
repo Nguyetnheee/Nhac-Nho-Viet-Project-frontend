@@ -22,10 +22,11 @@ import {
 } from '@ant-design/icons';
 
 // Order status mapping
+// ⭐ Ở phía customer: CONFIRMED hiển thị là "Đang chuẩn bị" (khách đã thanh toán rồi)
 const ORDER_STATUS_MAP = {
   'PENDING': { label: 'Chờ thanh toán', step: 0, color: 'bg-gray-500' },
   'PAID': { label: 'Đã thanh toán', step: 1, color: 'bg-yellow-500' },
-  'CONFIRMED': { label: 'Đã xác nhận', step: 2, color: 'bg-blue-500' },
+  'CONFIRMED': { label: 'Đang chuẩn bị', step: 2, color: 'bg-blue-500' },
   'PROCESSING': { label: 'Đang xử lý', step: 3, color: 'bg-indigo-500' },
   'SHIPPING': { label: 'Đang giao hàng', step: 4, color: 'bg-purple-500' },
   'DELIVERED': { label: 'Đã giao hàng', step: 5, color: 'bg-green-500' },
@@ -223,10 +224,19 @@ const OrderSuccess = () => {
         }
       });
       
-      // ✅ KIỂM TRA: Nếu đơn hàng PENDING hoặc CANCELLED -> redirect sang PendingOrderDetail
-      const orderStatus = mappedData.orderStatus;
-      if (orderStatus === 'PENDING' || orderStatus === 'CANCELLED') {
-        console.log('⚠️ Order is PENDING/CANCELLED, redirecting to PendingOrderDetail');
+      // ⭐ QUY TẮC: PENDING (Chờ thanh toán) được xử lý như CANCELLED (Đã hủy)
+      // Normalize status: map PENDING thành CANCELLED
+      let normalizedStatus = mappedData.orderStatus;
+      if (normalizedStatus === 'PENDING' || normalizedStatus === 'pending') {
+        console.log(`🔄 Mapping PENDING to CANCELLED for Order #${orderId}`);
+        normalizedStatus = 'CANCELLED';
+        mappedData.orderStatus = 'CANCELLED';
+        mappedData.status = 'CANCELLED';
+      }
+      
+      // ✅ KIỂM TRA: Nếu đơn hàng CANCELLED (bao gồm cả PENDING đã được map) -> redirect sang PendingOrderDetail
+      if (normalizedStatus === 'CANCELLED') {
+        console.log('⚠️ Order is CANCELLED (including PENDING mapped to CANCELLED), redirecting to PendingOrderDetail');
         navigate(`/pending-order/${orderId}`, { replace: true });
         return;
       }
@@ -326,17 +336,17 @@ const OrderSuccess = () => {
     
     switch(status) {
       case 'PAID':
-        return 'Thanh toán thành công!';
+        return 'Thanh toán thành công';
       case 'CONFIRMED':
-        return 'Đơn hàng đã được xác nhận!';
+        return 'Đơn hàng đang được chuẩn bị'; // ⭐ Customer view: "Đang chuẩn bị"
       case 'PROCESSING':
-        return 'Đơn hàng đang được xử lý!';
+        return 'Đơn hàng đang được xử lý';
       case 'SHIPPING':
-        return 'Đơn hàng đang được giao!';
+        return 'Đơn hàng đang được giao';
       case 'DELIVERED':
-        return 'Đơn hàng đã được giao!';
+        return 'Đơn hàng đã được giao';
       case 'COMPLETED':
-        return 'Đơn hàng hoàn thành!';
+        return 'Đơn hàng hoàn thành';
       case 'CANCELLED':
         return 'Đơn hàng đã bị hủy';
       default:
@@ -380,7 +390,7 @@ const OrderSuccess = () => {
 
     const steps = [
       { step: 1, label: 'Đã thanh toán', Icon: CheckCircleOutlined, status: 'PAID' },
-      { step: 2, label: 'Đã xác nhận', Icon: FileTextOutlined, status: 'CONFIRMED' },
+      { step: 2, label: 'Đang chuẩn bị', Icon: FileTextOutlined, status: 'CONFIRMED' }, // ⭐ Customer view: "Đang chuẩn bị"
       { step: 3, label: 'Đang xử lý', Icon: SyncOutlined, status: 'PROCESSING' },
       { step: 4, label: 'Đang giao', Icon: CarOutlined, status: 'SHIPPING' },
       { step: 5, label: 'Đã giao', Icon: CheckCircleOutlined, status: 'DELIVERED' },
@@ -501,7 +511,7 @@ const OrderSuccess = () => {
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Mã đơn hàng</p>
                   <p className="font-semibold text-vietnam-green text-lg">
-                    #{orderData.orderCode || orderData.orderId}
+                    {orderData.orderCode || orderData.orderId}
                   </p>
                 </div>
               </div>
@@ -598,13 +608,13 @@ const OrderSuccess = () => {
                             </span>
                             <span className="flex items-center">
                               <span className="font-medium mr-1">Đơn giá:</span>
-                              {formatMoney(item.price)}
+                              {(item.price || 0).toLocaleString('vi-VN')} VNĐ
                             </span>
                           </div>
                         </div>
                         <div className="text-right ml-4">
                           <p className="font-bold text-vietnam-green">
-                            {formatMoney(item.subtotal)}
+                            {(item.subtotal || 0).toLocaleString('vi-VN')} VNĐ
                           </p>
                         </div>
                       </div>
@@ -621,7 +631,7 @@ const OrderSuccess = () => {
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-600">
                   <span>Tạm tính:</span>
-                  <span className="font-medium">{formatMoney(orderData.totalPrice)}</span>
+                  <span className="font-medium">{(orderData.totalPrice || 0).toLocaleString('vi-VN')} VNĐ</span>
                 </div>
                 
                 {/* Hiển thị voucher nếu có */}
@@ -642,7 +652,7 @@ const OrderSuccess = () => {
                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                   <span className="text-xl font-bold text-gray-800">Tổng cộng:</span>
                   <span className="text-2xl font-bold text-vietnam-green">
-                    {formatMoney(orderData.totalPrice)}
+                    {(orderData.totalPrice || 0).toLocaleString('vi-VN')} VNĐ
                   </span>
                 </div>
               </div>

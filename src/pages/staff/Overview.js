@@ -166,17 +166,25 @@ const Overview = () => {
       if (response?.data) {
         const orders = Array.isArray(response.data) ? response.data : response.data.data || [];
         // Map đơn hàng và sắp xếp theo thứ tự mới nhất lên đầu
-        const mappedOrders = orders.map((order, index) => ({
-          key: order.orderId || order.id || index,
-          orderId: order.orderId || order.id || 'N/A',
-          customerName: order.receiverName || order.fullName || order.customerName || 'N/A',
-          totalAmount: order.totalPrice || order.totalAmount || 0,
-          status: order.status || 'PENDING',
-          createdAt: order.orderDate || order.createdAt || 'N/A',
-          shippingAddress: order.address || order.shippingAddress || 'N/A',
-          shippingStatus: order.shippingStatus || 'Chưa vận chuyển',
-          shipperName: order.shipperName || 'Chưa phân công'
-        }));
+        // ⭐ QUY TẮC: PENDING (Chờ thanh toán) được xử lý như CANCELLED (Đã hủy)
+        const mappedOrders = orders.map((order, index) => {
+          let normalizedStatus = order.status || 'CANCELLED';
+          // Map PENDING thành CANCELLED
+          if (normalizedStatus === 'PENDING' || normalizedStatus === 'pending') {
+            normalizedStatus = 'CANCELLED';
+          }
+          return {
+            key: order.orderId || order.id || index,
+            orderId: order.orderId || order.id || 'N/A',
+            customerName: order.receiverName || order.fullName || order.customerName || 'N/A',
+            totalAmount: order.totalPrice || order.totalAmount || 0,
+            status: normalizedStatus,
+            createdAt: order.orderDate || order.createdAt || 'N/A',
+            shippingAddress: order.address || order.shippingAddress || 'N/A',
+            shippingStatus: order.shippingStatus || 'Chưa vận chuyển',
+            shipperName: order.shipperName || 'Chưa phân công'
+          };
+        });
 
         // Sắp xếp theo createdAt (mới nhất lên đầu)
         const sortedOrders = mappedOrders.sort((a, b) => {
@@ -247,7 +255,14 @@ const Overview = () => {
       const response = await orderService.getStaffOrders().catch(() => null);
       if (response?.data) {
         const orders = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setAllOrders(orders);
+        // ⭐ QUY TẮC: PENDING (Chờ thanh toán) được xử lý như CANCELLED (Đã hủy)
+        const normalizedOrders = orders.map(order => {
+          if (order.status === 'PENDING' || order.status === 'pending') {
+            return { ...order, status: 'CANCELLED' };
+          }
+          return order;
+        });
+        setAllOrders(normalizedOrders);
       }
     } catch (error) {
       console.error('Error fetching all orders:', error);
@@ -325,8 +340,9 @@ const Overview = () => {
   };
 
   const getStatusTag = (status) => {
+    // ⭐ QUY TẮC: PENDING được xử lý như CANCELLED
+    const normalizedStatus = (status === 'PENDING' || status === 'pending') ? 'CANCELLED' : status;
     const statusMap = {
-      'PENDING': { color: 'orange', text: 'Hủy thanh toán' },
       'CONFIRMED': { color: 'blue', text: 'Đã xác nhận' },
       'COMPLETED': { color: 'green', text: 'Đã hoàn thành' },
       'CANCELLED': { color: 'red', text: 'Đã hủy' },
@@ -335,7 +351,7 @@ const Overview = () => {
       'ACTIVE': { color: 'green', text: 'Hoạt động' },
       'INACTIVE': { color: 'default', text: 'Không hoạt động' }
     };
-    const statusInfo = statusMap[status] || { color: 'default', text: status };
+    const statusInfo = statusMap[normalizedStatus] || { color: 'default', text: normalizedStatus };
     return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
   };
 
@@ -355,12 +371,15 @@ const Overview = () => {
   const getOrderStatusChartData = () => {
     const statusCount = {};
     allOrders.forEach(order => {
-      const status = order.status || 'UNKNOWN';
+      // ⭐ QUY TẮC: PENDING được map thành CANCELLED
+      let status = order.status || 'UNKNOWN';
+      if (status === 'PENDING' || status === 'pending') {
+        status = 'CANCELLED';
+      }
       statusCount[status] = (statusCount[status] || 0) + 1;
     });
 
     const statusMap = {
-      'PENDING': 'Hủy thanh toán',
       'CONFIRMED': 'Đã xác nhận',
       'COMPLETED': 'Đã hoàn thành',
       'CANCELLED': 'Đã hủy',
@@ -371,7 +390,6 @@ const Overview = () => {
     // Màu sắc cho từng trạng thái
     const statusColorMap = {
       'CANCELLED': '#ff4d4f',      // Đỏ - Đã hủy
-      'PENDING': '#faad14',         // Vàng - Chờ xử lý
       'CONFIRMED': '#2f54eb',       // Xanh biển - Đã xác nhận
       'COMPLETED': '#1890ff',       // Xanh đậm - Đã hoàn thành
       'PAID': '#73d13d',            // Xanh lá - Đã thanh toán
@@ -526,7 +544,7 @@ const Overview = () => {
 
   const userColumns = [
     {
-      title: 'ID',
+      title: 'STT',
       dataIndex: 'id',
       key: 'id',
       width: 80,
@@ -694,7 +712,7 @@ const Overview = () => {
 
   const shipperColumns = [
     {
-      title: 'ID',
+      title: 'STT',
       dataIndex: 'shipperId',
       key: 'shipperId',
       width: 80,

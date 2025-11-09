@@ -10,6 +10,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import News from "./pages/News";
+import NewsDetail from "./pages/NewsDetail";
 import AboutUs from "./pages/aboutUs/AboutUs";
 import Information from "./pages/aboutUs/Information";
 
@@ -103,6 +104,10 @@ export const router = createBrowserRouter(
       {
         path: "news",
         element: <News />,  // Make public - view news without login
+      },
+      {
+        path: "news/:slug",
+        element: <NewsDetail />,  // Make public - view news detail without login
       },
       {
         path: "aboutUs",

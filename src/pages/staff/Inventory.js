@@ -218,7 +218,7 @@ const Inventory = () => {
       message.success({
         content: (
           <span>
-            Đã xóa sản phẩm <strong>"{itemName}"</strong> khỏi kho!
+            Đã xóa nguyên liệu <strong>"{itemName}"</strong> khỏi kho!
           </span>
         ),
         duration: 3,
@@ -233,7 +233,7 @@ const Inventory = () => {
       const dataRes = error?.response?.data;
       console.error("DELETE error:", { status, data: dataRes, url: error?.config?.url, method: error?.config?.method });
 
-      let friendly = "Không thể xóa sản phẩm! Vui lòng thử lại.";
+      let friendly = "Không thể xóa nguyên liệu! Vui lòng thử lại.";
       if (status === 401) friendly = "Bạn chưa đăng nhập (401). Hãy đăng nhập lại.";
       // else if (status === 403) friendly = "Bạn không có quyền xoá (403). Cần tài khoản có role phù hợp.";
       // else if (status === 404) friendly = "Không tìm thấy sản phẩm (404).";
@@ -241,7 +241,7 @@ const Inventory = () => {
 
       message.error(
         <div>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>Xóa sản phẩm thất bại</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Xóa nguyên liệu thất bại</div>
           <div style={{ fontSize: 12, color: "#666" }}>{friendly}</div>
           {/* {dataRes?.message && (
             <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>Server: {dataRes.message}</div>
@@ -262,10 +262,10 @@ const Inventory = () => {
     try {
       const detailData = await checklistService.getChecklistItemById(record.itemId);
       setViewingItem(detailData);
-      message.success("Tải chi tiết sản phẩm thành công!");
+      message.success("Tải chi tiết nguyên liệu thành công!");
     } catch (error) {
       console.error("Lỗi khi tải chi tiết:", error);
-      message.error("Không thể tải chi tiết sản phẩm!");
+      message.error("Không thể tải chi tiết nguyên liệu!");
       setViewingItem(record);
     } finally {
       setDetailLoading(false);
@@ -284,10 +284,10 @@ const Inventory = () => {
 
       if (editingItem) {
         await checklistService.updateChecklistItem(editingItem.itemId, payload);
-        message.success({ content: `Đã cập nhật sản phẩm "${values.itemName}" thành công!`, duration: 3 });
+        message.success({ content: `Đã cập nhật nguyên liệu "${values.itemName}" thành công!`, duration: 3 });
       } else {
         await checklistService.createChecklistItem(payload);
-        message.success({ content: `Đã thêm sản phẩm "${values.itemName}" vào kho!`, duration: 3 });
+        message.success({ content: `Đã thêm nguyên liệu "${values.itemName}" vào kho!`, duration: 3 });
       }
 
       setIsModalVisible(false);
@@ -332,7 +332,7 @@ const Inventory = () => {
       },
     },
     {
-      title: "Tên sản phẩm",
+      title: "Tên nguyên liệu",
       dataIndex: "itemName",
       key: "itemName",
       ellipsis: true,
@@ -423,15 +423,15 @@ const Inventory = () => {
               disabled={deleteLoading === record.itemId}
             />
           </Tooltip>
-          <Tooltip title="Xóa sản phẩm">
+          <Tooltip title="Xóa nguyên liệu">
             <Popconfirm
               title={
                 <div style={{ maxWidth: 300 }}>
                   <div style={{ fontWeight: "bold", marginBottom: 8, fontSize: 15 }}>
-                    Xác nhận xóa sản phẩm
+                    Xác nhận xóa nguyên liệu
                   </div>
                   <div style={{ color: "#666" }}>
-                    Bạn có chắc chắn muốn xóa sản phẩm này khỏi kho?
+                    Bạn có chắc chắn muốn xóa nguyên liệu này khỏi kho?
                   </div>
                 </div>
               }
@@ -488,7 +488,7 @@ const Inventory = () => {
               <Title level={2} className="font-serif !text-vietnam-green !mb-1">
                 <Space>Quản lý kho hàng</Space>
               </Title>
-              <Text type="secondary">Thêm, xóa, sửa và quản lý các sản phẩm trong kho</Text>
+              <Text type="secondary">Thêm, xóa, sửa và quản lý các nguyên liệu trong kho</Text>
             </div>
             <Space>
               <Tooltip title="Làm mới">
@@ -502,7 +502,7 @@ const Inventory = () => {
                 onClick={handleAdd}
                 className="bg-vietnam-green hover:!bg-emerald-800"
               >
-                Thêm sản phẩm
+                Thêm nguyên liệu
               </Button>
             </Space>
           </div>
@@ -512,7 +512,7 @@ const Inventory = () => {
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col span={8}>
             <Card>
-              <Statistic title="Tổng số sản phẩm" value={stats.total} prefix={<InboxOutlined />} valueStyle={{ color: "#1890ff" }} />
+              <Statistic title="Tổng số nguyên liệu" value={stats.total} prefix={<InboxOutlined />} valueStyle={{ color: "#1890ff" }} />
             </Card>
           </Col>
           <Col span={8}>
@@ -533,7 +533,7 @@ const Inventory = () => {
           <div style={{ marginBottom: 16 }}>
             <Space size="middle" wrap>
               <Input
-                placeholder="Tìm kiếm sản phẩm..."
+                placeholder="Tìm kiếm nguyên liệu..."
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
@@ -569,7 +569,7 @@ const Inventory = () => {
             rowKey="itemId"
             loading={loading}
             pagination={{
-              showTotal: (total) => `Tổng ${total} sản phẩm`,
+              showTotal: (total) => `Tổng ${total} nguyên liệu`,
               pageSizeOptions: ["10", "20", "50", "100"],
             }}
             scroll={{ x: 1000 }}
@@ -608,7 +608,7 @@ const Inventory = () => {
           title={
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 16, fontWeight: 600 }}>
-                {editingItem ? "Chỉnh sửa thông tin sản phẩm" : "Thêm sản phẩm mới"}
+                {editingItem ? "Chỉnh sửa thông tin nguyên liệu" : "Thêm nguyên liệu mới"}
                 {editingItem?.itemName ? (
                   <span style={{ fontWeight: 600, color: "#1890ff" }}>: {editingItem.itemName}</span>
                 ) : null}
@@ -629,12 +629,12 @@ const Inventory = () => {
           <Form form={form} layout="vertical" size="large">
             <Form.Item
               name="itemName"
-              label={<span style={{ fontSize: 15, fontWeight: 600 }}>Tên sản phẩm</span>}
+              label={<span style={{ fontSize: 15, fontWeight: 600 }}>Tên nguyên liệu</span>}
               rules={[
-                { required: true, message: "Vui lòng nhập tên sản phẩm!" },
-                { min: 3, message: "Tên sản phẩm phải có ít nhất 3 ký tự!" },
-                { max: 100, message: "Tên sản phẩm không được vượt quá 100 ký tự!" },
-                { whitespace: true, message: "Tên sản phẩm không được chỉ chứa khoảng trắng!" },
+                { required: true, message: "Vui lòng nhập tên nguyên liệu!" },
+                // { min: 3, message: "Tên nguyên liệu phải có ít nhất 3 ký tự!" },
+                // { max: 100, message: "Tên nguyên liệu không được vượt quá 100 ký tự!" },
+                { whitespace: true, message: "Tên nguyên liệu không được chỉ chứa khoảng trắng!" },
               ]}
             >
               <Input placeholder="Ví dụ: Gạo tẻ Hương Việt, Trái cây tươi..." showCount maxLength={100} disabled={saveLoading} />
@@ -691,7 +691,7 @@ const Inventory = () => {
             <div style={{ textAlign: "center", padding: "12px", background: "#f0f0f0", borderRadius: 8, marginTop: 16 }}>
               <Spin />
               <span style={{ marginLeft: 12, color: "#666" }}>
-                Đang {editingItem ? "cập nhật" : "thêm"} sản phẩm...
+                Đang {editingItem ? "cập nhật" : "thêm"} nguyên liệu...
               </span>
             </div>
           )}
@@ -699,7 +699,7 @@ const Inventory = () => {
 
         {/* Detail Drawer */}
         <Drawer
-          title={<div style={{ display: "flex", alignItems: "center", gap: 8 }}><span>Chi tiết sản phẩm</span></div>}
+          title={<div style={{ display: "flex", alignItems: "center", gap: 8 }}><span>Chi tiết nguyên liệu</span></div>}
           placement="right"
           onClose={() => {
             setIsDetailDrawerVisible(false);
@@ -725,8 +725,8 @@ const Inventory = () => {
                   <Popconfirm
                     title={
                       <div style={{ maxWidth: 280 }}>
-                        <div style={{ fontWeight: "bold", marginBottom: 8, fontSize: 15 }}>Xác nhận xóa sản phẩm</div>
-                        <div style={{ color: "#666" }}>Bạn có chắc chắn muốn xóa sản phẩm này khỏi kho?</div>
+                        <div style={{ fontWeight: "bold", marginBottom: 8, fontSize: 15 }}>Xác nhận xóa nguyên liệu</div>
+                        <div style={{ color: "#666" }}>Bạn có chắc chắn muốn xóa nguyên liệu này khỏi kho?</div>
                       </div>
                     }
                     description={
@@ -739,7 +739,7 @@ const Inventory = () => {
                           marginTop: 8,
                         }}
                       >
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Tên sản phẩm: {viewingItem.itemName}</div>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Tên nguyên liệu: {viewingItem.itemName}</div>
                         <div style={{ fontSize: 12, color: "#666" }}>
                           Mã: #{viewingItem.itemId} | Đơn vị: {getUnitLabel(viewingItem.unit)} | Số lượng: {viewingItem.stockQuantity}
                         </div>
@@ -763,16 +763,16 @@ const Inventory = () => {
         >
           {detailLoading ? (
             <div style={{ textAlign: "center", padding: "50px 0" }}>
-              <Spin size="large" tip="Đang tải chi tiết sản phẩm..." />
+              <Spin size="large" tip="Đang tải chi tiết nguyên liệu..." />
             </div>
           ) : viewingItem ? (
             <>
               <Descriptions bordered column={1} size="middle">
-                <Descriptions.Item label={<span style={{ fontWeight: "bold" }}>Mã sản phẩm</span>}>
+                <Descriptions.Item label={<span style={{ fontWeight: "bold" }}>Mã nguyên liệu</span>}>
                   <Tag color="cyan">#{viewingItem.itemId}</Tag>
                 </Descriptions.Item>
 
-                <Descriptions.Item label={<span style={{ fontWeight: "bold" }}>Tên sản phẩm</span>}>
+                <Descriptions.Item label={<span style={{ fontWeight: "bold" }}>Tên nguyên liệu</span>}>
                   <strong>{viewingItem.itemName}</strong>
                 </Descriptions.Item>
 
@@ -820,19 +820,19 @@ const Inventory = () => {
                 {viewingItem.stockQuantity === 0 && (
                   <div style={{ padding: "12px", background: "#fff2e8", borderRadius: 8, border: "1px solid #ffbb96" }}>
                     <WarningOutlined style={{ color: "#ff4d4f", marginRight: 8 }} />
-                    <strong style={{ color: "#ff4d4f" }}>Cảnh báo:</strong> Sản phẩm đã hết hàng!
+                    <strong style={{ color: "#ff4d4f" }}>Cảnh báo:</strong> Nguyên liệu đã hết hàng!
                   </div>
                 )}
                 {viewingItem.stockQuantity > 0 && viewingItem.stockQuantity <= 10 && (
                   <div style={{ padding: "12px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f" }}>
                     <WarningOutlined style={{ color: "#faad14", marginRight: 8 }} />
-                    <strong style={{ color: "#faad14" }}>Cảnh báo:</strong> Sản phẩm sắp hết hàng! Cần nhập thêm.
+                    <strong style={{ color: "#faad14" }}>Cảnh báo:</strong> Nguyên liệu sắp hết hàng! Cần nhập thêm.
                   </div>
                 )}
                 {viewingItem.stockQuantity > 10 && (
                   <div style={{ padding: "12px", background: "#f6ffed", borderRadius: 8, border: "1px solid #b7eb8f" }}>
                     <CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />
-                    <strong style={{ color: "#52c41a" }}>Tốt:</strong> Sản phẩm còn đủ hàng trong kho.
+                    <strong style={{ color: "#52c41a" }}>Tốt:</strong> Nguyên liệu còn đủ hàng trong kho.
                   </div>
                 )}
               </Card>

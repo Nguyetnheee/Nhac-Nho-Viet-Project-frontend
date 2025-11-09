@@ -70,14 +70,21 @@ const PendingOrderDetail = () => {
       
       const orderDetail = detailResponse.data.data || detailResponse.data;
       
+      // ⭐ QUY TẮC: PENDING (Chờ thanh toán) được xử lý như CANCELLED (Đã hủy)
+      let normalizedStatus = orderDetail.status || orderDetail.orderStatus;
+      if (normalizedStatus === 'PENDING' || normalizedStatus === 'pending') {
+        console.log(`🔄 Mapping PENDING to CANCELLED for Order #${orderDetail.orderId || orderDetail.orderCode}`);
+        normalizedStatus = 'CANCELLED';
+      }
+      
       // ✅ Map các field name từ backend - LẤY ĐÚNG GIÁ TRỊ TỪ BACKEND, KHÔNG TỰ TÍNH TOÁN
       const mappedOrderDetail = {
         ...orderDetail,
         orderId: orderDetail.orderId || orderDetail.id,
         orderCode: orderDetail.orderCode || orderDetail.orderId || orderDetail.id,
         orderDate: orderDetail.orderDate || orderDetail.createdAt || orderDetail.createdDate,
-        status: orderDetail.status || orderDetail.orderStatus,
-        orderStatus: orderDetail.status || orderDetail.orderStatus,
+        status: normalizedStatus,
+        orderStatus: normalizedStatus,
         // ✅ Lấy subTotal (tạm tính trước khi giảm giá) - giá trị gốc từ lúc checkout
         subTotal: orderDetail.subTotal || orderDetail.subtotal || orderDetail.sub_total || 
                   orderDetail.totalPrice || orderDetail.total || 0,
@@ -212,21 +219,18 @@ const PendingOrderDetail = () => {
 
   // Xác định trạng thái và icon
   const getStatusInfo = () => {
-    const status = orderData.status || orderData.orderStatus || 'PENDING';
+    // ⭐ QUY TẮC: PENDING được xử lý như CANCELLED
+    let status = orderData.status || orderData.orderStatus || 'CANCELLED';
+    if (status === 'PENDING' || status === 'pending') {
+      status = 'CANCELLED';
+    }
     
     switch(status) {
-      case 'PENDING':
-        return {
-          icon: <ClockCircleOutlined className="text-6xl text-yellow-500" />,
-          title: 'Thanh toán chưa hoàn thành',
-          message: 'Bạn đã hủy thanh toán. Đơn hàng này sẽ tự động bị xóa. Vui lòng chọn lại sản phẩm và tạo đơn hàng mới.',
-          color: 'yellow'
-        };
       case 'CANCELLED':
         return {
           icon: <CloseCircleOutlined className="text-6xl text-red-500" />,
           title: 'Đơn hàng đã bị hủy',
-          message: 'Đơn hàng này đã bị hủy do chưa thanh toán. Bạn có thể tạo đơn hàng mới với các sản phẩm yêu thích.',
+          message: 'Đơn hàng này đã bị hủy do chưa thanh toán (khách hàng đã hủy hoặc thoát thanh toán). Bạn có thể tạo đơn hàng mới với các sản phẩm yêu thích.',
           color: 'red'
         };
       default:
@@ -254,31 +258,16 @@ const PendingOrderDetail = () => {
           <p className="text-gray-600">{statusInfo.message}</p>
         </div>
 
-        {/* Warning Banner */}
-        {(orderData.status === 'PENDING' || orderData.orderStatus === 'PENDING') && (
+        {/* Warning Banner - PENDING đã được map thành CANCELLED */}
+        {(orderData.status === 'CANCELLED' || orderData.orderStatus === 'CANCELLED') && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded">
             <div className="flex items-start">
               <CloseCircleOutlined className="text-red-600 text-xl mr-3 mt-1" />
               <div>
-                <h3 className="text-sm font-medium text-red-800">Đơn hàng sẽ bị xóa</h3>
+                <h3 className="text-sm font-medium text-red-800">Đơn hàng đã bị hủy</h3>
                 <p className="text-sm text-red-700 mt-1">
-                  Do bạn đã hủy thanh toán, đơn hàng này sẽ tự động bị xóa khỏi hệ thống. 
+                  Đơn hàng này đã bị hủy do chưa hoàn tất thanh toán (bạn đã hủy hoặc thoát thanh toán). 
                   Nếu vẫn muốn mua các sản phẩm này, vui lòng thêm vào giỏ hàng và tạo đơn mới.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {(orderData.status === 'CANCELLED' || orderData.orderStatus === 'CANCELLED') && (
-          <div className="bg-gray-50 border-l-4 border-gray-400 p-4 mb-6 rounded">
-            <div className="flex items-start">
-              <WarningOutlined className="text-gray-600 text-xl mr-3 mt-1" />
-              <div>
-                <h3 className="text-sm font-medium text-gray-800">Đơn hàng đã được hủy</h3>
-                <p className="text-sm text-gray-700 mt-1">
-                  Đơn hàng này đã bị hủy do chưa hoàn tất thanh toán. 
-                  Bạn có thể xem lại thông tin đơn hàng và tạo đơn mới nếu cần.
                 </p>
               </div>
             </div>
@@ -311,11 +300,9 @@ const PendingOrderDetail = () => {
                 <div>
                   <p className="text-sm text-gray-600">Trạng thái</p>
                   <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium 
-                    ${(orderData.status || orderData.orderStatus) === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
-                      (orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'bg-red-100 text-red-800' : 
+                    ${(orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'bg-red-100 text-red-800' : 
                       'bg-gray-100 text-gray-800'}`}>
-                    {(orderData.status || orderData.orderStatus) === 'PENDING' ? 'Chờ thanh toán' :
-                     (orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'Đã hủy' : 
+                    {(orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'Đã hủy' : 
                      (orderData.status || orderData.orderStatus)}
                   </span>
                 </div>
@@ -344,9 +331,9 @@ const PendingOrderDetail = () => {
                           <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-vietnam-green">{formatMoney(item.price)}</p>
+                          <p className="font-semibold text-vietnam-green">{(item.price).toLocaleString('vi-VN')} VNĐ</p>
                           <p className="text-sm text-gray-600">
-                            Tổng: {formatMoney(item.subtotal || (item.price * item.quantity))}
+                            Tổng: {(item.subtotal || (item.price * item.quantity)).toLocaleString('vi-VN')} VNĐ
                           </p>
                         </div>
                       </div>
@@ -420,7 +407,7 @@ const PendingOrderDetail = () => {
                     <div className="border-t-2 border-gray-200 pt-3 mt-3">
                       <div className="flex justify-between text-xl font-bold text-vietnam-green">
                         <span>Tổng cộng:</span>
-                        <span>{formatMoney(orderData.totalAmount || 0)}</span>
+                        <span>{(orderData.totalAmount || 0).toLocaleString('vi-VN')} VNĐ</span>
                       </div>
                       {orderData.voucherCode && (
                         <p className="text-sm text-green-600 text-right mt-1">
@@ -434,7 +421,7 @@ const PendingOrderDetail = () => {
                     {/* ✅ Nếu không có voucher: hiển thị breakdown bình thường */}
                     <div className="flex justify-between text-gray-700">
                       <span>Tạm tính:</span>
-                      <span className="font-medium">{formatMoney(orderData.subTotal || orderData.totalAmount || 0)}</span>
+                      <span className="font-medium">{(orderData.subTotal || orderData.totalAmount || 0).toLocaleString('vi-VN')} VNĐ</span>
                     </div>
                     
                     <div className="flex justify-between text-gray-700">
@@ -445,7 +432,7 @@ const PendingOrderDetail = () => {
                     <div className="border-t-2 border-gray-200 pt-3 mt-3">
                       <div className="flex justify-between text-xl font-bold text-vietnam-green">
                         <span>Tổng cộng:</span>
-                        <span>{formatMoney(orderData.totalAmount || orderData.subTotal || 0)}</span>
+                        <span>{(orderData.totalAmount || orderData.subTotal || 0).toLocaleString('vi-VN')} VNĐ</span>
                       </div>
                     </div>
                   </>

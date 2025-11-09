@@ -134,10 +134,12 @@
 
 
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 const News = () => {
   const ITEMS_PER_PAGE = 9;
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
   const newsItems = [
     {
@@ -145,6 +147,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20241119_wTkFMKfg.jpeg?v=1732027881",
       link: "/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
+      fullLink: "https://andole.vn/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
       description:
         "Tích lũy Điểm Lộc vào Hũ Thần Tài tại AN Đồ Lễ. Giảm giá trực tiếp và tận hưởng ưu đãi hấp dẫn cho khách hàng thân thiết.",
     },
@@ -154,6 +157,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250810_R41X2r5J.png?v=1754837904",
       link: "/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
+      fullLink: "https://andole.vn/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
       description:
         "Mâm cúng lễ Chùa Trấn Quốc - Hướng dẫn chi tiết cách chuẩn bị đúng nghi thức.",
     },
@@ -162,6 +166,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250721_mkoPbAg9.jpeg?v=1753112568",
       link: "/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
+      fullLink: "https://andole.vn/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
       description:
         "Chùa Một Cột - Nơi cầu bình an linh thiêng giữa lòng Hà Nội, gợi ý văn khấn & mâm lễ chuẩn chùa.",
     },
@@ -171,6 +176,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20241119_wTkFMKfg.jpeg?v=1732027881",
       link: "/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
+      fullLink: "https://andole.vn/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
       description:
         "Tích lũy Điểm Lộc vào Hũ Thần Tài tại AN Đồ Lễ. Giảm giá trực tiếp và tận hưởng ưu đãi hấp dẫn cho khách hàng thân thiết.",
     },
@@ -180,6 +186,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250810_R41X2r5J.png?v=1754837904",
       link: "/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
+      fullLink: "https://andole.vn/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
       description:
         "Mâm cúng lễ Chùa Trấn Quốc - Hướng dẫn chi tiết cách chuẩn bị đúng nghi thức.",
     },
@@ -188,6 +195,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250721_mkoPbAg9.jpeg?v=1753112568",
       link: "/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
+      fullLink: "https://andole.vn/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
       description:
         "Chùa Một Cột - Nơi cầu bình an linh thiêng giữa lòng Hà Nội, gợi ý văn khấn & mâm lễ chuẩn chùa.",
     },
@@ -196,6 +204,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20241119_wTkFMKfg.jpeg?v=1732027881",
       link: "/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
+      fullLink: "https://andole.vn/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
       description:
         "Tích lũy Điểm Lộc vào Hũ Thần Tài tại AN Đồ Lễ. Giảm giá trực tiếp và tận hưởng ưu đãi hấp dẫn cho khách hàng thân thiết.",
     },
@@ -205,6 +214,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250810_R41X2r5J.png?v=1754837904",
       link: "/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
+      fullLink: "https://andole.vn/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
       description:
         "Mâm cúng lễ Chùa Trấn Quốc - Hướng dẫn chi tiết cách chuẩn bị đúng nghi thức.",
     },
@@ -213,6 +223,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250721_mkoPbAg9.jpeg?v=1753112568",
       link: "/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
+      fullLink: "https://andole.vn/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
       description:
         "Chùa Một Cột - Nơi cầu bình an linh thiêng giữa lòng Hà Nội, gợi ý văn khấn & mâm lễ chuẩn chùa.",
     },
@@ -222,6 +233,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20241119_wTkFMKfg.jpeg?v=1732027881",
       link: "/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
+      fullLink: "https://andole.vn/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
       description:
         "Tích lũy Điểm Lộc vào Hũ Thần Tài tại AN Đồ Lễ. Giảm giá trực tiếp và tận hưởng ưu đãi hấp dẫn cho khách hàng thân thiết.",
     },
@@ -231,6 +243,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250810_R41X2r5J.png?v=1754837904",
       link: "/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
+      fullLink: "https://andole.vn/mam-cung-le-chua-tran-quoc-huong-dan-chi-tiet-cach-chuan-bi-dung-nghi-thuc-n162161.html",
       description:
         "Mâm cúng lễ Chùa Trấn Quốc - Hướng dẫn chi tiết cách chuẩn bị đúng nghi thức.",
     },
@@ -239,6 +252,7 @@ const News = () => {
       image:
         "https://pos.nvncdn.com/26fee5-146732/art/20250721_mkoPbAg9.jpeg?v=1753112568",
       link: "/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
+      fullLink: "https://andole.vn/chua-mot-cot-lich-su-van-khan-cach-chuan-bi-le-vat-n161083.html",
       description:
         "Chùa Một Cột - Nơi cầu bình an linh thiêng giữa lòng Hà Nội, gợi ý văn khấn & mâm lễ chuẩn chùa.",
     },
@@ -321,33 +335,42 @@ const News = () => {
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-        {paginatedNews.map((item, index) => (
-          <article
-            key={index}
-            className="bg-white rounded-2xl shadow hover:shadow-lg transition duration-300 flex flex-col"
-          >
-            <a href={item.link} className="block overflow-hidden rounded-t-2xl">
-              <img
-                src={item.image}
-                alt={item.title}
-                loading="lazy"
-                className="w-full h-56 object-cover hover:scale-105 transition duration-300"
-              />
-            </a>
-            <div className="flex flex-col flex-grow p-4">
-              <h2 className="text-lg font-semibold text-vietnam-green hover:text-green-800 transition duration-200 mb-2">
-                <a href={item.link}>{item.title}</a>
-              </h2>
-              <p className="text-gray-600 flex-grow">{item.description}</p>
-              <a
-                href={item.link}
-                className="mt-3 inline-block text-vietnam-gold hover:text-yellow-600 font-medium"
-              >
-                <em>Xem thêm</em>
-              </a>
-            </div>
-          </article>
-        ))}
+        {paginatedNews.map((item, index) => {
+          const handleClick = (e) => {
+            e.preventDefault();
+            // 提取 slug 从 link (去掉开头的 / 和 .html)
+            const slug = item.link.replace(/^\//, "").replace(/\.html$/, "");
+            navigate(`/news/${slug}`, {
+              state: { newsItem: item },
+            });
+          };
+
+          return (
+            <article
+              key={index}
+              className="bg-white rounded-2xl shadow hover:shadow-lg transition duration-300 flex flex-col cursor-pointer"
+              onClick={handleClick}
+            >
+              <div className="block overflow-hidden rounded-t-2xl">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  loading="lazy"
+                  className="w-full h-56 object-cover hover:scale-105 transition duration-300"
+                />
+              </div>
+              <div className="flex flex-col flex-grow p-4">
+                <h2 className="text-lg font-semibold text-vietnam-green hover:text-green-800 transition duration-200 mb-2">
+                  {item.title}
+                </h2>
+                <p className="text-gray-600 flex-grow">{item.description}</p>
+                <div className="mt-3 inline-block text-vietnam-gold hover:text-yellow-600 font-medium">
+                  <em>Xem thêm</em>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       {/* Thanh phân trang */}
