@@ -334,12 +334,25 @@ export const checklistService = {
   // Xóa user checklist
   deleteUserChecklist: async (userChecklistId) => {
     try {
-      console.log(`🗑️ Deleting user checklist ${userChecklistId}...`);
-      const response = await publicApi.delete(`/api/user-checklists/${userChecklistId}`);
+      // Đảm bảo ID là number và hợp lệ
+      const id = Number(userChecklistId);
+      if (!id || isNaN(id)) {
+        throw new Error(`Invalid userChecklistId: ${userChecklistId}`);
+      }
+
+      console.log(`🗑️ Deleting user checklist ${id}...`);
+      const response = await publicApi.delete(`/api/user-checklists/${id}`);
       console.log('✅ User checklist deleted:', response.data);
       return response.data;
     } catch (error) {
       console.error(`❌ Error deleting user checklist ${userChecklistId}:`, error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        userChecklistId: userChecklistId
+      });
       throw error;
     }
   },
