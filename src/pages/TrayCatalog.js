@@ -267,7 +267,7 @@ const TrayCatalog = () => {
   const changePage = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 200, behavior: 'smooth' });
     }
   };
 
@@ -294,7 +294,7 @@ const TrayCatalog = () => {
             <li key={page} className="page-item">
               <button
                 onClick={() => changePage(page)}
-                className={`page-link relative block py-1.5 px-3 rounded-full border-0 outline-none transition-all duration-300 shadow-md ${currentPage === page
+                className={`page-link relative block py-1.5 px-3 mr-2 rounded-full border-0 outline-none transition-all duration-300 shadow-md ${currentPage === page
                   ? 'bg-vietnam-green text-white font-bold'
                   : 'bg-white text-gray-800 hover:bg-gray-200'
                   }`}
@@ -307,7 +307,7 @@ const TrayCatalog = () => {
           <li className={`page-item ${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}`}>
             <button
               onClick={() => changePage(currentPage + 1)}
-              className="page-link relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 hover:text-vietnam-green focus:shadow-none"
+              className="page-link relative block py-1.5 px-0.5 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 hover:text-vietnam-green focus:shadow-none"
               aria-label="Next"
             >
               <span aria-hidden="true">&raquo;</span>

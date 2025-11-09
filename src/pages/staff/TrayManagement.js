@@ -778,7 +778,7 @@ const TrayManagement = () => {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Vùng miền">
-                <Tag color="blue">
+                <Tag color="orange">
                   {productDetailData.regionName ||
                     'N/A'}
                 </Tag>

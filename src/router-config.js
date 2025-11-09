@@ -9,6 +9,9 @@ import TrayCatalog from "./pages/TrayCatalog";
 import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import News from "./pages/News";
+import AboutUs from "./pages/aboutUs/AboutUs";
+import Information from "./pages/aboutUs/Information";
 
 // Authentication Pages
 import VerifyOTP from "./pages/VerifyOTP";
@@ -96,6 +99,18 @@ export const router = createBrowserRouter(
       {
         path: "trays/:id",
         element: <ProductDetail />,  // Make public - view product details without login
+      },
+      {
+        path: "news",
+        element: <News />,  // Make public - view news without login
+      },
+      {
+        path: "aboutUs",
+        element: <AboutUs />,  // Make public - view news without login
+      },
+       {
+        path: "information",
+        element: <Information />,  // Make public - view news without login
       },
 
       // Demo Routes - For testing and development

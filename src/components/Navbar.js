@@ -45,13 +45,28 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4">
             <Link
               to="/"
               className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium"
             >
               Trang chủ
             </Link>
+
+            <Link
+              to="/aboutUs"
+              className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Về chúng tôi
+            </Link>
+
+            <Link
+              to="/news"
+              className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Tin tức
+            </Link>
+
             <Link
               to="/rituals"
               className="text-white hover:text-vietnam-gold px-3 py-2 rounded-md text-sm font-medium"
