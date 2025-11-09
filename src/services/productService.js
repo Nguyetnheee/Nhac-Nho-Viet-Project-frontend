@@ -12,7 +12,7 @@ const productService = {
         }
     },
 
-    // Lấy chi tiết sản phẩm theo ID - API MỚI
+    // Lấy chi tiết sản phẩm theo ID 
     getProductById: async (productId) => {
         try {
             console.log('Fetching product by ID:', productId);

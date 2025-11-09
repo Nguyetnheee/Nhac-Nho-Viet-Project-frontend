@@ -1,165 +1,239 @@
 // src/services/productDetailService.js
 // Tất cả các API liên quan đến product-details (yêu cầu STAFF role)
+
 import api from './api';
+import axios from 'axios';
+
+const publicApi = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || 'https://isp-7jpp.onrender.com',
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  },
+});
 
 const productDetailService = {
-    // Lấy productDetailId từ productId
-    // GET /api/product-details/by-product/{productId}
-    getProductDetailIdByProductId: async (productId) => {
-        try {
-            const response = await api.get(`/api/product-details/by-product/${productId}`);
-            const data = response?.data;
-            
-            if (!Array.isArray(data) || data.length === 0) {
-                throw new Error('Product details not found');
-            }
-            
-            // Lấy productDetailId từ phần tử đầu tiên
-            const firstDetail = data[0];
-            return firstDetail.productDetailId;
-        } catch (error) {
-            // Chỉ log nếu không phải lỗi 500 (có thể do product detail chưa tồn tại)
-            if (error.response?.status !== 500) {
-                console.error('Error fetching product detail ID:', error.response?.status || error.message);
-            }
-            throw error;
-        }
-    },
+  /**
+   * Lấy productDetailId từ productId
+   * Backend có thể trả:
+   *  - object: { productDetailId, ... }
+   *  - array: [{ productDetailId, ... }]
+   *  - number: id
+   */
+  getProductDetailIdByProductId: async (productId) => {
+    if (!productId) throw new Error('productId is required');
 
-    // Lấy chi tiết nguyên liệu của mâm cúng theo productDetailId
-    // GET /api/product-details/{productDetailId}/details
-    getProductDetailIngredients: async (productDetailId) => {
-        try {
-            const response = await api.get(`/api/product-details/${productDetailId}/details`);
-            // Response structure:
-            // {
-            //   "productDetailId": 0,
-            //   "productId": 0,
-            //   "productName": "string",
-            //   "price": 0,
-            //   "categoryName": "string",
-            //   "regionName": "string",
-            //   "checklists": [...]
-            // }
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching product detail ingredients:', error);
-            throw error;
-        }
-    },
+    try {
+      const response = await publicApi.get(
+        `/api/product-details/${productId}/details`
+      );
+      const data = response?.data;
 
-    // Lấy product detail với checklists đầy đủ (alias của getProductDetailIngredients)
-    // GET /api/product-details/{productDetailId}/details
-    getProductDetailWithChecklists: async (productDetailId) => {
-        try {
-            const response = await api.get(`/api/product-details/${productDetailId}/details`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching product detail with checklists:', error);
-            throw error;
-        }
-    },
+      if (!data) {
+        throw new Error('Product detail not found');
+      }
 
-    // Tạo product detail mới
-    // POST /api/product-details
-    createProductDetail: async (productId) => {
-        try {
-            const response = await api.post('/api/product-details', {
-                productId: productId
-            });
-            return response.data;
-        } catch (error) {
-            // Log lỗi nhưng không spam console
-            if (error.response?.status !== 500) {
-                console.error('Error creating product detail:', error.response?.status || error.message);
-            }
-            throw error;
-        }
-    },
+      // Trường hợp API trả array
+      if (Array.isArray(data)) {
+        if (!data.length) throw new Error('Product detail not found');
+        const first = data[0];
+        if (first.productDetailId) return first.productDetailId;
+        if (first.id) return first.id;
+      }
 
-    // Cập nhật product detail
-    // PUT /api/product-details/{id}
-    updateProductDetail: async (productDetailId, productDetailData) => {
-        try {
-            const response = await api.put(`/api/product-details/${productDetailId}`, productDetailData);
-            return response.data;
-        } catch (error) {
-            console.error('Error updating product detail:', error);
-            throw error;
-        }
-    },
+      // Trường hợp API trả object
+      if (typeof data === 'object') {
+        if (data.productDetailId) return data.productDetailId;
+        if (data.id) return data.id;
+      }
 
-    // Assign checklists to product detail
-    // POST /api/product-details/{productDetailId}/assign-checklists
-    assignChecklistsToProductDetail: async (productDetailId, checklistIds) => {
-        try {
-            const response = await api.post(`/api/product-details/${productDetailId}/assign-checklists`, {
-                checklistIds: checklistIds
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error assigning checklists:', error);
-            throw error;
-        }
-    },
+      // Trường hợp API trả trực tiếp id
+      if (typeof data === 'number') {
+        return data;
+      }
 
-    // Xóa product detail
-    // DELETE /api/product-details/{id}
-    deleteProductDetail: async (productDetailId) => {
-        try {
-            const response = await api.delete(`/api/product-details/${productDetailId}`);
-            return response.data || { success: true };
-        } catch (error) {
-            console.error('Error deleting product detail:', error);
-            throw error;
-        }
-    },
-
-    // Hàm cũ - giữ lại để tương thích ngược (deprecated)
-    // GET /api/product-details/by-product/{productId}
-    getProductDetails: async (productId) => {
-        if (!productId) {
-            throw new Error('Product ID is required to fetch details.');
-        }
-        
-        try {
-            const response = await api.get(`/api/product-details/by-product/${productId}`);
-            const data = response?.data;
-
-            if (!Array.isArray(data) || data.length === 0) {
-                throw new Error('Product details not found or invalid format');
-            }
-            
-            // Logic chuẩn hóa dữ liệu cũ
-            const firstDetail = data[0];
-            const productInfo = firstDetail.product;
-            
-            const items = data.map(detail => ({
-                itemId: detail.itemId,
-                proDetailQuantity: detail.proDetailQuantity,
-            }));
-
-            return {
-                data: {
-                    productDetailId: firstDetail.productDetailId, 
-                    product: {
-                        productId: productInfo.productId,
-                        productName: productInfo.productName,
-                        productDescription: productInfo.productDescription,
-                        productImage: productInfo.productImage,
-                        price: productInfo.price,
-                        status: productInfo.status,
-                        category: productInfo.category, 
-                        region: productInfo.region, 
-                        items: items 
-                    }
-                }
-            };
-        } catch (error) {
-            console.error('Error fetching product details:', error);
-            throw error;
-        }
+      throw new Error('productDetailId not found in response');
+    } catch (error) {
+      if (error.response?.status !== 500) {
+        console.error(
+          'Error fetching product detail ID:',
+          error.response?.status || error.message
+        );
+      }
+      throw error;
     }
+  },
+
+  /**
+   * Helper: Lấy chi tiết mâm cúng + checklist theo productId
+   * Quy trình:
+   *  1. Lấy productDetailId từ productId
+   *  2. Gọi /{productDetailId}/details
+   */
+  getProductDetailWithChecklistsByProductId: async (productId) => {
+    const productDetailId =
+      await productDetailService.getProductDetailIdByProductId(productId);
+    return productDetailService.getProductDetailWithChecklists(productDetailId);
+  },
+
+  // Lấy chi tiết nguyên liệu theo productDetailId
+  // GET /api/product-details/{productDetailId}/details
+  getProductDetailIngredients: async (productDetailId) => {
+    if (!productDetailId) {
+      throw new Error('productDetailId is required');
+    }
+    try {
+      const response = await publicApi.get(
+        `/api/product-details/${productDetailId}/details`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching product detail ingredients:', error);
+      throw error;
+    }
+  },
+
+  // Lấy product detail với checklists đầy đủ
+  // GET /api/product-details/{productDetailId}/details
+  getProductDetailWithChecklists: async (productDetailId) => {
+    if (!productDetailId) {
+      throw new Error('productDetailId is required');
+    }
+    try {
+      const response = await publicApi.get(
+        `/api/product-details/${productDetailId}/details`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching product detail with checklists:', error);
+      throw error;
+    }
+  },
+
+  // Tạo product detail mới
+  // POST /api/product-details
+  createProductDetail: async (productId) => {
+    if (!productId) throw new Error('productId is required');
+    try {
+      const response = await publicApi.post('/api/product-details', {
+        productId,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status !== 500) {
+        console.error(
+          'Error creating product detail:',
+          error.response?.status || error.message
+        );
+      }
+      throw error;
+    }
+  },
+
+  // Cập nhật product detail
+  // PUT /api/product-details/{productDetailId}
+  updateProductDetail: async (productDetailId, productDetailData) => {
+    if (!productDetailId) {
+      throw new Error('productDetailId is required');
+    }
+    try {
+      const response = await publicApi.put(
+        `/api/product-details/${productDetailId}`,
+        productDetailData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating product detail:', error);
+      throw error;
+    }
+  },
+
+  // Gán checklist cho product detail
+  // POST /api/product-details/{productDetailId}/assign-checklists
+  assignChecklistsToProductDetail: async (productDetailId, checklistIds) => {
+    if (!productDetailId) throw new Error('productDetailId is required');
+    if (!Array.isArray(checklistIds) || checklistIds.length === 0) {
+      throw new Error('checklistIds is required');
+    }
+
+    try {
+      const response = await publicApi.post(
+        `/api/product-details/${productDetailId}/assign-checklists`,
+        {
+          productDetailId,
+          checklistIds,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning checklists:', error);
+      throw error;
+    }
+  },
+
+  // Xóa product detail
+  // DELETE /api/product-details/{productDetailId}
+  deleteProductDetail: async (productDetailId) => {
+    if (!productDetailId) {
+      throw new Error('productDetailId is required');
+    }
+    try {
+      const response = await publicApi.delete(
+        `/api/product-details/${productDetailId}`
+      );
+      return response.data || { success: true };
+    } catch (error) {
+      console.error('Error deleting product detail:', error);
+      throw error;
+    }
+  },
+
+  // Hàm legacy giữ lại nếu còn chỗ nào dùng (khuyến nghị: dần bỏ)
+  getProductDetails: async (productId) => {
+    if (!productId) {
+      throw new Error('Product ID is required to fetch details.');
+    }
+
+    try {
+      const response = await publicApi.get(
+        `/api/product-details/${productId}/details`
+      );
+      const data = response?.data;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('Product details not found or invalid format');
+      }
+
+      const firstDetail = data[0];
+      const productInfo = firstDetail.product;
+
+      const items = data.map((detail) => ({
+        itemId: detail.itemId,
+        proDetailQuantity: detail.proDetailQuantity,
+      }));
+
+      return {
+        data: {
+          productDetailId: firstDetail.productDetailId,
+          product: {
+            productId: productInfo.productId,
+            productName: productInfo.productName,
+            productDescription: productInfo.productDescription,
+            productImage: productInfo.productImage,
+            price: productInfo.price,
+            status: productInfo.status,
+            category: productInfo.category,
+            region: productInfo.region,
+            items,
+          },
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      throw error;
+    }
+  },
 };
 
 export default productDetailService;

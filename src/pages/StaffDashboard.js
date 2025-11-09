@@ -23,6 +23,8 @@ import ShipperManagement from './staff/ShipperManagement';
 import CustomerManagement from './staff/CustomerManagement';
 import OrderManagement from './staff/OrderManagement';
 import VoucherManagement from './staff/VoucherManagement';
+import RegionManagement from './staff/RegionManagement';
+import CategoryManagement from './staff/CategoryManagement';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -42,6 +44,8 @@ const items = [
     getItem('Lễ hội', '3'),
     getItem('Mâm cúng', '4'),
     getItem('Danh mục', '5'),
+    getItem('Vùng miền', '7'),
+    getItem('Phân loại', '11'),
   ]),
   getItem('Ưu đãi', '10', <GiftOutlined />),
   getItem('Vai trò', 'sub2', <TeamOutlined />, [getItem('Shipper', '6', <CarOutlined />), getItem('Khách hàng', '8', <UserOutlined />)]),
@@ -77,6 +81,10 @@ const StaffDashboard = () => {
         return <ChecklistManagement />;
       case '6':
         return <ShipperManagement />;
+      case '7':
+        return <RegionManagement />;
+      case '11':
+        return <CategoryManagement />;
       case '8':
         return <CustomerManagement />;
       case '9':
@@ -96,9 +104,11 @@ const StaffDashboard = () => {
       '4': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Mâm cúng' }],
       '5': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Checklist' }],
       '6': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Shipper' }],
+      '7': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Vùng miền' }],
       '8': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Khách hàng' }],
       '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],
       '10': [{ title: 'Dashboard' }, { title: 'Ưu đãi' }],
+      '11': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Danh mục' }],
     };
     return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
   };
