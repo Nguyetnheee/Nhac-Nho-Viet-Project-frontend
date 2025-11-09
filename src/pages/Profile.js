@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { fetchCustomerProfile } from '../services/apiAuth';
 import { useAuth } from '../contexts/AuthContext';
 import OrderHistory from '../components/OrderHistory';
@@ -6,6 +7,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' hoặc 'orders'
   const [formData, setFormData] = useState({
     customerName: user?.customerName || "",
@@ -18,6 +20,16 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [profileData, setProfileData] = useState(null);
+
+  // Đọc query param để set activeTab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'orders') {
+      setActiveTab('orders');
+    } else {
+      setActiveTab('profile');
+    }
+  }, [searchParams]);
 
   // Tải dữ liệu profile từ API khi component mount
   useEffect(() => {

@@ -426,7 +426,7 @@ const PendingOrderDetail = () => {
 
                 {/* Link xem tất cả đơn hàng */}
                 <button
-                  onClick={() => navigate('/profile')}
+                  onClick={() => navigate('/profile?tab=orders')}
                   className="w-full text-vietnam-green hover:underline text-sm"
                 >
                   Xem tất cả đơn hàng
