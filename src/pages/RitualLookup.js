@@ -368,7 +368,7 @@ const RitualLookup = () => {
                       <img
                         src={getImageUrl(ritual.imageUrl)}
                         alt={ritual.ritualName}
-                        className="w-full h-56 object-cover"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="card-body p-6 flex flex-col flex-grow">

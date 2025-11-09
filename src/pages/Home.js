@@ -12,7 +12,7 @@ import { Tag } from 'antd';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { scrollToTop } from "../utils/scrollUtils";
-const BACKEND_BASE = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
+const BACKEND_BASE = process.env.REACT_APP_API_URL || "";
 
 const getImageUrl = (url) =>
   url
@@ -731,22 +731,24 @@ const Home = () => {
             )} */}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 md:gap-10 justify-items-start text-left">
-            {loading ? (
-              [...Array(8)].map((_, index) => <RitualCardSkeleton key={index} />)
-            ) : rituals.length > 0 ? (
-              rituals.map((ritual, index) => (
+
+          {loading ? (
+            [...Array(8)].map((_, index) => <RitualCardSkeleton key={index} />)
+          ) : rituals.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 md:gap-10">
+              {rituals.map((ritual, index) => (
                 <div
                   key={ritual.ritualId}
                   className="bg-white rounded-2xl overflow-hidden shadow-xl transition-all duration-500 transform hover:shadow-2xl hover:-translate-y-1 opacity-0 animate-fadeIn h-full flex flex-col text-left"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="card-content flex flex-grow flex-col items-start">
-                    <div className="aspect-w-16 aspect-h-9 w-full">
+                    <div className="relative">
                       <img
                         src={getImageUrl(ritual.imageUrl)}
                         alt={ritual.ritualName}
-                        className="w-full object-cover"
+                        className="w-full object-contain transition-opacity duration-500 hover:opacity-90"
+                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/23473d/ffffff?text=Lễ+Hội'; }}
                       />
                     </div>
                     <div className="card-body p-6">
@@ -771,8 +773,10 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-              ))
-            ) : (
+              ))}
+            </div>
+          ) : (
+            // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 md:gap-10">
               <div className="text-center py-12 bg-white rounded-xl shadow-lg">
                 <div className="text-gray-400 mb-4">
                   <InboxOutlined className="text-6xl mx-auto" />
@@ -781,13 +785,13 @@ const Home = () => {
                   Không tìm thấy nghi lễ nào
                 </h3>
               </div>
-            )}
+            // </div>
+          )}
           </div>
-        </div>
-        {/* </section> */}
+        </section>
 
-        {/* fadeIn */}
-        <style jsx="true">{`
+          {/* fadeIn */}
+          <style jsx="true">{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
@@ -796,7 +800,7 @@ const Home = () => {
           animation: fadeIn 0.5s ease-out forwards;
         }
       `}</style>
-      </section >
+      {/* </section > */}
 
       {/* Về chúng tôi */}
       {/* < section className="mt-10 text-center bg-vietnam-cream" >
