@@ -46,6 +46,16 @@ const Footer = () => {
                   Giỏ hàng
                 </Link>
               </li>
+              <li>
+                <Link to="/news" className="text-gray-300 hover:text-vietnam-gold transition-colors">
+                  Tin tức
+                </Link>
+              </li>
+              <li>
+                <Link to="/news" className="text-gray-300 hover:text-vietnam-gold transition-colors">
+                  Chính sách
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
