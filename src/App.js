@@ -8,6 +8,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import { ToastProvider } from "./components/ToastContainer";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import VoucherBanner from "./components/VoucherBanner";
 
 function App() {
   // ⚠️ Khai báo useLocation
@@ -29,6 +30,9 @@ function App() {
             <CartProvider>
               {/* Layout chung của toàn bộ website */}
               <div className="min-h-screen flex flex-col">
+                
+                {/* Voucher Banner hiển thị nếu KHÔNG phải là trang Dashboard */}
+                {!isDashboardRoute && <VoucherBanner />}
                 
                 {/* Navbar hiển thị nếu KHÔNG phải là trang Dashboard */}
                 {!isDashboardRoute && <Navbar />}
