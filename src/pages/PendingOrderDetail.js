@@ -8,7 +8,9 @@ import {
   EnvironmentOutlined,
   PhoneOutlined,
   UserOutlined,
-  TagOutlined
+  TagOutlined,
+  MailOutlined,
+  FacebookOutlined
 } from '@ant-design/icons';
 import { useToast } from '../components/ToastContainer';
 import api from '../services/api';
@@ -68,7 +70,7 @@ const PendingOrderDetail = () => {
       
       const orderDetail = detailResponse.data.data || detailResponse.data;
       
-      // ✅ Map các field name từ backend
+      // ✅ Map các field name từ backend - LẤY ĐÚNG GIÁ TRỊ TỪ BACKEND, KHÔNG TỰ TÍNH TOÁN
       const mappedOrderDetail = {
         ...orderDetail,
         orderId: orderDetail.orderId || orderDetail.id,
@@ -76,8 +78,16 @@ const PendingOrderDetail = () => {
         orderDate: orderDetail.orderDate || orderDetail.createdAt || orderDetail.createdDate,
         status: orderDetail.status || orderDetail.orderStatus,
         orderStatus: orderDetail.status || orderDetail.orderStatus,
-        totalPrice: orderDetail.totalPrice || orderDetail.total || orderDetail.totalAmount || 0,
+        // ✅ Lấy subTotal (tạm tính trước khi giảm giá) - giá trị gốc từ lúc checkout
+        subTotal: orderDetail.subTotal || orderDetail.subtotal || orderDetail.sub_total || 
+                  orderDetail.totalPrice || orderDetail.total || 0,
+        // ✅ Lấy discountAmount (số tiền giảm giá) - giá trị chính xác từ lúc checkout
         discountAmount: orderDetail.discountAmount || orderDetail.discount || 0,
+        // ✅ Lấy totalAmount (tổng sau khi trừ discount) - giá trị chính xác từ lúc checkout
+        totalAmount: orderDetail.totalAmount || orderDetail.finalAmount || 
+                     orderDetail.totalPrice || orderDetail.total || 0,
+        // ✅ Lấy voucherCode để hiển thị mã voucher đã áp dụng
+        voucherCode: orderDetail.voucherCode || orderDetail.voucher_code || null,
         // Thông tin khách hàng từ detail API
         receiverName: orderDetail.receiverName || orderDetail.customerName || orderDetail.fullName || orderDetail.name || '',
         phone: orderDetail.phone || orderDetail.customerPhone || orderDetail.phoneNumber || '',
@@ -86,6 +96,13 @@ const PendingOrderDetail = () => {
       };
       
       console.log('✅ Mapped order details:', mappedOrderDetail);
+      console.log('💰 Price breakdown from backend:', {
+        subTotal: mappedOrderDetail.subTotal,
+        discountAmount: mappedOrderDetail.discountAmount,
+        totalAmount: mappedOrderDetail.totalAmount,
+        voucherCode: mappedOrderDetail.voucherCode,
+        note: 'These values are EXACTLY as saved during checkout - no recalculation'
+      });
 
       // Gọi API danh sách orders để lấy thông tin khách hàng (receiverName, phone, address)
       const ordersResponse = await api.get('/api/customer/orders', {
@@ -107,13 +124,20 @@ const PendingOrderDetail = () => {
           address: foundOrder.address
         });
         
-        // Merge: ưu tiên thông tin từ list API (nếu có)
+        // Merge: ưu tiên thông tin từ list API (nếu có) - CHỈ merge thông tin khách hàng
+        // ✅ QUAN TRỌNG: Giữ nguyên giá tiền và voucher từ detail API (mappedOrderDetail)
+        // KHÔNG được lấy từ foundOrder vì có thể không chính xác
         setOrderData({
-          ...mappedOrderDetail,
+          ...mappedOrderDetail, // ✅ Giữ nguyên tất cả giá tiền, voucher từ detail API
           receiverName: foundOrder.receiverName || mappedOrderDetail.receiverName,
           phone: foundOrder.phone || mappedOrderDetail.phone,
           address: foundOrder.address || mappedOrderDetail.address,
           email: foundOrder.email || mappedOrderDetail.email,
+          // ✅ Đảm bảo giá tiền và voucher không bị ghi đè
+          subTotal: mappedOrderDetail.subTotal,
+          discountAmount: mappedOrderDetail.discountAmount,
+          totalAmount: mappedOrderDetail.totalAmount,
+          voucherCode: mappedOrderDetail.voucherCode,
         });
       } else {
         // Nếu không tìm thấy trong list (có thể do phân trang), chỉ dùng detail API
@@ -384,32 +408,48 @@ const PendingOrderDetail = () => {
               <h2 className="text-xl font-semibold text-vietnam-green mb-4">Tóm tắt đơn hàng</h2>
               
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-gray-700">
-                  <span>Tạm tính:</span>
-                  <span className="font-medium">{formatMoney(orderData.totalPrice)}</span>
-                </div>
-                
-                {orderData.discountAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span className="flex items-center gap-1">
-                      <TagOutlined />
-                      Giảm giá:
-                    </span>
-                    <span className="font-semibold">-{formatMoney(orderData.discountAmount)}</span>
-                  </div>
+                {/* ✅ Nếu có voucher: CHỈ hiển thị tổng cộng (giá cuối cùng) để tránh trừ chồng */}
+                {orderData.voucherCode || orderData.discountAmount > 0 ? (
+                  <>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Phí giao hàng:</span>
+                      <span className="font-medium text-green-600">Miễn phí</span>
+                    </div>
+                    
+                    {/* ✅ Chỉ hiển thị tổng cộng - giá cuối cùng đã được tính sẵn từ lúc checkout */}
+                    <div className="border-t-2 border-gray-200 pt-3 mt-3">
+                      <div className="flex justify-between text-xl font-bold text-vietnam-green">
+                        <span>Tổng cộng:</span>
+                        <span>{formatMoney(orderData.totalAmount || 0)}</span>
+                      </div>
+                      {orderData.voucherCode && (
+                        <p className="text-sm text-green-600 text-right mt-1">
+                          ✓ Đã áp dụng mã giảm giá {orderData.voucherCode}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* ✅ Nếu không có voucher: hiển thị breakdown bình thường */}
+                    <div className="flex justify-between text-gray-700">
+                      <span>Tạm tính:</span>
+                      <span className="font-medium">{formatMoney(orderData.subTotal || orderData.totalAmount || 0)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between text-gray-700">
+                      <span>Phí giao hàng:</span>
+                      <span className="font-medium text-green-600">Miễn phí</span>
+                    </div>
+                    
+                    <div className="border-t-2 border-gray-200 pt-3 mt-3">
+                      <div className="flex justify-between text-xl font-bold text-vietnam-green">
+                        <span>Tổng cộng:</span>
+                        <span>{formatMoney(orderData.totalAmount || orderData.subTotal || 0)}</span>
+                      </div>
+                    </div>
+                  </>
                 )}
-                
-                <div className="flex justify-between text-gray-700">
-                  <span>Phí giao hàng:</span>
-                  <span className="font-medium text-green-600">Miễn phí</span>
-                </div>
-                
-                <div className="border-t-2 border-gray-200 pt-3 mt-3">
-                  <div className="flex justify-between text-xl font-bold text-vietnam-green">
-                    <span>Tổng cộng:</span>
-                    <span>{formatMoney(orderData.totalPrice - (orderData.discountAmount || 0))}</span>
-                  </div>
-                </div>
               </div>
 
               {/* Action Buttons */}
@@ -435,13 +475,21 @@ const PendingOrderDetail = () => {
 
               {/* Help Section */}
               <div className="mt-6 pt-6 border-t">
-                <p className="text-sm text-gray-600 mb-2">Cần hỗ trợ?</p>
-                <p className="text-sm text-vietnam-green font-semibold">
-                  Hotline: 1900 xxxx
-                </p>
-                <p className="text-sm text-gray-600">
-                  Email: support@nhacnhoviet.vn
-                </p>
+                <p className="text-sm text-gray-600 mb-2">Cần liên hệ?</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-vietnam-green font-semibold">
+                    <PhoneOutlined className="mr-1" />
+                    Hotline: 0366 852 182
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <MailOutlined className="mr-1" />
+                    <b>Email: </b>nhacnhoviet1@gmail.com
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <FacebookOutlined className="mr-1" />
+                    <b>Facebook: </b>Nhắc Nhớ Việt
+                  </p>
+                </div>
               </div>
             </div>
 

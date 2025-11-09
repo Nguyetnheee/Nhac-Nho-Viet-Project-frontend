@@ -671,7 +671,7 @@ const OrderManagement = () => {
         title={
           <Space>
             <EyeOutlined style={{ color: '#1890ff' }} />
-            <span>Chi tiết đơn hàng #{selectedOrder?.orderId}</span>
+            <span>Chi tiết đơn hàng </span>
           </Space>
         }
         open={detailModalVisible}
@@ -685,9 +685,7 @@ const OrderManagement = () => {
       >
         {selectedOrder && (
           <Descriptions bordered column={2}>
-            <Descriptions.Item label="Mã đơn hàng (ID)" span={2}>
-              <strong>#{selectedOrder.orderId}</strong>
-            </Descriptions.Item>
+            {/* ✅ Bỏ "Mã đơn hàng (ID)" */}
             <Descriptions.Item label="Mã đơn hàng (Code)" span={2}>
               <strong style={{ color: '#1890ff' }}>{selectedOrder.orderCode || 'N/A'}</strong>
             </Descriptions.Item>
@@ -702,9 +700,12 @@ const OrderManagement = () => {
             <Descriptions.Item label="Số điện thoại">
               {selectedOrder.phoneNumber}
             </Descriptions.Item>
-            <Descriptions.Item label="Email" span={2}>
-              {selectedOrder.email || 'N/A'}
-            </Descriptions.Item>
+            {/* ✅ Chỉ hiển thị Email nếu có thông tin */}
+            {selectedOrder.email && selectedOrder.email !== 'N/A' && (
+              <Descriptions.Item label="Email" span={2}>
+                {selectedOrder.email}
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Địa chỉ giao hàng" span={2}>
               {selectedOrder.deliveryAddress}
             </Descriptions.Item>
@@ -713,15 +714,16 @@ const OrderManagement = () => {
                 {formatCurrency(selectedOrder.totalAmount)}
               </strong>
             </Descriptions.Item>
-            <Descriptions.Item label="Phương thức thanh toán">
-              {selectedOrder.paymentMethod || 'N/A'}
-            </Descriptions.Item>
+            {/* ✅ Chỉ hiển thị Phương thức thanh toán nếu có thông tin */}
+            {selectedOrder.paymentMethod && selectedOrder.paymentMethod !== 'N/A' && (
+              <Descriptions.Item label="Phương thức thanh toán">
+                {selectedOrder.paymentMethod}
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Shipper">
               {selectedOrder.shipperName || <Tag color="default">Chưa gán</Tag>}
             </Descriptions.Item>
-            <Descriptions.Item label="SĐT Shipper">
-              {selectedOrder.shipperPhone || 'N/A'}
-            </Descriptions.Item>
+            {/* ✅ Bỏ "SĐT Shipper" */}
             <Descriptions.Item label="Ngày đặt hàng" span={2}>
               {formatDate(selectedOrder.createdAt)}
             </Descriptions.Item>
@@ -806,7 +808,7 @@ const OrderManagement = () => {
         title={
           <Space>
             <UserOutlined style={{ color: '#1890ff' }} />
-            <span>Gán shipper cho đơn hàng #{selectedOrder?.orderId}</span>
+            <span>Gán đơn hàng {selectedOrder?.orderCode} cho shipper</span>
           </Space>
         }
         open={assignModalVisible}

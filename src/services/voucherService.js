@@ -300,3 +300,86 @@ export const applyVoucherToCart = async (voucherCode) => {
 
 // Giữ lại alias cho backward compatibility
 export const applyVoucher = validateVoucher;
+
+/**
+ * 📋 LẤY DANH SÁCH VOUCHER CÒN SỬ DỤNG ĐƯỢC (PUBLIC - CHO CUSTOMER)
+ * GET /api/vouchers
+ * Chỉ lấy mã giảm và description của voucher còn sử dụng được
+ * @returns {Promise} Array of vouchers với { code, description }
+ */
+export const getAvailableVouchers = async () => {
+  try {
+    console.log('📤 Fetching available vouchers for customer...');
+    
+    // Gọi API GET /api/vouchers - có thể cần filter isActive=true
+    const response = await api.get('/api/vouchers', {
+      params: {
+        isActive: true,
+        // Có thể thêm filter khác nếu cần
+      }
+    });
+    
+    console.log('✅ Available vouchers response:', response.data);
+    
+    // Xử lý response - có thể là array hoặc object với content
+    let vouchers = [];
+    if (Array.isArray(response.data)) {
+      vouchers = response.data;
+    } else if (response.data?.content) {
+      vouchers = response.data.content || [];
+    } else if (response.data?.data) {
+      vouchers = Array.isArray(response.data.data) ? response.data.data : [];
+    }
+    
+    // Lọc chỉ lấy voucher còn sử dụng được (có thể check thêm điều kiện)
+    const now = new Date();
+    const availableVouchers = vouchers
+      .filter(v => {
+        // Chỉ lấy voucher active
+        if (v.isActive === false) return false;
+        
+        // Check ngày hết hạn
+        if (v.endDate) {
+          const endDate = new Date(v.endDate);
+          if (endDate < now) return false;
+        }
+        
+        // Check ngày bắt đầu
+        if (v.startDate) {
+          const startDate = new Date(v.startDate);
+          if (startDate > now) return false;
+        }
+        
+        return true;
+      })
+      .map(v => ({
+        code: v.code || v.voucherCode,
+        description: v.description || '',
+        discountType: v.discountType || v.type,
+        discountValue: v.discountValue || v.value,
+        minOrderAmount: v.minOrderAmount || v.minimumOrderAmount || 0,
+        maxDiscountAmount: v.maxDiscountAmount || v.maxDiscount || 0,
+        // Giữ thêm thông tin để validate sau
+        _fullData: v
+      }));
+    
+    console.log('✅ Filtered available vouchers:', availableVouchers);
+    
+    return availableVouchers;
+  } catch (error) {
+    const errorMessage = 
+      error.response?.data?.message || 
+      error.response?.data?.error ||
+      error.message || 
+      "Không thể tải danh sách mã giảm giá. Vui lòng thử lại.";
+    
+    console.error('❌ Get available vouchers error:', {
+      message: errorMessage,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    // Trả về array rỗng thay vì throw error để không làm crash UI
+    return [];
+  }
+};

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate, useSearchParams } from 'react-router-dom'; 
 import { scrollToTop } from '../utils/scrollUtils';
 import { 
   Select, 
@@ -33,7 +33,8 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const Checklist = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams(); 
   
   const [checklistsByRitual, setChecklistsByRitual] = useState([]); 
   const [loading, setLoading] = useState(false);
@@ -102,6 +103,47 @@ const Checklist = () => {
     scrollToTop(true);
     // Fetch rituals for dropdown (chỉ fetch 1 lần khi mount)
     fetchRituals();
+    
+    // Check if should open create modal from URL params
+    const shouldCreate = searchParams.get('create') === 'true';
+    const ritualIdParam = searchParams.get('ritualId');
+    
+    if (shouldCreate && ritualIdParam) {
+      const ritualId = Number(ritualIdParam);
+      
+      // Remove query params from URL
+      setSearchParams({});
+      
+      // Open modal and set ritual
+      setTimeout(async () => {
+        setSelectedRitualId(ritualId);
+        setCreateModalOpen(true);
+        
+        // Fetch checklist items for the ritual first
+        setLoadingRitualItems(true);
+        try {
+          const items = await checklistService.getByRitual(ritualId);
+          setRitualChecklistItems(items || []);
+        } catch (error) {
+          console.error('Error fetching ritual checklist items:', error);
+          message.warning('Không thể tải danh sách vật phẩm của lễ hội này.');
+          setRitualChecklistItems([]);
+        } finally {
+          setLoadingRitualItems(false);
+        }
+        
+        // Set form values after a short delay to ensure form is ready
+        setTimeout(() => {
+          form.setFieldsValue({
+            ritualId: ritualId,
+            title: '',
+            reminderDate: null
+          });
+          setFormData({ ritualId: ritualId, title: '', reminderDate: null });
+        }, 150);
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch user checklists khi user thay đổi

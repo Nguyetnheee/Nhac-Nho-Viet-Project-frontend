@@ -478,7 +478,7 @@ const ShipperOrderManagement = () => {
               loading={loading}
               pagination={{
                 pageSize: 10,
-                showSizeChanger: true,
+                showSizeChanger: false,
                 showTotal: (total) => `Tổng ${total} đơn hàng`,
               }}
               scroll={{ x: 1000 }}
@@ -511,7 +511,7 @@ const ShipperOrderManagement = () => {
               loading={loading}
               pagination={{
                 pageSize: 10,
-                showSizeChanger: true,
+                showSizeChanger: false,
                 showTotal: (total) => `Tổng ${total} đơn hàng`,
               }}
               scroll={{ x: 1000 }}
@@ -542,7 +542,7 @@ const ShipperOrderManagement = () => {
               loading={loading}
               pagination={{
                 pageSize: 10,
-                showSizeChanger: true,
+                showSizeChanger: false,
                 showTotal: (total) => `Tổng ${total} đơn hàng`,
               }}
               scroll={{ x: 1000 }}
@@ -564,7 +564,7 @@ const ShipperOrderManagement = () => {
         title={
           <Space>
             <ShoppingOutlined />
-            <span>Chi tiết đơn hàng #{selectedOrder?.orderId}</span>
+            <span>Chi tiết đơn hàng </span>
           </Space>
         }
         open={detailModalVisible}
@@ -579,7 +579,7 @@ const ShipperOrderManagement = () => {
         {selectedOrder && (
           <Descriptions bordered column={1}>
             <Descriptions.Item label="Mã đơn hàng">
-              <strong>#{selectedOrder.orderId}</strong>
+              <strong style={{ color: '#1890ff' }}>{selectedOrder.orderCode || 'N/A'}</strong>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
               {getStatusTag(selectedOrder.status)}
