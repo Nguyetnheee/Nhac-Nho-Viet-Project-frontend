@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, InputNumber, Select, Button, Card, Space, Upload, message, Spin, Row, Col, Image, Typography, Alert, Table, Modal, Divider, Tag } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, EditOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import productService from '../../services/productService';
+import productDetailService from '../../services/productDetailService';
 import categoryService from '../../services/categoryService';
 import regionService from '../../services/regionService';
 import { checklistService } from '../../services/checklistService';
@@ -26,52 +27,85 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
   // States for checklists management
   const [productDetailId, setProductDetailId] = useState(null);
   const [checklists, setChecklists] = useState([]);
-  const [newChecklists, setNewChecklists] = useState([]); // Các dòng mới đang thêm
-  const [availableItems, setAvailableItems] = useState([]);
   const [availableRituals, setAvailableRituals] = useState([]);
-  const [availableChecklists, setAvailableChecklists] = useState([]); // Danh sách checklists có sẵn
-  const [isChecklistModalVisible, setIsChecklistModalVisible] = useState(false);
+  const [groupedChecklists, setGroupedChecklists] = useState({}); // Checklists đã group theo ritual
   const [isAssignChecklistModalVisible, setIsAssignChecklistModalVisible] = useState(false);
-  const [editingChecklist, setEditingChecklist] = useState(null);
-  const [checklistForm] = Form.useForm();
   const [assignChecklistForm] = Form.useForm();
+  const [selectedRitualId, setSelectedRitualId] = useState(null);
+
+  // Load checklists từ API
+  const loadChecklists = async (productDetailIdToLoad) => {
+    try {
+      const productDetailData = await productDetailService.getProductDetailWithChecklists(productDetailIdToLoad || productDetailId);
+      if (productDetailData && productDetailData.checklists) {
+        // Đảm bảo format đúng với API response
+        const formattedChecklists = productDetailData.checklists.map(checklist => ({
+          checklistId: checklist.checklistId,
+          ritualId: checklist.ritualId,
+          ritualName: checklist.ritualName,
+          itemId: checklist.itemId,
+          itemName: checklist.itemName,
+          unit: checklist.unit,
+          quantity: checklist.quantity,
+          checkNote: checklist.checkNote
+        }));
+        setChecklists(formattedChecklists);
+      } else {
+        setChecklists([]);
+      }
+    } catch (error) {
+      console.error('Error loading checklists:', error);
+      setChecklists([]);
+    }
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
       setInitialLoading(true);
       try {
-        // Load product, categories, regions, items, rituals, checklists
-        const [productRes, categoriesRes, regionsRes, itemsRes, ritualsRes, checklistsRes] = await Promise.all([
+        // Load product, categories, regions, rituals, grouped checklists
+        const [productRes, categoriesRes, regionsRes, ritualsRes, groupedChecklistsRes] = await Promise.all([
           productService.getProductById(productId),
           categoryService.getAllCategories(),
           regionService.getAllRegions(),
-          checklistService.getChecklistItems(),
           ritualService.getAllRituals(),
-          checklistService.getAllChecklists()
+          checklistService.getGroupedChecklists()
         ]);
         
         setProductData(productRes);
         setCategories(categoriesRes || []);
         setRegions(regionsRes || []);
-        setAvailableItems(itemsRes || []);
         setAvailableRituals(ritualsRes || []);
-        setAvailableChecklists(checklistsRes || []);
+        setGroupedChecklists(groupedChecklistsRes || {});
         setCurrentImageUrl(productRes.productImage || '');
         form.setFieldsValue(productRes);
         
         // Load product detail với checklists
         try {
-          const productDetailId = await productService.getProductDetailIdByProductId(productId);
+          let productDetailId;
+          try {
+            productDetailId = await productDetailService.getProductDetailIdByProductId(productId);
+          } catch (error) {
+            // Nếu API trả về 500 hoặc không tìm thấy, có thể product detail chưa tồn tại
+            // Tạo product detail mới
+            console.warn('Product detail not found, creating new one...', error);
+            try {
+              const newProductDetail = await productDetailService.createProductDetail(productId);
+              productDetailId = newProductDetail.productDetailId || newProductDetail.id;
+              message.info('Đã tạo product detail mới cho sản phẩm này.');
+            } catch (createError) {
+              console.error('Error creating product detail:', createError);
+              // Không báo lỗi, chỉ log - có thể product detail sẽ được tạo sau
+            }
+          }
+          
           if (productDetailId) {
             setProductDetailId(productDetailId);
-            const productDetailData = await productService.getProductDetailWithChecklists(productDetailId);
-            if (productDetailData && productDetailData.checklists) {
-              setChecklists(productDetailData.checklists || []);
-            }
+            await loadChecklists(productDetailId);
           }
         } catch (error) {
           console.warn('Could not load product detail checklists:', error);
-          // Không báo lỗi nếu không có product detail
+          // Không báo lỗi nếu không có product detail - có thể chưa được tạo
         }
       } catch (error) {
         message.error('Không thể tải dữ liệu sản phẩm!');
@@ -99,119 +133,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
       const updateData = { ...values, price: Number(values.price), categoryId: Number(values.categoryId), regionId: Number(values.regionId) };
       const productResponse = await productService.updateProduct(productId, updateData, selectedFile);
       
-      // Bước 2: Cập nhật product detail với checklists nếu có productDetailId
-      if (productDetailId && productData) {
-        try {
-          const selectedCategory = categories.find(c => c.categoryId === Number(values.categoryId));
-          const selectedRegion = regions.find(r => r.regionId === Number(values.regionId));
-          
-          // Merge checklists cũ và mới, chỉ lấy những dòng đã chọn checklist
-          const allChecklists = [
-            ...checklists,
-            ...newChecklists.filter(cl => cl.checklistId && cl.itemId)
-          ];
-          
-          // Chuẩn bị data cho product detail update
-          const productDetailUpdateData = {
-            productDetailId: productDetailId,
-            product: {
-              productId: productId,
-              category: selectedCategory ? {
-                categoryId: selectedCategory.categoryId,
-                categoryName: selectedCategory.categoryName || '',
-                description: selectedCategory.description || ''
-              } : {
-                categoryId: Number(values.categoryId),
-                categoryName: '',
-                description: ''
-              },
-              region: selectedRegion ? {
-                regionId: selectedRegion.regionId,
-                regionName: selectedRegion.regionName || '',
-                regionDescription: selectedRegion.regionDescription || ''
-              } : {
-                regionId: Number(values.regionId),
-                regionName: '',
-                regionDescription: ''
-              },
-              productName: values.productName,
-              price: Number(values.price),
-              productDescription: values.productDescription || '',
-              productImage: productResponse?.productImage || productResponse?.data?.productImage || currentImageUrl,
-              status: values.productStatus || 'AVAILABLE',
-              productDetails: []
-            },
-            checklists: allChecklists.map(cl => {
-              // Tìm ritual và item từ available lists nếu chưa có đầy đủ
-              const ritualData = cl.ritual || (cl.ritualId ? availableRituals.find(r => r.ritualId === cl.ritualId) : null);
-              const itemData = cl.item || (cl.itemId ? availableItems.find(i => i.itemId === cl.itemId) : null);
-              
-              return {
-                checklistId: cl.checklistId || 0,
-                ritual: ritualData ? {
-                  ritualId: ritualData.ritualId || cl.ritualId || 0,
-                  ritualName: ritualData.ritualName || cl.ritualName || '',
-                  dateLunar: ritualData.dateLunar || '',
-                  region: ritualData.region || {},
-                  dateSolar: ritualData.dateSolar || '',
-                  description: ritualData.description || '',
-                  meaning: ritualData.meaning || '',
-                  imageUrl: ritualData.imageUrl || '',
-                  checklists: []
-                } : {
-                  ritualId: cl.ritualId || 0,
-                  ritualName: cl.ritualName || '',
-                  dateLunar: '',
-                  region: {},
-                  dateSolar: '',
-                  description: '',
-                  meaning: '',
-                  imageUrl: '',
-                  checklists: []
-                },
-                item: itemData ? {
-                  itemId: itemData.itemId || cl.itemId || 0,
-                  itemName: itemData.itemName || cl.itemName || '',
-                  unit: itemData.unit || cl.unit || '',
-                  stockQuantity: itemData.stockQuantity || 0,
-                  isActive: itemData.isActive !== false,
-                  deletedAt: null
-                } : {
-                  itemId: cl.itemId || 0,
-                  itemName: cl.itemName || '',
-                  unit: cl.unit || '',
-                  stockQuantity: 0,
-                  isActive: true,
-                  deletedAt: null
-                },
-                productDetail: '',
-                quantity: cl.quantity || 0,
-                checkNote: cl.checkNote || '',
-                status: cl.status || 'PENDING'
-              };
-            })
-          };
-          
-          await productService.updateProductDetail(productDetailId, productDetailUpdateData);
-          
-          // Clear các dòng mới sau khi lưu thành công
-          setNewChecklists([]);
-          
-          // Reload checklists từ server để có dữ liệu mới nhất
-          try {
-            const productDetailData = await productService.getProductDetailWithChecklists(productDetailId);
-            if (productDetailData && productDetailData.checklists) {
-              setChecklists(productDetailData.checklists || []);
-            }
-          } catch (error) {
-            console.error('Error reloading checklists:', error);
-          }
-        } catch (error) {
-          console.error('Error updating product detail:', error);
-          // Không fail toàn bộ nếu chỉ lỗi update checklists
-          message.warning('Đã cập nhật sản phẩm nhưng có lỗi khi cập nhật nguyên liệu!');
-        }
-      }
+      // Note: Checklists được gán riêng qua API assign-checklists, không cần update ở đây
       
       message.success('Cập nhật mâm cúng thành công!');
       if (onSuccess) onSuccess(productResponse);
@@ -224,60 +146,36 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
   };
   
   // Checklist management functions
-  const handleAddChecklist = () => {
-    // Nếu chưa có checklists và chưa có productDetailId, mở modal assign checklists
-    if (checklists.length === 0 && newChecklists.length === 0 && productDetailId) {
-      setIsAssignChecklistModalVisible(true);
-      assignChecklistForm.resetFields();
-    } else {
-      // Thêm dòng mới vào bảng để staff có thể nhập trực tiếp
-      const newRow = {
-        tempId: `temp-${Date.now()}-${Math.random()}`, // ID tạm để track
-        checklistId: 0,
-        ritualId: null,
-        ritualName: '',
-        itemId: null,
-        itemName: '',
-        quantity: 1,
-        unit: '',
-        checkNote: '',
-        status: 'PENDING',
-        isNew: true // Đánh dấu là dòng mới
-      };
-      setNewChecklists(prev => [...prev, newRow]);
-    }
-  };
-  
-  // Cập nhật dòng mới trong bảng
-  const handleUpdateNewChecklist = (tempId, field, value) => {
-    setNewChecklists(prev => prev.map(row => {
-      if (row.tempId === tempId) {
-        const updated = { ...row, [field]: value };
-        
-        // Nếu chọn checklist, tự động điền thông tin
-        if (field === 'checklistId' && value) {
-          const selectedChecklist = availableChecklists.find(c => c.checklistId === value);
-          if (selectedChecklist) {
-            updated.ritualId = selectedChecklist.ritualId || selectedChecklist.ritual?.ritualId;
-            updated.ritualName = selectedChecklist.ritualName || selectedChecklist.ritual?.ritualName || '';
-            updated.itemId = selectedChecklist.itemId || selectedChecklist.item?.itemId;
-            updated.itemName = selectedChecklist.itemName || selectedChecklist.item?.itemName || '';
-            updated.unit = selectedChecklist.unit || selectedChecklist.item?.unit || '';
-          }
+  const handleOpenAssignChecklistModal = async () => {
+    // Nếu chưa có productDetailId, thử tạo mới
+    if (!productDetailId) {
+      try {
+        message.loading('Đang tạo product detail...', 0);
+        const newProductDetail = await productService.createProductDetail(productId);
+        const newProductDetailId = newProductDetail.productDetailId || newProductDetail.id;
+        if (newProductDetailId) {
+          setProductDetailId(newProductDetailId);
+          message.destroy();
+          message.success('Đã tạo product detail thành công!');
+        } else {
+          message.destroy();
+          message.error('Không thể tạo product detail!');
+          return;
         }
-        
-        return updated;
+      } catch (error) {
+        message.destroy();
+        console.error('Error creating product detail:', error);
+        message.error('Không thể tạo product detail. Vui lòng thử lại sau!');
+        return;
       }
-      return row;
-    }));
+    }
+    
+    setIsAssignChecklistModalVisible(true);
+    assignChecklistForm.resetFields();
+    setSelectedRitualId(null);
   };
   
-  // Xóa dòng mới
-  const handleDeleteNewChecklist = (tempId) => {
-    setNewChecklists(prev => prev.filter(row => row.tempId !== tempId));
-  };
-  
-  // Handle assign checklists (khi chưa có checklists)
+  // Handle assign checklists
   const handleAssignChecklists = async () => {
     try {
       const values = await assignChecklistForm.validateFields();
@@ -287,109 +185,54 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
         return;
       }
       
+      if (!values.checklistIds || values.checklistIds.length === 0) {
+        message.warning('Vui lòng chọn ít nhất một checklist!');
+        return;
+      }
+      
       // Gửi request assign checklists
-      await productService.assignChecklistsToProductDetail(
+      await productDetailService.assignChecklistsToProductDetail(
         productDetailId,
-        values.checklistIds || []
+        values.checklistIds
       );
       
-      message.success('Đã thêm nguyên liệu thành công!');
+      message.success('Đã gán danh mục sản phẩm thành công!');
       setIsAssignChecklistModalVisible(false);
       assignChecklistForm.resetFields();
+      setSelectedRitualId(null);
       
-      // Reload checklists để hiển thị
-      try {
-        const productDetailData = await productService.getProductDetailWithChecklists(productDetailId);
-        if (productDetailData && productDetailData.checklists) {
-          setChecklists(productDetailData.checklists || []);
-        }
-      } catch (error) {
-        console.error('Error reloading checklists:', error);
-      }
+      // Reload checklists từ API để hiển thị danh sách mới nhất
+      await loadChecklists(productDetailId);
     } catch (error) {
       if (error.errorFields) {
         // Validation error
         return;
       }
       console.error('Error assigning checklists:', error);
-      const errorMessage = error.response?.data?.message || 'Không thể thêm nguyên liệu!';
+      const errorMessage = error.response?.data?.message || 'Không thể gán checklist!';
       message.error(errorMessage);
     }
   };
   
-  const handleEditChecklist = (checklist) => {
-    setEditingChecklist(checklist);
-    checklistForm.setFieldsValue({
-      ritualId: checklist.ritualId || checklist.ritual?.ritualId,
-      itemId: checklist.itemId || checklist.item?.itemId,
-      quantity: checklist.quantity,
-      checkNote: checklist.checkNote || ''
-    });
-    setIsChecklistModalVisible(true);
-  };
-  
-  const handleDeleteChecklist = (checklist) => {
-    setChecklists(prev => prev.filter(cl => 
-      cl.checklistId !== checklist.checklistId || 
-      (cl.ritualId !== checklist.ritualId && cl.itemId !== checklist.itemId)
-    ));
-    message.success('Đã xóa nguyên liệu khỏi danh sách!');
-  };
-  
-  const handleSaveChecklist = () => {
-    checklistForm.validateFields().then(values => {
-      const selectedItem = availableItems.find(i => i.itemId === values.itemId);
-      const selectedRitual = availableRituals.find(r => r.ritualId === values.ritualId);
-      
-      const newChecklist = {
-        checklistId: editingChecklist?.checklistId || 0,
-        ritualId: values.ritualId,
-        ritualName: selectedRitual?.ritualName || '',
-        ritual: selectedRitual ? {
-          ritualId: selectedRitual.ritualId,
-          ritualName: selectedRitual.ritualName,
-          dateLunar: selectedRitual.dateLunar || '',
-          region: selectedRitual.region || {},
-          dateSolar: selectedRitual.dateSolar || '',
-          description: selectedRitual.description || '',
-          meaning: selectedRitual.meaning || '',
-          imageUrl: selectedRitual.imageUrl || '',
-          checklists: []
-        } : null,
-        itemId: values.itemId,
-        itemName: selectedItem?.itemName || '',
-        item: selectedItem ? {
-          itemId: selectedItem.itemId,
-          itemName: selectedItem.itemName,
-          unit: selectedItem.unit || '',
-          stockQuantity: selectedItem.stockQuantity || 0,
-          isActive: selectedItem.isActive !== false,
-          deletedAt: null
-        } : null,
-        quantity: Number(values.quantity),
-        unit: selectedItem?.unit || '',
-        checkNote: values.checkNote || '',
-        status: 'PENDING' // Set mặc định, không cho staff chọn
-      };
-      
-      if (editingChecklist) {
-        // Update existing
-        setChecklists(prev => prev.map(cl => 
-          (cl.checklistId === editingChecklist.checklistId && 
-           cl.ritualId === editingChecklist.ritualId && 
-           cl.itemId === editingChecklist.itemId) ? newChecklist : cl
-        ));
-        message.success('Đã cập nhật nguyên liệu!');
-      } else {
-        // Add new
-        setChecklists(prev => [...prev, newChecklist]);
-        message.success('Đã thêm nguyên liệu!');
-      }
-      
-      setIsChecklistModalVisible(false);
-      checklistForm.resetFields();
-      setEditingChecklist(null);
-    });
+  // Lấy danh sách checklist theo ritual đã chọn
+  const getChecklistsByRitual = () => {
+    if (!selectedRitualId || !groupedChecklists) {
+      return [];
+    }
+    
+    // Tìm ritual name từ ritualId
+    const ritual = availableRituals.find(r => r.ritualId === selectedRitualId);
+    if (!ritual || !ritual.ritualName) {
+      return [];
+    }
+    
+    // Lấy checklist items từ grouped checklists
+    const ritualChecklists = groupedChecklists[ritual.ritualName];
+    if (!ritualChecklists || !Array.isArray(ritualChecklists)) {
+      return [];
+    }
+    
+    return ritualChecklists;
   };
 
   if (initialLoading) {
@@ -476,26 +319,34 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
               </Form.Item>
             </Card>
 
-            {/* Bảng quản lý nguyên liệu */}
+            {/* Bảng gán danh mục checklist */}
             <Card className="shadow-lg rounded-xl mb-6">
               <div className="flex justify-between items-center mb-4">
                 <Title level={4} className="font-serif !text-vietnam-green !mb-0">
-                  Quản lý nguyên liệu trong kho
+                  Gán danh mục sản phẩm
                 </Title>
                 <Button 
                   type="primary" 
                   icon={<PlusOutlined />} 
-                  onClick={handleAddChecklist}
+                  onClick={handleOpenAssignChecklistModal}
                   className="bg-vietnam-gold hover:!bg-yellow-500"
                 >
-                  Thêm nguyên liệu
+                  Gán danh mục sản phẩm
                 </Button>
               </div>
               
-              {(checklists.length > 0 || newChecklists.length > 0) ? (
+              <Alert
+                message="Lưu ý"
+                description="Chỉ có thể gán các dan đã được tạo sẵn trong phần 'Quản lý danh mục'. Để tạo danh mục mới, vui lòng vào phần 'Quản lý danh mục'."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+              
+              {checklists.length > 0 ? (
                 <Table
-                  dataSource={[...checklists, ...newChecklists]}
-                  rowKey={(record) => record.tempId || `${record.checklistId || 0}-${record.ritualId || 0}-${record.itemId || 0}`}
+                  dataSource={checklists}
+                  rowKey={(record) => `${record.checklistId || 0}-${record.ritualId || 0}-${record.itemId || 0}`}
                   pagination={false}
                   size="small"
                   bordered
@@ -507,139 +358,54 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
                       render: (_, __, index) => index + 1,
                     },
                     {
-                      title: 'Tên nguyên liệu',
+                      title: 'Lễ hội',
+                      key: 'ritualName',
+                      width: 200,
+                      render: (_, record) => (
+                        <Text strong>{record.ritualName || 'N/A'}</Text>
+                      ),
+                    },
+                    {
+                      title: 'Tên vật phẩm',
                       key: 'itemName',
                       width: 200,
-                      render: (_, record) => {
-                        if (record.isNew) {
-                          // Dòng mới: dropdown chọn checklist
-                          return (
-                            <Select
-                              placeholder="Chọn nguyên liệu"
-                              style={{ width: '100%' }}
-                              showSearch
-                              value={record.checklistId || undefined}
-                              onChange={(value) => handleUpdateNewChecklist(record.tempId, 'checklistId', value)}
-                              filterOption={(input, option) => {
-                                const checklist = availableChecklists.find(c => c.checklistId === option.value);
-                                if (!checklist) return false;
-                                const itemName = checklist.item?.itemName || checklist.itemName || '';
-                                const searchText = itemName.toLowerCase();
-                                return searchText.includes(input.toLowerCase());
-                              }}
-                            >
-                              {availableChecklists.map(checklist => {
-                                const itemName = checklist.item?.itemName || checklist.itemName || 'N/A';
-                                return (
-                                  <Option key={checklist.checklistId} value={checklist.checklistId}>
-                                    {itemName}
-                                  </Option>
-                                );
-                              })}
-                            </Select>
-                          );
-                        }
-                        return <Text strong>{record.itemName || 'N/A'}</Text>;
-                      },
+                      render: (_, record) => (
+                        <Text strong>{record.itemName || 'N/A'}</Text>
+                      ),
                     },
                     {
                       title: 'Số lượng',
                       key: 'quantity',
                       width: 120,
                       align: 'center',
-                      render: (_, record) => {
-                        if (record.isNew) {
-                          // Dòng mới: input số lượng
-                          return (
-                            <InputNumber
-                              min={1}
-                              value={record.quantity || 1}
-                              onChange={(value) => handleUpdateNewChecklist(record.tempId, 'quantity', value || 1)}
-                              style={{ width: '100%' }}
-                            />
-                          );
-                        }
-                        return (
-                          <Text>{record.quantity !== null && record.quantity !== undefined ? record.quantity : 'N/A'}</Text>
-                        );
-                      },
+                      render: (_, record) => (
+                        <Text>{record.quantity !== null && record.quantity !== undefined ? record.quantity : 'N/A'}</Text>
+                      ),
                     },
                     {
                       title: 'Đơn vị',
                       key: 'unit',
                       width: 100,
                       align: 'center',
-                      render: (_, record) => <Tag>{record.unit || '-'}</Tag>,
+                      render: (_, record) => (
+                        <Tag>{record.unit || '-'}</Tag>
+                      ),
                     },
                     {
                       title: 'Ghi chú',
                       key: 'checkNote',
                       width: 200,
-                      render: (_, record) => {
-                        if (record.isNew) {
-                          // Dòng mới: textarea ghi chú
-                          return (
-                            <Input.TextArea
-                              rows={2}
-                              value={record.checkNote || ''}
-                              onChange={(e) => handleUpdateNewChecklist(record.tempId, 'checkNote', e.target.value)}
-                              placeholder="Ghi chú (tùy chọn)"
-                              maxLength={200}
-                            />
-                          );
-                        }
-                        return (
-                          <Text type="secondary" style={{ fontStyle: 'italic' }}>
-                            {record.checkNote || '-'}
-                          </Text>
-                        );
-                      },
-                    },
-                    {
-                      title: 'Hành động',
-                      key: 'action',
-                      width: 120,
-                      render: (_, record) => {
-                        if (record.isNew) {
-                          // Dòng mới: chỉ có nút xóa
-                          return (
-                            <Button
-                              size="small"
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleDeleteNewChecklist(record.tempId)}
-                            >
-                              Xóa
-                            </Button>
-                          );
-                        }
-                        // Dòng cũ: có nút sửa và xóa
-                        return (
-                          <Space>
-                            <Button
-                              size="small"
-                              icon={<EditOutlined />}
-                              onClick={() => handleEditChecklist(record)}
-                            >
-                              Sửa
-                            </Button>
-                            <Button
-                              size="small"
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleDeleteChecklist(record)}
-                            >
-                              Xóa
-                            </Button>
-                          </Space>
-                        );
-                      },
+                      render: (_, record) => (
+                        <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                          {record.checkNote || '-'}
+                        </Text>
+                      ),
                     },
                   ]}
                 />
               ) : (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                  <Text type="secondary">Chưa có nguyên liệu nào. Nhấn "Thêm nguyên liệu" để bắt đầu.</Text>
+                  <Text type="secondary">Chưa có checklist nào được gán. Nhấn "Gán checklist" để bắt đầu.</Text>
                 </div>
               )}
             </Card>
@@ -661,16 +427,17 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
         </Row>
       </Form>
 
-      {/* Modal assign checklists (khi chưa có checklists) */}
+      {/* Modal assign checklists */}
       <Modal
-        title="Thêm nguyên liệu cho mâm cúng"
+        title="Gán danh mục checklist cho mâm cúng"
         open={isAssignChecklistModalVisible}
         onOk={handleAssignChecklists}
         onCancel={() => {
           setIsAssignChecklistModalVisible(false);
           assignChecklistForm.resetFields();
+          setSelectedRitualId(null);
         }}
-        okText="Thêm"
+        okText="Gán checklist"
         cancelText="Hủy"
         width={700}
       >
@@ -679,79 +446,22 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
           layout="vertical"
         >
           <Form.Item
-            name="checklistIds"
-            label="Chọn nguyên liệu"
-            rules={[{ required: true, message: 'Vui lòng chọn ít nhất một nguyên liệu!' }]}
-            tooltip="Chọn các nguyên liệu cần thêm vào mâm cúng này"
-          >
-            <Select
-              mode="multiple"
-              placeholder="Chọn nguyên liệu"
-              showSearch
-              filterOption={(input, option) => {
-                const checklist = availableChecklists.find(c => c.checklistId === option.value);
-                if (!checklist) return false;
-                const itemName = checklist.item?.itemName || checklist.itemName || '';
-                const searchText = itemName.toLowerCase();
-                return searchText.includes(input.toLowerCase());
-              }}
-              optionLabelProp="label"
-            >
-              {availableChecklists.map(checklist => {
-                const itemName = checklist.item?.itemName || checklist.itemName || 'N/A';
-                
-                return (
-                  <Option key={checklist.checklistId} value={checklist.checklistId} label={itemName}>
-                    <div>
-                      <div><strong>{itemName}</strong></div>
-                    </div>
-                  </Option>
-                );
-              })}
-            </Select>
-          </Form.Item>
-          
-          <div style={{ 
-            padding: '12px', 
-            backgroundColor: '#f0f0f0', 
-            borderRadius: '4px',
-            marginTop: '16px'
-          }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              <strong>Lưu ý:</strong> Sau khi thêm, bạn có thể xem và chỉnh sửa số lượng, ghi chú của từng nguyên liệu trong bảng bên dưới.
-            </Text>
-          </div>
-        </Form>
-      </Modal>
-
-      {/* Modal thêm/sửa checklist (khi đã có checklists) */}
-      <Modal
-        title={editingChecklist ? 'Sửa nguyên liệu' : 'Thêm nguyên liệu mới'}
-        open={isChecklistModalVisible}
-        onOk={handleSaveChecklist}
-        onCancel={() => {
-          setIsChecklistModalVisible(false);
-          checklistForm.resetFields();
-          setEditingChecklist(null);
-        }}
-        okText="Lưu"
-        cancelText="Hủy"
-        width={600}
-      >
-        <Form
-          form={checklistForm}
-          layout="vertical"
-        >
-          <Form.Item
             name="ritualId"
-            label="Lễ hội"
+            label="Chọn lễ hội"
             rules={[{ required: true, message: 'Vui lòng chọn lễ hội!' }]}
+            tooltip="Chọn lễ hội để xem danh sách checklist đã tạo sẵn"
           >
             <Select
               placeholder="Chọn lễ hội"
               showSearch
+              value={selectedRitualId}
+              onChange={(value) => {
+                setSelectedRitualId(value);
+                // Reset checklist selection khi đổi ritual
+                assignChecklistForm.setFieldValue('checklistIds', []);
+              }}
               filterOption={(input, option) =>
-                option?.children?.toLowerCase().includes(input.toLowerCase())
+                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
               }
             >
               {availableRituals.map(ritual => (
@@ -761,54 +471,80 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
               ))}
             </Select>
           </Form.Item>
-
+          
           <Form.Item
-            name="itemId"
-            label="Nguyên liệu"
-            rules={[{ required: true, message: 'Vui lòng chọn nguyên liệu!' }]}
+            name="checklistIds"
+            label="Chọn checklist"
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất một checklist!' }]}
+            tooltip="Chọn các checklist đã tạo sẵn cho lễ hội này"
           >
             <Select
-              placeholder="Chọn nguyên liệu"
+              mode="multiple"
+              placeholder={selectedRitualId ? "Chọn checklist" : "Vui lòng chọn lễ hội trước"}
+              disabled={!selectedRitualId}
               showSearch
-              filterOption={(input, option) =>
-                option?.children?.toLowerCase().includes(input.toLowerCase())
-              }
+              filterOption={(input, option) => {
+                const checklist = getChecklistsByRitual().find(c => c.checklistId === option.value);
+                if (!checklist) return false;
+                const itemName = checklist.itemName || checklist.item?.itemName || '';
+                const searchText = itemName.toLowerCase();
+                return searchText.includes(input.toLowerCase());
+              }}
+              optionLabelProp="label"
             >
-              {availableItems.map(item => (
-                <Option key={item.itemId} value={item.itemId}>
-                  {item.itemName} {item.unit ? `(${item.unit})` : ''}
-                </Option>
-              ))}
+              {getChecklistsByRitual().map(checklist => {
+                const itemName = checklist.itemName || checklist.item?.itemName || 'N/A';
+                const quantity = checklist.quantity || 0;
+                const unit = checklist.unit || checklist.item?.unit || '';
+                
+                return (
+                  <Option key={checklist.checklistId} value={checklist.checklistId} label={itemName}>
+                    <div>
+                      <div><strong>{itemName}</strong></div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        Số lượng: {quantity} {unit}
+                      </div>
+                    </div>
+                  </Option>
+                );
+              })}
             </Select>
           </Form.Item>
-
-          <Form.Item
-            name="quantity"
-            label="Số lượng"
-            rules={[
-              { required: true, message: 'Vui lòng nhập số lượng!' },
-              { type: 'number', min: 1, message: 'Số lượng phải lớn hơn 0!' }
-            ]}
-          >
-            <InputNumber
-              placeholder="Nhập số lượng"
-              min={1}
-              style={{ width: '100%' }}
+          
+          {!selectedRitualId && (
+            <Alert
+              message="Vui lòng chọn lễ hội"
+              description="Sau khi chọn lễ hội, danh sách checklist đã tạo sẵn cho lễ hội đó sẽ hiển thị."
+              type="info"
+              showIcon
+              style={{ marginTop: '16px' }}
             />
-          </Form.Item>
-
-          <Form.Item
-            name="checkNote"
-            label="Ghi chú"
-          >
-            <Input.TextArea
-              placeholder="Nhập ghi chú (tùy chọn)"
-              rows={3}
-              maxLength={200}
+          )}
+          
+          {selectedRitualId && getChecklistsByRitual().length === 0 && (
+            <Alert
+              message="Không có checklist nào"
+              description={`Lễ hội này chưa có checklist nào được tạo. Vui lòng vào phần "Quản lý danh mục" để tạo checklist trước.`}
+              type="warning"
+              showIcon
+              style={{ marginTop: '16px' }}
             />
-          </Form.Item>
+          )}
+          
+          <div style={{ 
+            padding: '12px', 
+            backgroundColor: '#f0f0f0', 
+            borderRadius: '4px',
+            marginTop: '16px'
+          }}>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              <strong>Lưu ý:</strong> Chỉ có thể gán các checklist đã được tạo sẵn trong phần "Quản lý danh mục". 
+              Khi khách hàng checkout thành công, hệ thống sẽ tự động trừ các vật phẩm tương ứng trong kho.
+            </Text>
+          </div>
         </Form>
       </Modal>
+
     </div>
   );
 };

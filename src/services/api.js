@@ -66,22 +66,23 @@ api.interceptors.request.use(
       console.warn('⚠️ No token found for authenticated request!');
     }
     
-    // Attach CSRF token for state-changing requests if backend uses CSRF protection
-    try {
-      const unsafeMethods = ['post', 'put', 'patch', 'delete'];
-      const method = (config.method || 'get').toLowerCase();
-      if (unsafeMethods.includes(method)) {
-        if (!getCookie('XSRF-TOKEN')) {
-          await initCsrf();
-        }
-        const xsrf = getCookie('XSRF-TOKEN');
-        if (xsrf) {
-          config.headers['X-XSRF-TOKEN'] = xsrf;
-        }
-      }
-    } catch (_) {
-      // best-effort; do not block request
-    }
+    // ⚠️ CSRF token: Backend không yêu cầu CSRF, đã tắt để tránh lỗi 403
+    // Nếu backend yêu cầu CSRF trong tương lai, uncomment code bên dưới
+    // try {
+    //   const unsafeMethods = ['post', 'put', 'patch', 'delete'];
+    //   const method = (config.method || 'get').toLowerCase();
+    //   if (unsafeMethods.includes(method)) {
+    //     if (!getCookie('XSRF-TOKEN')) {
+    //       await initCsrf();
+    //     }
+    //     const xsrf = getCookie('XSRF-TOKEN');
+    //     if (xsrf) {
+    //       config.headers['X-XSRF-TOKEN'] = xsrf;
+    //     }
+    //   }
+    // } catch (_) {
+    //   // best-effort; do not block request
+    // }
     return config;
   },
   (error) => Promise.reject(error)
@@ -90,29 +91,35 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    // ✅ DEBUG: Log chi tiết lỗi với FULL response
-    console.error('❌ API Response Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      message: error.message,
-      fullError: error
-    });
+    // Chỉ log lỗi quan trọng, bỏ qua lỗi 500 từ backend (có thể do product detail chưa tồn tại)
+    const status = error.response?.status;
+    const url = error.config?.url;
     
-    if (error.response?.status === 401) {
-      console.warn('⚠️ 401 Unauthorized - Removing token');
-      localStorage.removeItem('token');
-    } else if (error.response?.status === 403) {
-      console.error('🚫 403 Forbidden - Access denied!', {
-        url: error.config?.url,
-        hasToken: !!error.config?.headers?.Authorization,
-        backendMessage: error.response?.data?.message || error.response?.data,
-        requestHeaders: error.config?.headers,
-        responseHeaders: error.response?.headers
-      });
+    // Bỏ qua log cho các lỗi thường gặp (500 từ product-details, 403 từ CSRF)
+    const shouldSkipLog = 
+      (status === 500 && url?.includes('/api/product-details')) ||
+      (status === 403 && (url?.includes('/csrf') || url === '/'));
+    
+    if (!shouldSkipLog) {
+      // Log các lỗi quan trọng khác
+      if (status === 401) {
+        console.warn('⚠️ 401 Unauthorized - Removing token');
+        localStorage.removeItem('token');
+      } else if (status === 403) {
+        console.error('🚫 403 Forbidden - Access denied!', {
+          url: url,
+          hasToken: !!error.config?.headers?.Authorization,
+          backendMessage: error.response?.data?.message || error.response?.data
+        });
+      } else if (status && status >= 400) {
+        // Log các lỗi khác (404, 400, etc.) nhưng không spam
+        console.error('❌ API Error:', {
+          url: url,
+          method: error.config?.method,
+          status: status,
+          message: error.response?.data?.message || error.message
+        });
+      }
     }
     
     return Promise.reject(error);
