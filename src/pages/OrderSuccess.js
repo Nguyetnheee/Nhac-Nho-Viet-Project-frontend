@@ -711,7 +711,7 @@ const OrderSuccess = () => {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
           <button
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/profile?tab=orders')}
             className="btn-primary"
           >
             Xem tất cả đơn hàng

@@ -43,6 +43,20 @@ const Checkout = () => {
     }
   }, [location, showWarning]);
 
+  // Tự động điền thông tin khi customer đã đăng nhập
+  useEffect(() => {
+    if (user && user.role === 'CUSTOMER') {
+      // Chỉ điền các trường nếu chưa có giá trị (để không ghi đè nếu user đã nhập)
+      setFormData(prev => ({
+        ...prev,
+        customerName: prev.customerName || user.customerName || '',
+        customerEmail: prev.customerEmail || user.email || '',
+        customerPhone: prev.customerPhone || user.phone || user.phoneNumber || '',
+        customerAddress: prev.customerAddress || user.address || '',
+      }));
+    }
+  }, [user]);
+
   // Validation functions
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
