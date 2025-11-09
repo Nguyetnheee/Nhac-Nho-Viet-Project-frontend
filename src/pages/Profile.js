@@ -19,6 +19,43 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [profileData, setProfileData] = useState(null);
 
+  // Tải dữ liệu profile từ API khi component mount
+  useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        const data = await fetchCustomerProfile();
+        setProfileData(data);
+        
+        // Cập nhật formData với dữ liệu từ API
+        if (data) {
+          setFormData({
+            customerName: data.customerName || "",
+            gender: data.gender || '',
+            phone: data.phone || '',
+            address: data.address || '',
+            email: data.email || '',
+            birthDate: data.birthDate || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Nếu API fail, fallback về user từ AuthContext
+        if (user) {
+          setFormData({
+            customerName: user.customerName || "",
+            gender: user.gender || '',
+            phone: user.phone || user.phoneNumber || '',
+            address: user.address || '',
+            email: user.email || '',
+            birthDate: user.birthDate || ''
+          });
+        }
+      }
+    };
+
+    loadProfileData();
+  }, []); // Chỉ chạy một lần khi component mount
+
   // Đồng bộ formData khi user thay đổi (sau khi update)
   useEffect(() => {
     if (user) {
@@ -39,6 +76,19 @@ const Profile = () => {
     try {
       const data = await fetchCustomerProfile();
       setProfileData(data);
+      
+      // Cập nhật formData với dữ liệu mới
+      if (data) {
+        setFormData({
+          customerName: data.customerName || "",
+          gender: data.gender || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          email: data.email || '',
+          birthDate: data.birthDate || ''
+        });
+      }
+      
       setMessage('Tải thông tin thành công!');
     } catch (error) {
       // Thông báo dễ hiểu cho người dùng
@@ -146,9 +196,6 @@ const Profile = () => {
                   }`}
                 >
                   <i className="fa-solid fa-shopping-bag mr-3 text-[#0b3d3c]"></i>Đơn hàng của tôi
-                </button>
-                <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
-                  <i className="fa-solid fa-lock mr-3 text-[#0b3d3c]"></i>Bảo mật
                 </button>
                 <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
                   <i className="fa-solid fa-bell mr-3 text-[#0b3d3c]"></i>Thông báo
