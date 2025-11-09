@@ -136,11 +136,11 @@ const EditRitual = ({ ritualId, onBack, onSave }) => {
                 </Form.Item>
 
                 <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}>
-                    <TextArea rows={4} showCount maxLength={1000} />
+                    <TextArea rows={4} showCount maxLength={20000} />
                 </Form.Item>
 
                 <Form.Item name="meaning" label="Ý nghĩa">
-                    <TextArea rows={3} showCount maxLength={500} />
+                    <TextArea rows={3} showCount maxLength={20000} />
                 </Form.Item>
             </Card>
 

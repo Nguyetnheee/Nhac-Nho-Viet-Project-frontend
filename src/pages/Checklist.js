@@ -21,7 +21,7 @@ import {
   Space,
   Divider
 } from 'antd';
-import { PlusCircleOutlined, InfoCircleOutlined, ReloadOutlined, CheckCircleOutlined, PlusOutlined, DeleteOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, InfoCircleOutlined, ReloadOutlined, CheckCircleOutlined, PlusOutlined, DeleteOutlined, EditOutlined, SaveOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,6 +53,12 @@ const Checklist = () => {
   const [ritualsLoading, setRitualsLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form] = Form.useForm();
+  
+  // States cho checklist con (items)
+  const [selectedRitualId, setSelectedRitualId] = useState(null); // RitualId đã chọn trong form
+  const [ritualChecklistItems, setRitualChecklistItems] = useState([]); // Danh sách items của ritual đã chọn
+  const [selectedItems, setSelectedItems] = useState([]); // Danh sách items con sẽ thêm vào checklist
+  const [loadingRitualItems, setLoadingRitualItems] = useState(false);
   
   // Detail modal states
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -163,9 +169,38 @@ const Checklist = () => {
       }));
     } catch (error) {
       console.error('Error fetching user checklists:', error);
-      // Không hiển thị error nếu chưa có checklist nào (có thể là 404)
-      if (error.response?.status !== 404) {
-        message.error('Không thể tải danh sách checklist!');
+      
+      // Chỉ hiển thị lỗi khi thực sự có lỗi từ server (500, 403, etc.)
+      // KHÔNG hiển thị lỗi khi:
+      // - 404 (Not Found - chưa có checklist)
+      // - 200 với empty array (chưa có checklist)
+      // - Network error nhưng có thể do chưa có data
+      const status = error.response?.status;
+      const isNotFound = status === 404;
+      const isEmptyResponse = status === 200 && (!error.response?.data || 
+        (Array.isArray(error.response.data) && error.response.data.length === 0));
+      
+      // Chỉ hiển thị lỗi cho các lỗi thực sự (500, 403, network errors không phải 404)
+      if (!isNotFound && !isEmptyResponse && status !== undefined) {
+        // Chỉ hiển thị lỗi cho các status code lỗi thực sự (>= 500 hoặc 403)
+        if (status >= 500 || status === 403 || status === 401) {
+          message.error('Không thể tải danh sách checklist!');
+        }
+      } else if (!error.response) {
+        // Network error - chỉ log, không hiển thị message để tránh làm phiền user
+        // khi chưa có checklist nào
+        console.warn('Network error fetching checklists (may be empty):', error.message);
+      }
+      
+      // Đảm bảo set empty state nếu có lỗi nhưng không phải lỗi nghiêm trọng
+      if (isNotFound || isEmptyResponse || !error.response) {
+        setUserChecklists([]);
+        setUserListPagination(prev => ({
+          ...prev,
+          current: page,
+          pageSize: pageSize,
+          total: 0
+        }));
       }
     } finally {
       setUserListLoading(false);
@@ -207,6 +242,9 @@ const Checklist = () => {
   const openCreateModal = () => {
     form.resetFields();
     setFormData({ ritualId: null, title: '', reminderDate: null });
+    setSelectedRitualId(null);
+    setRitualChecklistItems([]);
+    setSelectedItems([]);
     setCreateModalOpen(true);
   };
 
@@ -214,6 +252,62 @@ const Checklist = () => {
     setCreateModalOpen(false);
     form.resetFields();
     setFormData({ ritualId: null, title: '', reminderDate: null });
+    setSelectedRitualId(null);
+    setRitualChecklistItems([]);
+    setSelectedItems([]);
+  };
+
+  // Fetch checklist items khi user chọn ritual
+  const handleRitualChange = async (ritualId) => {
+    setSelectedRitualId(ritualId);
+    
+    if (!ritualId) {
+      setRitualChecklistItems([]);
+      setSelectedItems([]);
+      return;
+    }
+
+    setLoadingRitualItems(true);
+    try {
+      const items = await checklistService.getByRitual(ritualId);
+      setRitualChecklistItems(items || []);
+    } catch (error) {
+      console.error('Error fetching ritual checklist items:', error);
+      message.warning('Không thể tải danh sách vật phẩm của lễ hội này.');
+      setRitualChecklistItems([]);
+    } finally {
+      setLoadingRitualItems(false);
+    }
+  };
+
+  // Thêm item vào danh sách items con
+  const handleAddItemToChecklist = (item) => {
+    const existingItem = selectedItems.find(si => si.itemId === item.itemId);
+    if (existingItem) {
+      message.warning('Vật phẩm này đã được thêm vào danh sách!');
+      return;
+    }
+
+    const newItem = {
+      itemId: item.itemId,
+      itemName: item.itemName || item.name || 'N/A',
+      quantity: item.quantity || 1,
+      note: item.checkNote || item.note || '',
+      unit: item.unit || ''
+    };
+    setSelectedItems([...selectedItems, newItem]);
+  };
+
+  // Xóa item khỏi danh sách items con
+  const handleRemoveItemFromChecklist = (itemId) => {
+    setSelectedItems(selectedItems.filter(item => item.itemId !== itemId));
+  };
+
+  // Cập nhật quantity hoặc note của item
+  const handleUpdateItemInChecklist = (itemId, field, value) => {
+    setSelectedItems(selectedItems.map(item => 
+      item.itemId === itemId ? { ...item, [field]: value } : item
+    ));
   };
 
   const handleCreate = async () => {
@@ -249,29 +343,42 @@ const Checklist = () => {
       setCreating(true);
       const response = await checklistService.createUserChecklist(payload);
       
-      // Success
-      message.success('Tạo danh mục cá nhân thành công!');
+      // Lấy userChecklistId từ response
+      const userChecklistId = response?.userChecklistId || response?.id || response?.data?.userChecklistId;
+      
+      if (!userChecklistId) {
+        throw new Error('Không thể lấy ID của checklist vừa tạo!');
+      }
+
+      // Tạo các items con nếu có
+      if (selectedItems.length > 0) {
+        try {
+          const itemPromises = selectedItems.map(item => 
+            checklistService.createUserChecklistItem({
+              userChecklistId: Number(userChecklistId),
+              itemId: Number(item.itemId),
+              quantity: Number(item.quantity) || 1,
+              note: item.note || ''
+            })
+          );
+          
+          await Promise.all(itemPromises);
+          message.success(`Đã thêm ${selectedItems.length} vật phẩm vào checklist!`);
+        } catch (itemError) {
+          console.error('Error creating checklist items:', itemError);
+          message.warning('Checklist đã được tạo nhưng một số vật phẩm không thể thêm. Vui lòng thêm lại sau.');
+        }
+      }
+      
       closeCreateModal();
       
       // Refresh danh sách checklist
       await fetchUserChecklists(userListPagination.current, userListPagination.pageSize);
       
-      // Show success modal with checklist info
+      // Show success modal
       Modal.success({
-        title: 'Tạo checklist thành công!',
-        content: (
-          <div>
-            <p><strong>Tiêu đề:</strong> {payload.title}</p>
-            <p><strong>Lễ hội ID:</strong> {payload.ritualId}</p>
-            {response?.userChecklistId && (
-              <p><strong>Checklist ID:</strong> {response.userChecklistId}</p>
-            )}
-            <p className="mt-2 text-sm text-gray-600">
-              Checklist của bạn đã được lưu. Bạn có thể thêm vật phẩm vào checklist này.
-            </p>
-          </div>
-        ),
-        width: 500
+        title: 'Tạo danh mục mới thành công',
+        width: 400
       });
     } catch (error) {
       console.error('❌ Create user checklist failed:', error);
@@ -368,18 +475,19 @@ const Checklist = () => {
         item: item
       });
       
-      // Quay lại dùng endpoint cũ: PUT /api/user-checklist-items/{userChecklistItemId}
-      // Endpoint này dùng userChecklistItemId (ID duy nhất) nên chính xác hơn
-      const response = await checklistService.updateUserChecklistItem(item.userChecklistItemId, {
-        checked: checked
-      });
+      // Sử dụng API chuyên biệt để toggle checked status
+      // PUT /api/user-checklist-items/{id}/check
+      const response = await checklistService.toggleUserChecklistItemChecked(item.userChecklistItemId);
       
-      console.log('✅ Item checked status updated successfully:', response);
+      // API này tự động toggle, nên cần lấy checked status từ response
+      const newCheckedStatus = response?.checked !== undefined ? response.checked : !item.checked;
       
-      // Update local state
+      console.log('✅ Item checked status toggled successfully:', response);
+      
+      // Update local state với checked status từ response
       setChecklistItems(prev => prev.map(i => 
         i.userChecklistItemId === item.userChecklistItemId 
-          ? { ...i, checked } 
+          ? { ...i, checked: newCheckedStatus } 
           : i
       ));
       
@@ -395,10 +503,10 @@ const Checklist = () => {
         userChecklistItemId: item.userChecklistItemId
       });
       
-      // Revert checkbox state nếu có lỗi
+      // Revert checkbox state nếu có lỗi (giữ nguyên trạng thái ban đầu)
       setChecklistItems(prev => prev.map(i => 
         i.userChecklistItemId === item.userChecklistItemId 
-          ? { ...i, checked: !checked } 
+          ? { ...i, checked: item.checked } 
           : i
       ));
       
@@ -447,7 +555,7 @@ const Checklist = () => {
       };
 
       setChecklistItems(prev => [...prev, newItem]);
-      message.success('Đã thêm vật phẩm vào checklist!');
+      message.success('Đã thêm vật phẩm vào danh mục!');
       setAddItemModalOpen(false);
       newItemForm.resetFields();
     } catch (error) {
@@ -490,6 +598,59 @@ const Checklist = () => {
 
 
   // Edit Item Handlers
+  // Xem chi tiết một item con (sử dụng GET /api/user-checklist-items/{id})
+  const handleViewItemDetail = async (userChecklistItemId) => {
+    if (!userChecklistItemId) {
+      message.warning('Không tìm thấy ID của vật phẩm!');
+      return;
+    }
+
+    try {
+      const itemDetail = await checklistService.getUserChecklistItemById(userChecklistItemId);
+      Modal.info({
+        title: 'Chi tiết vật phẩm',
+        width: 600,
+        content: (
+          <div className="mt-4">
+            <div className="space-y-3">
+              <div>
+                <Text strong className="text-vietnam-green">Tên vật phẩm:</Text>
+                <div className="mt-1">{itemDetail.itemName || 'N/A'}</div>
+              </div>
+              <div>
+                <Text strong className="text-vietnam-green">Số lượng:</Text>
+                <div className="mt-1">{itemDetail.quantity || 0} {itemDetail.unit || ''}</div>
+              </div>
+              {itemDetail.note && (
+                <div>
+                  <Text strong className="text-vietnam-green">Ghi chú:</Text>
+                  <div className="mt-1">{itemDetail.note}</div>
+                </div>
+              )}
+              <div>
+                <Text strong className="text-vietnam-green">Trạng thái:</Text>
+                <div className="mt-1">
+                  <Tag color={itemDetail.checked ? 'green' : 'default'}>
+                    {itemDetail.checked ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
+                  </Tag>
+                </div>
+              </div>
+              {itemDetail.createdAt && (
+                <div>
+                  <Text strong className="text-vietnam-green">Ngày tạo:</Text>
+                  <div className="mt-1">{dayjs(itemDetail.createdAt).format('DD/MM/YYYY HH:mm')}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        ),
+      });
+    } catch (error) {
+      console.error('Error fetching item detail:', error);
+      message.error('Không thể tải chi tiết vật phẩm!');
+    }
+  };
+
   const handleStartEditItem = (item) => {
     setEditingItemId(item.userChecklistItemId);
     editingItemForm.setFieldsValue({
@@ -548,13 +709,13 @@ const Checklist = () => {
   const handleDeleteChecklist = async (userChecklistId) => {
     // Validate ID trước khi hiển thị modal
     if (!userChecklistId) {
-      message.error('Không tìm thấy ID checklist để xóa!');
+      message.error('Không tìm thấy danh mục để xóa!');
       return;
     }
 
     Modal.confirm({
-      title: 'Xác nhận xóa checklist',
-      content: 'Bạn có chắc muốn xóa checklist này? Hành động này không thể hoàn tác.',
+      title: 'Xác nhận xóa danh mục',
+      content: 'Bạn có chắc muốn xóa danh mục này? Hành động này không thể hoàn tác.',
       okText: 'Xóa',
       cancelText: 'Hủy',
       okButtonProps: { danger: true },
@@ -562,7 +723,7 @@ const Checklist = () => {
         try {
           setSavingChecklist(true);
           await checklistService.deleteUserChecklist(userChecklistId);
-          message.success('Đã xóa checklist!');
+          message.success('Đã xóa danh mục!');
           
           // Đóng modal nếu đang mở
           if (detailModalOpen && checklistDetail?.userChecklistId === userChecklistId) {
@@ -576,7 +737,7 @@ const Checklist = () => {
           const errorMessage = error.response?.data?.message 
             || error.response?.data?.error
             || error.message
-            || 'Không thể xóa checklist!';
+            || 'Không thể xóa danh mục!';
           message.error(errorMessage);
         } finally {
           setSavingChecklist(false);
@@ -705,6 +866,9 @@ const Checklist = () => {
                   showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} checklist`,
                   showSizeChanger: true,
                   pageSizeOptions: ['10', '20', '50'],
+                  locale: {
+                    items_per_page: ' / trang',
+                  },
                   onChange: (page, pageSize) => {
                     fetchUserChecklists(page, pageSize);
                   },
@@ -787,16 +951,6 @@ const Checklist = () => {
                     width: '20%',
                   },
                   {
-                    title: 'Trạng Thái',
-                    key: 'status',
-                    render: (_, record) => (
-                      <Tag color="processing" icon={<CheckCircleOutlined />}>
-                        Hoạt động
-                      </Tag>
-                    ),
-                    width: '12%',
-                  },
-                  {
                     title: 'Thao Tác',
                     key: 'actions',
                     width: '15%',
@@ -875,13 +1029,14 @@ const Checklist = () => {
             ]}
           >
                 <Select
-              placeholder="Chọn lễ hội để tạo checklist"
+              placeholder="Chọn lễ hội để tạo danh mục"
                   size="large"
               loading={ritualsLoading}
               showSearch
               filterOption={(input, option) =>
                 option?.children?.toLowerCase().includes(input.toLowerCase())
               }
+              onChange={handleRitualChange}
             >
               {rituals.map(ritual => (
                 <Option key={ritual.ritualId} value={ritual.ritualId}>
@@ -892,7 +1047,7 @@ const Checklist = () => {
           </Form.Item>
 
           <Form.Item
-            label={<span className="text-vietnam-green font-medium">Tiêu Đề Checklist</span>}
+            label={<span className="text-vietnam-green font-medium">Tiêu Đề Danh Mục</span>}
             name="title"
             rules={[
               { required: true, message: 'Vui lòng nhập tiêu đề checklist!' },
@@ -900,7 +1055,7 @@ const Checklist = () => {
             ]}
           >
             <Input
-              placeholder="Ví dụ: Checklist Lễ Tết 2025"
+              placeholder="Ví dụ: Danh mục Lễ Tết 2025"
                   size="large"
               maxLength={200}
               showCount
@@ -910,7 +1065,7 @@ const Checklist = () => {
           <Form.Item
             label={<span className="text-vietnam-green font-medium">Ngày Nhắc Nhở (Tùy chọn)</span>}
             name="reminderDate"
-            tooltip="Chọn ngày bạn muốn được nhắc nhở về checklist này"
+            tooltip="Chọn ngày bạn muốn được nhắc nhở về danh mục này"
           >
             <DatePicker
               placeholder="Chọn ngày nhắc nhở"
@@ -922,11 +1077,144 @@ const Checklist = () => {
             />
           </Form.Item>
 
+          {/* Phần chọn items con */}
+          {selectedRitualId && (
+            <div className="mt-4">
+              <Divider orientation="left" className="!text-vietnam-green !font-semibold">
+                Thêm Vật Phẩm Vào Danh Mục (Tùy chọn)
+              </Divider>
+              
+              {loadingRitualItems ? (
+                <div className="flex justify-center py-4">
+                  <Spin />
+                </div>
+              ) : ritualChecklistItems.length > 0 ? (
+                <div className="space-y-3">
+                  {/* Danh sách items có sẵn */}
+                  <div className="bg-gray-50 rounded-lg p-3 max-h-60 overflow-y-auto">
+                    <Text strong className="text-sm text-vietnam-green mb-2 block">
+                      Vật phẩm có sẵn cho lễ hội này:
+                    </Text>
+                    <div className="space-y-2">
+                      {ritualChecklistItems.map((item) => {
+                        const isSelected = selectedItems.some(si => si.itemId === item.itemId);
+                        return (
+                          <div
+                            key={item.itemId || item.checklistId}
+                            className={`flex items-center justify-between p-2 rounded border ${
+                              isSelected ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'
+                            }`}
+                          >
+                            <div className="flex-1">
+                              <Text strong className="text-sm">
+                                {item.itemName || item.name || 'N/A'}
+                              </Text>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Số lượng mặc định: {item.quantity || 1} {item.unit || ''}
+                              </div>
+                            </div>
+                            <Button
+                              type={isSelected ? 'default' : 'primary'}
+                              size="small"
+                              icon={isSelected ? <CheckCircleOutlined /> : <PlusOutlined />}
+                              onClick={() => {
+                                if (isSelected) {
+                                  handleRemoveItemFromChecklist(item.itemId);
+                                } else {
+                                  handleAddItemToChecklist(item);
+                                }
+                              }}
+                              disabled={creating}
+                            >
+                              {isSelected ? 'Đã chọn' : 'Thêm'}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Danh sách items đã chọn */}
+                  {selectedItems.length > 0 && (
+                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                      <Text strong className="text-sm text-vietnam-green mb-2 block">
+                        Vật phẩm đã chọn ({selectedItems.length}):
+                      </Text>
+                      <div className="space-y-2">
+                        {selectedItems.map((item) => (
+                          <div
+                            key={item.itemId}
+                            className="bg-white rounded p-3 border border-amber-300"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <Text strong className="text-sm">
+                                {item.itemName}
+                              </Text>
+                              <Button
+                                type="text"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={() => handleRemoveItemFromChecklist(item.itemId)}
+                                disabled={creating}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Text className="text-xs text-gray-600">Số lượng:</Text>
+                                <InputNumber
+                                  min={1}
+                                  value={item.quantity}
+                                  onChange={(value) => handleUpdateItemInChecklist(item.itemId, 'quantity', value || 1)}
+                                  size="small"
+                                  className="w-full mt-1"
+                                  disabled={creating}
+                                />
+                              </div>
+                              <div>
+                                <Text className="text-xs text-gray-600">Đơn vị:</Text>
+                                <Input
+                                  value={item.unit}
+                                  onChange={(e) => handleUpdateItemInChecklist(item.itemId, 'unit', e.target.value)}
+                                  size="small"
+                                  className="w-full mt-1"
+                                  disabled={creating}
+                                  placeholder="Đơn vị"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <Text className="text-xs text-gray-600">Ghi chú:</Text>
+                              <Input
+                                value={item.note}
+                                onChange={(e) => handleUpdateItemInChecklist(item.itemId, 'note', e.target.value)}
+                                size="small"
+                                className="w-full mt-1"
+                                disabled={creating}
+                                placeholder="Ghi chú (tùy chọn)"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-3 text-center">
+                  <Text type="secondary" className="text-sm">
+                    Không có vật phẩm nào cho lễ hội này.
+                  </Text>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
             <p className="text-sm text-blue-800 mb-0">
               <InfoCircleOutlined className="mr-2" />
-              <strong>Lưu ý:</strong> Sau khi tạo checklist, hệ thống sẽ tự động copy danh sách vật phẩm mặc định 
-              từ lễ hội bạn đã chọn. Bạn có thể chỉnh sửa checklist sau đó.
+              <strong>Lưu ý:</strong> Bạn có thể thêm vật phẩm vào danh mục ngay bây giờ hoặc thêm sau. 
+              Danh mục sẽ được lưu và bạn có thể chỉnh sửa sau đó.
             </p>
               </div>
         </Form>

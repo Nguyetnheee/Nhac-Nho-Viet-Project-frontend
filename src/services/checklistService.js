@@ -1,10 +1,10 @@
-import api from './api'; // Sử dụng api có interceptor token cho các API yêu cầu STAFF
+import api from './api'; // Sử dụng api có interceptor token cho các API yêu cầu authentication
 import axios from "axios";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 
 // publicApi chỉ dùng cho các API public (không yêu cầu auth)
-// Các API yêu cầu STAFF sẽ dùng `api` từ './api'
+// Các API yêu cầu STAFF hoặc CUSTOMER role sẽ dùng `api` từ './api' (có token interceptor)
 export const publicApi = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -253,12 +253,14 @@ export const checklistService = {
   },
 
   // ========== USER CHECKLIST APIs ==========
+  // ⚠️ TẤT CẢ CÁC API NÀY YÊU CẦU CUSTOMER ROLE VÀ ĐĂNG NHẬP
+  // Phải sử dụng `api` (có token interceptor) thay vì `publicApi`
   
-  // Tạo user checklist mới
+  // Tạo user checklist mới (yêu cầu CUSTOMER role)
   createUserChecklist: async (data) => {
     try {
       console.log('➕ Creating new user checklist...', data);
-      const response = await publicApi.post('/api/user-checklists', data);
+      const response = await api.post('/api/user-checklists', data);
       console.log('✅ User checklist created:', response.data);
       return response.data;
     } catch (error) {
@@ -273,7 +275,7 @@ export const checklistService = {
     }
   },
 
-  // Lấy tất cả user checklists của user hiện tại
+  // Lấy tất cả user checklists của user hiện tại (yêu cầu CUSTOMER role)
   getUserChecklists: async (params = {}) => {
     try {
       console.log('🔍 Fetching user checklists with params:', params);
@@ -298,7 +300,7 @@ export const checklistService = {
       const queryString = queryParams.toString();
       const url = `/api/user-checklists${queryString ? `?${queryString}` : ''}`;
       
-      const response = await publicApi.get(url);
+      const response = await api.get(url);
       console.log('✅ User checklists loaded:', response.data);
       return response.data;
     } catch (error) {
@@ -307,11 +309,11 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật user checklist
+  // Cập nhật user checklist (yêu cầu CUSTOMER role)
   updateUserChecklist: async (userChecklistId, data) => {
     try {
       console.log(`✏️ Updating user checklist ${userChecklistId}...`, data);
-      const response = await publicApi.put(`/api/user-checklists/${userChecklistId}`, data);
+      const response = await api.put(`/api/user-checklists/${userChecklistId}`, data);
       console.log('✅ User checklist updated:', response.data);
       return response.data;
     } catch (error) {
@@ -327,7 +329,7 @@ export const checklistService = {
     }
   },
 
-  // Xóa user checklist
+  // Xóa user checklist (yêu cầu CUSTOMER role)
   deleteUserChecklist: async (userChecklistId) => {
     try {
       // Đảm bảo ID là number và hợp lệ
@@ -337,7 +339,7 @@ export const checklistService = {
       }
 
       console.log(`🗑️ Deleting user checklist ${id}...`);
-      const response = await publicApi.delete(`/api/user-checklists/${id}`);
+      const response = await api.delete(`/api/user-checklists/${id}`);
       console.log('✅ User checklist deleted:', response.data);
       return response.data;
     } catch (error) {
@@ -353,11 +355,11 @@ export const checklistService = {
     }
   },
 
-  // Lấy chi tiết user checklist theo ID
+  // Lấy chi tiết user checklist theo ID (yêu cầu CUSTOMER role)
   getUserChecklistById: async (userChecklistId) => {
     try {
       console.log(`🔍 Fetching user checklist ${userChecklistId}...`);
-      const response = await publicApi.get(`/api/user-checklists/${userChecklistId}`);
+      const response = await api.get(`/api/user-checklists/${userChecklistId}`);
       console.log('✅ User checklist detail loaded:', response.data);
       return response.data;
     } catch (error) {
@@ -367,12 +369,14 @@ export const checklistService = {
   },
 
   // ========== USER CHECKLIST ITEMS APIs ==========
+  // ⚠️ TẤT CẢ CÁC API NÀY YÊU CẦU CUSTOMER ROLE VÀ ĐĂNG NHẬP
 
-  // Lấy user checklist items
+  // Lấy user checklist items theo userChecklistId (yêu cầu CUSTOMER role)
+  // GET /api/user-checklist-items?userChecklistId={userChecklistId}
   getUserChecklistItems: async (userChecklistId) => {
     try {
       console.log(`🔍 Fetching user checklist items for ${userChecklistId}...`);
-      const response = await publicApi.get(`/api/user-checklist-items?userChecklistId=${userChecklistId}`);
+      const response = await api.get(`/api/user-checklist-items?userChecklistId=${userChecklistId}`);
       console.log('✅ User checklist items loaded:', response.data);
       return response.data;
     } catch (error) {
@@ -381,11 +385,25 @@ export const checklistService = {
     }
   },
 
-  // Tạo user checklist item mới
+  // Lấy chi tiết một user checklist item theo ID (yêu cầu CUSTOMER role)
+  // GET /api/user-checklist-items/{id}
+  getUserChecklistItemById: async (userChecklistItemId) => {
+    try {
+      console.log(`🔍 Fetching user checklist item ${userChecklistItemId}...`);
+      const response = await api.get(`/api/user-checklist-items/${userChecklistItemId}`);
+      console.log('✅ User checklist item detail loaded:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error getting user checklist item ${userChecklistItemId}:`, error);
+      throw error;
+    }
+  },
+
+  // Tạo user checklist item mới (yêu cầu CUSTOMER role)
   createUserChecklistItem: async (data) => {
     try {
       console.log('➕ Creating new user checklist item...', data);
-      const response = await publicApi.post('/api/user-checklist-items', data);
+      const response = await api.post('/api/user-checklist-items', data);
       console.log('✅ User checklist item created:', response.data);
       return response.data;
     } catch (error) {
@@ -394,11 +412,12 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật user checklist item
+  // Cập nhật user checklist item (yêu cầu CUSTOMER role)
+  // PUT /api/user-checklist-items/{id}
   updateUserChecklistItem: async (userChecklistItemId, data) => {
     try {
       console.log(`✏️ Updating user checklist item ${userChecklistItemId}...`, data);
-      const response = await publicApi.put(`/api/user-checklist-items/${userChecklistItemId}`, data);
+      const response = await api.put(`/api/user-checklist-items/${userChecklistItemId}`, data);
       console.log('✅ User checklist item updated:', response.data);
       return response.data;
     } catch (error) {
@@ -407,11 +426,39 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật user checklist item bằng itemId (endpoint mới)
+  // Toggle checked status của user checklist item (yêu cầu CUSTOMER role)
+  // PUT /api/user-checklist-items/{id}/check
+  toggleUserChecklistItemChecked: async (userChecklistItemId) => {
+    try {
+      console.log(`✅ Toggling checked status for user checklist item ${userChecklistItemId}...`);
+      const response = await api.put(`/api/user-checklist-items/${userChecklistItemId}/check`);
+      console.log('✅ User checklist item checked status toggled:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error toggling checked status for user checklist item ${userChecklistItemId}:`, error);
+      throw error;
+    }
+  },
+
+  // Cập nhật user checklist item theo userChecklistId và itemId (yêu cầu CUSTOMER role)
+  // PUT /api/user-checklist-items/checklist/{userChecklistId}/item/{itemId}
+  updateUserChecklistItemByChecklistAndItem: async (userChecklistId, itemId, data) => {
+    try {
+      console.log(`✏️ Updating user checklist item by checklist ${userChecklistId} and item ${itemId}...`, data);
+      const response = await api.put(`/api/user-checklist-items/checklist/${userChecklistId}/item/${itemId}`, data);
+      console.log('✅ User checklist item updated by checklist and item:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error updating user checklist item by checklist ${userChecklistId} and item ${itemId}:`, error);
+      throw error;
+    }
+  },
+
+  // Cập nhật user checklist item bằng itemId (yêu cầu CUSTOMER role)
   updateUserChecklistItemByItemId: async (itemId, data) => {
     try {
       console.log(`✏️ Updating user checklist item by itemId ${itemId}...`, data);
-      const response = await publicApi.put(`/api/user-checklists/items/${itemId}`, data);
+      const response = await api.put(`/api/user-checklists/items/${itemId}`, data);
       console.log('✅ User checklist item updated by itemId:', response.data);
       return response.data;
     } catch (error) {
@@ -426,11 +473,11 @@ export const checklistService = {
     }
   },
 
-  // Xóa user checklist item
+  // Xóa user checklist item (yêu cầu CUSTOMER role)
   deleteUserChecklistItem: async (userChecklistItemId) => {
     try {
       console.log(`🗑️ Deleting user checklist item ${userChecklistItemId}...`);
-      const response = await publicApi.delete(`/api/user-checklist-items/${userChecklistItemId}`);
+      const response = await api.delete(`/api/user-checklist-items/${userChecklistItemId}`);
       console.log('✅ User checklist item deleted:', response.data);
       return response.data;
     } catch (error) {
@@ -439,11 +486,11 @@ export const checklistService = {
     }
   },
 
-  // Khôi phục user checklist đã xóa
+  // Khôi phục user checklist đã xóa (yêu cầu CUSTOMER role)
   restoreUserChecklist: async (userChecklistId) => {
     try {
       console.log(`♻️ Restoring user checklist ${userChecklistId}...`);
-      const response = await publicApi.put(`/api/user-checklists/${userChecklistId}/restore`);
+      const response = await api.put(`/api/user-checklists/${userChecklistId}/restore`);
       console.log('✅ User checklist restored:', response.data);
       return response.data;
     } catch (error) {
