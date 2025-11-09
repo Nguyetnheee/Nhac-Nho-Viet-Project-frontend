@@ -325,7 +325,7 @@ const TrayManagement = () => {
 
       if (!assigningProduct?.productDetailId) {
         message.error(
-          'Không tìm thấy product detail ID để gán checklist!'
+          'Không tìm thấy product detail ID để gán danh mục!'
         );
         return;
       }
@@ -358,7 +358,7 @@ const TrayManagement = () => {
       let msg =
         error.response?.data?.message ||
         error.message ||
-        'Không thể gán checklist!';
+        'Không thể gán danh mục!';
       if (
         msg.toLowerCase().includes('not found') ||
         msg
@@ -552,7 +552,7 @@ const TrayManagement = () => {
               record.productId
             }
           >
-            Gán Checklist
+            Gán Danh Mục
           </Button>
         </Space>
       ),
@@ -996,7 +996,7 @@ const TrayManagement = () => {
           setSelectedRitualId(null);
           setAssigningProduct(null);
         }}
-        okText="Gán checklist"
+        okText="Gán danh mục"
         cancelText="Hủy"
         width={700}
         confirmLoading={assignLoading}
@@ -1015,7 +1015,7 @@ const TrayManagement = () => {
                   'Vui lòng chọn lễ hội!',
               },
             ]}
-            tooltip="Chọn lễ hội để xem danh sách checklist đã tạo sẵn"
+            tooltip="Chọn lễ hội để xem danh sách danh mục đã tạo sẵn"
           >
             <Select
               placeholder="Chọn lễ hội"
@@ -1070,16 +1070,16 @@ const TrayManagement = () => {
               {
                 required: true,
                 message:
-                  'Vui lòng chọn ít nhất một checklist!',
+                  'Vui lòng chọn ít nhất một danh mục!',
               },
             ]}
-            tooltip="Chọn các checklist đã tạo sẵn cho lễ hội này"
+            tooltip="Chọn các danh mục đã tạo sẵn cho lễ hội này"
           >
             <Select
               mode="multiple"
               placeholder={
                 selectedRitualId
-                  ? 'Chọn checklist'
+                  ? 'Chọn danh mục'
                   : 'Vui lòng chọn lễ hội trước'
               }
               disabled={
@@ -1177,7 +1177,7 @@ const TrayManagement = () => {
           {!selectedRitualId && (
             <Alert
               message="Vui lòng chọn lễ hội"
-              description="Sau khi chọn lễ hội, danh sách checklist tương ứng sẽ hiển thị."
+              description="Sau khi chọn lễ hội, danh sách danh mục tương ứng sẽ hiển thị."
               type="info"
               showIcon
               style={{
@@ -1190,8 +1190,8 @@ const TrayManagement = () => {
             getChecklistsByRitual()
               .length === 0 && (
               <Alert
-                message="Không có checklist nào"
-                description="Lễ hội này chưa có checklist. Vào 'Quản lý danh mục' để tạo trước."
+                message="Không có danh mục nào"
+                description="Lễ hội này chưa có danh mục. Vào 'Quản lý danh mục' để tạo trước."
                 type="warning"
                 showIcon
                 style={{

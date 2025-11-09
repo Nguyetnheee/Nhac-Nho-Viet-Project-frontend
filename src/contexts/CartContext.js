@@ -168,10 +168,36 @@ export const CartProvider = ({ children }) => {
         setCartItems(items);
         setTotals(totals);
         
-        // ✅ Sync voucher từ database
-        // Nếu backend chưa trả về voucher info, giữ nguyên voucher đang có thay vì xóa
-        if (voucher) {
-          setAppliedVoucher(voucher);
+        // ✅ Nếu giỏ hàng trống hoặc không có sản phẩm, tự động xóa voucher
+        if (items.length === 0 || totals.subTotal <= 0) {
+          setAppliedVoucher(null);
+          console.log('🗑️ Cart is empty, removing voucher automatically');
+        } else {
+          // ✅ Logic sync voucher:
+          // 1. Nếu là首次加载 (serverSynced === false) → load voucher từ database
+          // 2. Nếu state đã có voucher → sync từ database
+          // 3. Nếu state không có voucher nhưng đã sync trước đó → không load (user đã xóa)
+          if (voucher) {
+            if (!serverSynced) {
+              // ✅ 首次加载: load voucher từ database
+              setAppliedVoucher(voucher);
+              console.log('📦 Initial load: Loading voucher from database:', voucher.code);
+            } else if (appliedVoucher) {
+              // ✅ State đã có voucher: sync từ database
+              setAppliedVoucher(voucher);
+              console.log('🔄 Syncing voucher from database:', voucher.code);
+            } else {
+              // ✅ State không có voucher nhưng đã sync trước đó → không load (user đã xóa)
+              console.log('⏭️ Database has voucher but state does not. Skipping auto-load (user removed it).');
+            }
+          } else {
+            // Database không có voucher
+            if (!serverSynced) {
+              // 首次加载且 database không có voucher → clear state
+              setAppliedVoucher(null);
+            }
+            // Nếu đã sync trước đó, giữ nguyên state (không làm gì)
+          }
         }
         
         setServerSynced(true);
@@ -264,8 +290,34 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       await cartService.removeFromCart(productId);
-      await fetchCart();
-      setError(null);
+      const data = await cartService.getCart();
+      
+      if (data) {
+        const { items, totals, voucher } = adaptCartFromApi(data);
+        setCartItems(items);
+        setTotals(totals);
+        
+        // ✅ Nếu giỏ hàng trống hoặc không có sản phẩm, tự động xóa voucher
+        if (items.length === 0 || totals.subTotal <= 0) {
+          setAppliedVoucher(null);
+          console.log('🗑️ Cart is empty, removing voucher automatically');
+        } else {
+          // ✅ CHỈ sync voucher từ database NẾU state hiện tại đã có voucher
+          // Tránh tự động load voucher khi user chưa apply
+          if (voucher && appliedVoucher) {
+            // Chỉ sync nếu state đã có voucher (user đã apply trước đó)
+            setAppliedVoucher(voucher);
+            console.log('🔄 Syncing voucher from database:', voucher.code);
+          } else if (voucher && !appliedVoucher) {
+            // Nếu database có voucher nhưng state không có → không load (user đã xóa)
+            console.log('⏭️ Database has voucher but state does not. Skipping auto-load.');
+          }
+          // Nếu database không có voucher, giữ nguyên state (không làm gì)
+        }
+        
+        setServerSynced(true);
+        setError(null);
+      }
     } catch (err) {
       console.error("removeFromCart error:", err);
       if (err?.status === 401) setError({ type: "auth", message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
@@ -284,6 +336,8 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       await cartService.clearCart();
+      // ✅ Xóa tất cả sản phẩm thì cũng xóa voucher
+      setAppliedVoucher(null);
       await fetchCart();
       setError(null);
     } catch (err) {

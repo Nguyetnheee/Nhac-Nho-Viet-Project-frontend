@@ -23,7 +23,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
   const [previewUrl, setPreviewUrl] = useState('');
   const [currentImageUrl, setCurrentImageUrl] = useState('');
   const [productData, setProductData] = useState(null);
-
+  
   // States for checklists management
   const [productDetailId, setProductDetailId] = useState(null);
   const [checklists, setChecklists] = useState([]);
@@ -32,13 +32,13 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
   const [isAssignChecklistModalVisible, setIsAssignChecklistModalVisible] = useState(false);
   const [assignChecklistForm] = Form.useForm();
   const [selectedRitualId, setSelectedRitualId] = useState(null);
-  const [selectedChecklistIds, setSelectedChecklistIds] = useState([]);
 
   // Load checklists từ API
   const loadChecklists = async (productDetailIdToLoad) => {
     try {
       const productDetailData = await productDetailService.getProductDetailWithChecklists(productDetailIdToLoad || productDetailId);
       if (productDetailData && productDetailData.checklists) {
+        // Đảm bảo format đúng với API response
         const formattedChecklists = productDetailData.checklists.map(checklist => ({
           checklistId: checklist.checklistId,
           ritualId: checklist.ritualId,
@@ -50,18 +50,14 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
           checkNote: checklist.checkNote
         }));
         setChecklists(formattedChecklists);
-        setSelectedChecklistIds(formattedChecklists.map(c => c.checklistId));
       } else {
         setChecklists([]);
-        setSelectedChecklistIds([]);
       }
     } catch (error) {
       console.error('Error loading checklists:', error);
       setChecklists([]);
-      setSelectedChecklistIds([]);
     }
   };
-
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -75,7 +71,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
           ritualService.getAllRituals(),
           checklistService.getGroupedChecklists()
         ]);
-
+        
         setProductData(productRes);
         setCategories(categoriesRes || []);
         setRegions(regionsRes || []);
@@ -83,7 +79,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
         setGroupedChecklists(groupedChecklistsRes || {});
         setCurrentImageUrl(productRes.productImage || '');
         form.setFieldsValue(productRes);
-
+        
         // Load product detail với checklists
         try {
           let productDetailId;
@@ -102,7 +98,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
               // Không báo lỗi, chỉ log - có thể product detail sẽ được tạo sau
             }
           }
-
+          
           if (productDetailId) {
             setProductDetailId(productDetailId);
             await loadChecklists(productDetailId);
@@ -136,9 +132,9 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
       // Bước 1: Cập nhật thông tin product
       const updateData = { ...values, price: Number(values.price), categoryId: Number(values.categoryId), regionId: Number(values.regionId) };
       const productResponse = await productService.updateProduct(productId, updateData, selectedFile);
-
+      
       // Note: Checklists được gán riêng qua API assign-checklists, không cần update ở đây
-
+      
       message.success('Cập nhật mâm cúng thành công!');
       if (onSuccess) onSuccess(productResponse);
     } catch (error) {
@@ -148,7 +144,7 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
       setLoading(false);
     }
   };
-
+  
   // Checklist management functions
   const handleOpenAssignChecklistModal = async () => {
     // Nếu chưa có productDetailId, thử tạo mới
@@ -173,38 +169,38 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
         return;
       }
     }
-
+    
     setIsAssignChecklistModalVisible(true);
     assignChecklistForm.resetFields();
     setSelectedRitualId(null);
   };
-
+  
   // Handle assign checklists
   const handleAssignChecklists = async () => {
     try {
       const values = await assignChecklistForm.validateFields();
-
+      
       if (!productDetailId) {
         message.error('Không tìm thấy product detail ID!');
         return;
       }
-
+      
       if (!values.checklistIds || values.checklistIds.length === 0) {
         message.warning('Vui lòng chọn ít nhất một checklist!');
         return;
       }
-
+      
       // Gửi request assign checklists
       await productDetailService.assignChecklistsToProductDetail(
-        productDetailId.productDetailId,
+        productDetailId,
         values.checklistIds
       );
-
+      
       message.success('Đã gán danh mục sản phẩm thành công!');
       setIsAssignChecklistModalVisible(false);
       assignChecklistForm.resetFields();
       setSelectedRitualId(null);
-
+      
       // Reload checklists từ API để hiển thị danh sách mới nhất
       await loadChecklists(productDetailId);
     } catch (error) {
@@ -217,25 +213,25 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
       message.error(errorMessage);
     }
   };
-
+  
   // Lấy danh sách checklist theo ritual đã chọn
   const getChecklistsByRitual = () => {
     if (!selectedRitualId || !groupedChecklists) {
       return [];
     }
-
+    
     // Tìm ritual name từ ritualId
     const ritual = availableRituals.find(r => r.ritualId === selectedRitualId);
     if (!ritual || !ritual.ritualName) {
       return [];
     }
-
+    
     // Lấy checklist items từ grouped checklists
     const ritualChecklists = groupedChecklists[ritual.ritualName];
     if (!ritualChecklists || !Array.isArray(ritualChecklists)) {
       return [];
     }
-
+    
     return ritualChecklists;
   };
 
@@ -322,9 +318,233 @@ const EditTrayProduct = ({ productId, onBack, onSuccess }) => {
                 </Space>
               </Form.Item>
             </Card>
+
+            {/* Bảng gán danh mục checklist */}
+            <Card className="shadow-lg rounded-xl mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <Title level={4} className="font-serif !text-vietnam-green !mb-0">
+                  Gán danh mục sản phẩm
+                </Title>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />} 
+                  onClick={handleOpenAssignChecklistModal}
+                  className="bg-vietnam-gold hover:!bg-yellow-500"
+                >
+                  Gán danh mục sản phẩm
+                </Button>
+              </div>
+              
+              <Alert
+                message="Lưu ý"
+                description="Chỉ có thể gán các danh mục đã được tạo sẵn trong phần 'Quản lý danh mục'. Để tạo danh mục mới, vui lòng vào phần 'Quản lý danh mục'."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+              
+              {checklists.length > 0 ? (
+                <Table
+                  dataSource={checklists}
+                  rowKey={(record) => `${record.checklistId || 0}-${record.ritualId || 0}-${record.itemId || 0}`}
+                  pagination={false}
+                  size="small"
+                  bordered
+                  columns={[
+                    {
+                      title: 'STT',
+                      key: 'index',
+                      width: 60,
+                      render: (_, __, index) => index + 1,
+                    },
+                    {
+                      title: 'Lễ hội',
+                      key: 'ritualName',
+                      width: 200,
+                      render: (_, record) => (
+                        <Text strong>{record.ritualName || 'N/A'}</Text>
+                      ),
+                    },
+                    {
+                      title: 'Tên vật phẩm',
+                      key: 'itemName',
+                      width: 200,
+                      render: (_, record) => (
+                        <Text strong>{record.itemName || 'N/A'}</Text>
+                      ),
+                    },
+                    {
+                      title: 'Số lượng',
+                      key: 'quantity',
+                      width: 120,
+                      align: 'center',
+                      render: (_, record) => (
+                        <Text>{record.quantity !== null && record.quantity !== undefined ? record.quantity : 'N/A'}</Text>
+                      ),
+                    },
+                    {
+                      title: 'Đơn vị',
+                      key: 'unit',
+                      width: 100,
+                      align: 'center',
+                      render: (_, record) => (
+                        <Tag>{record.unit || '-'}</Tag>
+                      ),
+                    },
+                    {
+                      title: 'Ghi chú',
+                      key: 'checkNote',
+                      width: 200,
+                      render: (_, record) => (
+                        <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                          {record.checkNote || '-'}
+                        </Text>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  <Text type="secondary">Chưa có danh mục nào được gán. Nhấn "Gán Danh Mục" để bắt đầu.</Text>
+                </div>
+              )}
+            </Card>
+
+          </Col>
+          <Col xs={24} lg={8}>
+            <Card title="Hình ảnh mâm cúng" className="shadow-lg rounded-xl text-center">
+              <Upload listType="picture-card" className="avatar-uploader" showUploadList={false} beforeUpload={handleFileSelect}>
+                {displayImageUrl ? <img src={displayImageUrl} alt="preview" style={{ width: '100%' }} /> : (<div><PlusOutlined /><div className="mt-2">Chọn ảnh mới</div></div>)}
+              </Upload>
+              {previewUrl && (
+                <Button size="small" className="mt-2" onClick={() => { setSelectedFile(null); setPreviewUrl(''); }}>Hủy ảnh mới</Button>
+              )}
+              <Text type="secondary" className="block mt-2 text-xs">
+                {previewUrl ? `Đang sử dụng ảnh mới` : `Đang sử dụng ảnh hiện tại`}
+              </Text>
+            </Card>
           </Col>
         </Row>
       </Form>
+
+      {/* Modal assign checklists */}
+      <Modal
+        title="Gán danh mục cho mâm cúng"
+        open={isAssignChecklistModalVisible}
+        onOk={handleAssignChecklists}
+        onCancel={() => {
+          setIsAssignChecklistModalVisible(false);
+          assignChecklistForm.resetFields();
+          setSelectedRitualId(null);
+        }}
+        okText="Gán danh mục"
+        cancelText="Hủy"
+        width={700}
+      >
+        <Form
+          form={assignChecklistForm}
+          layout="vertical"
+        >
+          <Form.Item
+            name="ritualId"
+            label="Chọn lễ hội"
+            rules={[{ required: true, message: 'Vui lòng chọn lễ hội!' }]}
+            tooltip="Chọn lễ hội để xem danh sách danh mục đã tạo sẵn"
+          >
+            <Select
+              placeholder="Chọn lễ hội"
+              showSearch
+              value={selectedRitualId}
+              onChange={(value) => {
+                setSelectedRitualId(value);
+                // Reset checklist selection khi đổi ritual
+                assignChecklistForm.setFieldValue('checklistIds', []);
+              }}
+              filterOption={(input, option) =>
+                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {availableRituals.map(ritual => (
+                <Option key={ritual.ritualId} value={ritual.ritualId}>
+                  {ritual.ritualName}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
+            name="checklistIds"
+            label="Chọn danh mục"
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất một danh mục!' }]}
+            tooltip="Chọn các danh mục đã tạo sẵn cho lễ hội này"
+          >
+            <Select
+              mode="multiple"
+              placeholder={selectedRitualId ? "Chọn danh mục" : "Vui lòng chọn lễ hội trước"}
+              disabled={!selectedRitualId}
+              showSearch
+              filterOption={(input, option) => {
+                const checklist = getChecklistsByRitual().find(c => c.checklistId === option.value);
+                if (!checklist) return false;
+                const itemName = checklist.itemName || checklist.item?.itemName || '';
+                const searchText = itemName.toLowerCase();
+                return searchText.includes(input.toLowerCase());
+              }}
+              optionLabelProp="label"
+            >
+              {getChecklistsByRitual().map(checklist => {
+                const itemName = checklist.itemName || checklist.item?.itemName || 'N/A';
+                const quantity = checklist.quantity || 0;
+                const unit = checklist.unit || checklist.item?.unit || '';
+                
+                return (
+                  <Option key={checklist.checklistId} value={checklist.checklistId} label={itemName}>
+                    <div>
+                      <div><strong>{itemName}</strong></div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        Số lượng: {quantity} {unit}
+                      </div>
+                    </div>
+                  </Option>
+                );
+              })}
+            </Select>
+          </Form.Item>
+          
+          {!selectedRitualId && (
+            <Alert
+              message="Vui lòng chọn lễ hội"
+              description="Sau khi chọn lễ hội, danh sách danh mục đã tạo sẵn cho lễ hội đó sẽ hiển thị."
+              type="info"
+              showIcon
+              style={{ marginTop: '16px' }}
+            />
+          )}
+          
+          {selectedRitualId && getChecklistsByRitual().length === 0 && (
+            <Alert
+              message="Không có danh mục nào"
+              description={`Lễ hội này chưa có danh mục nào được tạo. Vui lòng vào phần "Quản lý danh mục" để tạo danh mục trước.`}
+              type="warning"
+              showIcon
+              style={{ marginTop: '16px' }}
+            />
+          )}
+          
+          <div style={{ 
+            padding: '12px', 
+            backgroundColor: '#f0f0f0', 
+            borderRadius: '4px',
+            marginTop: '16px'
+          }}>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              <strong>Lưu ý:</strong> Chỉ có thể gán các danh mục đã được tạo sẵn trong phần "Quản lý danh mục". 
+              Khi khách hàng thanh toán thành công, hệ thống sẽ tự động trừ các vật phẩm tương ứng trong kho.
+            </Text>
+          </div>
+        </Form>
+      </Modal>
+
     </div>
   );
 };

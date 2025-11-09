@@ -49,10 +49,10 @@ const OrderManagement = () => {
   const [selectedShipper, setSelectedShipper] = useState(null);
   const [statistics, setStatistics] = useState({
     total: 0,
-    pending: 0,
     paid: 0,
     confirmed: 0,
     shipping: 0,
+    cancelled: 0,
   });
   const { Title, Text } = Typography;
 
@@ -119,12 +119,13 @@ const OrderManagement = () => {
 
   useEffect(() => {
     // Logic calculateStatistics được di chuyển vào đây để tránh lỗi dependency
+    // ⭐ LƯU Ý: PENDING đã được map thành CANCELLED trong fetchOrders, nên không cần đếm PENDING riêng
     const stats = {
       total: orders.length,
-      pending: orders.filter(o => o.status === 'PENDING').length,
       paid: orders.filter(o => o.status === 'PAID').length,
       confirmed: orders.filter(o => o.status === 'CONFIRMED').length,
       shipping: orders.filter(o => o.status === 'SHIPPING').length,
+      cancelled: orders.filter(o => o.status === 'CANCELLED').length,
     };
     setStatistics(stats);
   }, [orders]);
@@ -165,6 +166,15 @@ const OrderManagement = () => {
           }
         }
 
+        // ⭐ QUY TẮC: PENDING (Chờ thanh toán) được xử lý như CANCELLED (Đã hủy)
+        // Nếu khách hàng vào PayOS nhưng hủy hoặc thoát thanh toán, status sẽ là PENDING
+        // Theo quy định, những đơn này được tính là Đã hủy
+        let normalizedStatus = order.status;
+        if (normalizedStatus === 'PENDING' || normalizedStatus === 'pending') {
+          console.log(`🔄 Mapping PENDING to CANCELLED for Order #${order.orderId}`);
+          normalizedStatus = 'CANCELLED';
+        }
+
         const mapped = {
           orderId: order.orderId,
           orderCode: order.orderCode,
@@ -173,7 +183,7 @@ const OrderManagement = () => {
           email: order.email || 'N/A',
           deliveryAddress: order.address,
           totalAmount: order.totalPrice,
-          status: order.status,
+          status: normalizedStatus, // Sử dụng normalized status
           paymentMethod: order.paymentMethod || 'N/A',
           shipperName: shipperName,
           shipperId: shipperId,
@@ -421,7 +431,6 @@ const OrderManagement = () => {
         </Tag>
       ),
       filters: [
-        { text: 'Chờ thanh toán', value: 'PENDING' },
         { text: 'Đã thanh toán', value: 'PAID' },
         { text: 'Đã xác nhận', value: 'CONFIRMED' },
         { text: 'Đang giao', value: 'SHIPPING' },
@@ -528,10 +537,10 @@ const OrderManagement = () => {
           });
         }
 
-        // Chỉ cho phép hủy khi status là PENDING (chưa thanh toán)
-        // Không cho phép hủy khi đã xác nhận (CONFIRMED) trở đi
-        const isPending = statusUpper === 'PENDING' || record.status === 'Chờ thanh toán';
-        if (isPending) {
+        // ⭐ LƯU Ý: PENDING đã được map thành CANCELLED, nên không cần xử lý hủy cho PENDING nữa
+        // Chỉ cho phép hủy khi status là PAID (đã thanh toán nhưng chưa xác nhận)
+        // Không cho phép hủy khi đã xác nhận (CONFIRMED) trở đi hoặc đã hủy (CANCELLED)
+        if (isPaid && !isConfirmed) {
           menuItems.push(
             {
               type: 'divider'
@@ -611,16 +620,6 @@ const OrderManagement = () => {
         <Col xs={24} sm={12} lg={8} xl={5}>
           <Card>
             <Statistic
-              title="Chờ thanh toán"
-              value={statistics.pending}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={8} xl={5}>
-          <Card>
-            <Statistic
               title="Đã thanh toán"
               value={statistics.paid}
               prefix={<DollarOutlined />}
@@ -645,6 +644,16 @@ const OrderManagement = () => {
               value={statistics.shipping}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#fa8c16' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={12} xl={5}>
+          <Card>
+            <Statistic
+              title="Đã hủy"
+              value={statistics.cancelled}
+              prefix={<CloseCircleOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>

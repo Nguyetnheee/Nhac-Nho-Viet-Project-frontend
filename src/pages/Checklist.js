@@ -166,7 +166,7 @@ const Checklist = () => {
         (Array.isArray(error.response.data) && error.response.data.length === 0));
       if (!isNotFound && !isEmptyResponse && status !== undefined) {
         if (status >= 500 || status === 403 || status === 401) {
-          message.error('Không thể tải danh sách checklist!');
+          message.error('Không thể tải danh sách danh mục!');
         }
       }
       if (isNotFound || isEmptyResponse || !error.response) {
@@ -300,7 +300,7 @@ const Checklist = () => {
       setCreating(true);
       const response = await checklistService.createUserChecklist(payload);
       const userChecklistId = response?.userChecklistId || response?.id || response?.data?.userChecklistId;
-      if (!userChecklistId) throw new Error('Không thể lấy ID của checklist vừa tạo!');
+      if (!userChecklistId) throw new Error('Không thể lấy ID của danh mục vừa tạo!');
 
       if (selectedItems.length > 0) {
         try {
@@ -313,10 +313,10 @@ const Checklist = () => {
             })
           );
           await Promise.all(itemPromises);
-          message.success(`Đã thêm ${selectedItems.length} vật phẩm vào checklist!`);
+          message.success(`Đã thêm ${selectedItems.length} vật phẩm vào danh mục!`);
         } catch (itemError) {
           console.error('Error creating checklist items:', itemError);
-          message.warning('Checklist đã được tạo nhưng một số vật phẩm không thể thêm. Vui lòng thêm lại sau.');
+          message.warning('Danh mục đã được tạo nhưng một số vật phẩm không thể thêm. Vui lòng thêm lại sau.');
         }
       }
       
@@ -330,8 +330,8 @@ const Checklist = () => {
       const errorMessage = error.response?.data?.message 
         || error.response?.data?.error 
         || error.message 
-        || 'Không thể tạo checklist. Vui lòng thử lại.';
-      Modal.error({ title: 'Không thể tạo checklist', content: errorMessage });
+        || 'Không thể tạo danh mục. Vui lòng thử lại.';
+      Modal.error({ title: 'Không thể tạo danh mục', content: errorMessage });
     } finally {
       setCreating(false);
     }
@@ -371,7 +371,7 @@ const Checklist = () => {
       setAvailableItems(allItems || []);
     } catch (error) {
       console.error('Error loading checklist detail:', error);
-      message.error('Không thể tải chi tiết checklist!');
+      message.error('Không thể tải chi tiết danh mục!');
       setDetailModalOpen(false);
     } finally {
       setDetailLoading(false);
@@ -389,7 +389,7 @@ const Checklist = () => {
 
   const handleToggleItemChecked = async (item, checked) => {
     if (!item.userChecklistItemId) {
-      message.warning('Không thể cập nhật item chưa được lưu!');
+      message.warning('Không thể cập nhật các vật phẩm chưa được lưu!');
       return;
     }
     try {
@@ -419,7 +419,7 @@ const Checklist = () => {
 
   const handleAddNewItem = () => {
     if (!checklistDetail?.userChecklistId) {
-      message.error('Không tìm thấy checklist!');
+      message.error('Không tìm thấy danh mục!');
       return;
     }
     newItemForm.resetFields();
@@ -867,7 +867,7 @@ const Checklist = () => {
             label={<span className="text-vietnam-green font-medium">Tiêu Đề Danh Mục</span>}
             name="title"
             rules={[
-              { required: true, message: 'Vui lòng nhập tiêu đề checklist!' },
+              { required: true, message: 'Vui lòng nhập tiêu đề danh mục!' },
               { max: 200, message: 'Tiêu đề không được quá 200 ký tự!' }
             ]}
           >
@@ -1223,7 +1223,7 @@ const Checklist = () => {
             </div>
           </div>
         ) : (
-          <Empty description="Không tìm thấy checklist" />
+          <Empty description="Không tìm thấy danh mục" />
         )}
       </Modal>
 
