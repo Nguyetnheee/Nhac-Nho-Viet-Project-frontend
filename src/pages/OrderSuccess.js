@@ -17,7 +17,8 @@ import {
   UserOutlined,
   PhoneOutlined,
   MailOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  FacebookOutlined
 } from '@ant-design/icons';
 
 // Order status mapping
@@ -691,19 +692,21 @@ const OrderSuccess = () => {
 
             {/* Support Section */}
             <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-gray-600">
-                Cần hỗ trợ?{' '}
-                <a 
-                  href="#!" 
-                  className="text-vietnam-green font-semibold hover:text-vietnam-gold transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    // TODO: Navigate to support page or open chat
-                  }}
-                >
-                  Liên hệ chúng tôi
-                </a>
-              </p>
+              <p className="text-gray-600 mb-3">Cần liên hệ?</p>
+              <div className="space-y-2">
+                <p className="text-sm text-vietnam-green font-semibold">
+                  <PhoneOutlined className="mr-1" />
+                  Hotline: 0366 852 182
+                </p>
+                <p className="text-sm text-gray-600">
+                  <MailOutlined className="mr-1" />
+                  <b>Email: </b>nhacnhoviet1@gmail.com
+                </p>
+                <p className="text-sm text-gray-600">
+                  <FacebookOutlined className="mr-1" />
+                  <b>Facebook: </b>Nhắc Nhớ Việt
+                </p>
+              </div>
             </div>
           </div>
         </div>

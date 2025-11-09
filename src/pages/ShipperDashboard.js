@@ -380,7 +380,7 @@ const ShipperDashboard = () => {
             scroll={{ x: 1200 }}
             pagination={{
               pageSize: 10,
-              showSizeChanger: true,
+              showSizeChanger: false,
               showTotal: (total) => `Tổng ${total} đơn hàng`,
             }}
           />
@@ -391,7 +391,7 @@ const ShipperDashboard = () => {
           title={
             <Space>
               <EyeOutlined style={{ color: '#1890ff' }} />
-              <span>Chi tiết đơn hàng #{selectedOrder?.orderId}</span>
+              <span>Chi tiết đơn hàng </span>
             </Space>
           }
           open={detailModalVisible}
@@ -406,7 +406,7 @@ const ShipperDashboard = () => {
           {selectedOrder && (
             <Descriptions bordered column={2}>
               <Descriptions.Item label="Mã đơn hàng" span={2}>
-                <strong>#{selectedOrder.orderId}</strong>
+                <strong style={{ color: '#1890ff' }}>{selectedOrder.orderCode || 'N/A'}</strong>
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái" span={2}>
                 <Tag color={getStatusColor(selectedOrder.status)} style={{ fontWeight: 'bold', fontSize: '14px' }}>

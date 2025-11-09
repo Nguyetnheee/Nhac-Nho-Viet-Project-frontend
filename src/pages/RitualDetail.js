@@ -1,6 +1,6 @@
 // src/pages/RitualDetail.js
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ritualService } from "../services/ritualService";
 import { checklistService } from "../services/checklistService";
 import { scrollToTop } from "../utils/scrollUtils";
@@ -28,10 +28,12 @@ const safeParse = (raw, fallback = null) => {
 
 const RitualDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   // (1) Scroll progress + (2) Parallax
   const [progress, setProgress] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
 
   // ritual
   const [ritual, setRitual] = useState(null);
@@ -52,11 +54,26 @@ const RitualDetail = () => {
         (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
       setProgress(scrolled);
       setOffset(window.scrollY * 0.2); // parallax: 0.2
+      
+      // Hide scroll indicator when user scrolls down
+      if (window.scrollY > 300) {
+        setShowScrollIndicator(false);
+      } else {
+        setShowScrollIndicator(true);
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  
+  // Scroll to body section
+  const scrollToBody = () => {
+    const bodySection = document.querySelector('section.container');
+    if (bodySection) {
+      bodySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // persist/restore localStorage
   const persist = (nextItems = items, nextNotes = userNotes) => {
@@ -233,8 +250,8 @@ const RitualDetail = () => {
         }}
       >
         <div className="absolute inset-0 bg-[#0d3b36]/80"></div>
-        <div className="relative z-10 container mx-auto px-4 py-16">
-          <nav className="flex items-center space-x-2 text-sm mb-8 opacity-95">
+        <div className="relative z-10 container mx-auto px-0 py-16">
+          <nav className="flex items-center space-x-2 text-sm mb-8 opacity-95 px-4 lg:px-6">
             <Link to="/" className="hover:text-vietnam-gold transition-colors">
               Trang chủ
             </Link>
@@ -249,8 +266,8 @@ const RitualDetail = () => {
             <span className="text-vietnam-gold">{ritual.ritualName}</span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="animate-slideUp">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center px-4 lg:px-6">
+            <div className="lg:col-span-2 animate-slideUp">
               <h1 className="text-4xl lg:text-5xl font-serif font-bold mb-6 leading-tight drop-shadow-[0_3px_12px_rgba(0,0,0,0.35)]">
                 {ritual.ritualName}
               </h1>
@@ -274,20 +291,45 @@ const RitualDetail = () => {
               </div>
             </div>
 
-            <div className="rounded-xl overflow-hidden shadow-2xl animate-zoomIn">
+            <div className="lg:col-span-3 rounded-xl overflow-hidden shadow-2xl animate-zoomIn">
               <img
                 src={getImageUrl(ritual.imageUrl)}
                 alt={ritual.ritualName}
-                className="w-full h-80 object-cover"
+                className="w-full h-80 lg:h-96 object-cover"
                 loading="lazy"
               />
             </div>
           </div>
+          
+          {/* Scroll Indicator */}
+          {showScrollIndicator && (
+            <div 
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce z-20 transition-opacity duration-300"
+              onClick={scrollToBody}
+            >
+              <div className="flex flex-col items-center text-yellow/80 hover:text-white transition-colors cursor-pointer group">
+                <span className="text-sm mb-2 font-medium">Xem thêm</span>
+                <svg
+                  className="w-6 h-6 group-hover:translate-y-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ===== BODY ===== */}
-      <section className="container mx-auto px-4 py-14">
+      <section className="container mx-auto px-4 lg:px-6 py-14">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* LEFT — mô tả (information-background.jpg) */}
           <div className="lg:col-span-2 animate-fadeInUp">
@@ -336,6 +378,26 @@ const RitualDetail = () => {
                 <div className="absolute inset-0 bg-white/65 backdrop-blur-[1px]"></div>
 
                 <div className="relative z-10 p-4 md:p-5 text-stone-800 text-sm">
+                  {/* Banner tạo danh mục cá nhân */}
+                  <div 
+                    onClick={() => navigate(`/checklist?create=true&ritualId=${id}`)}
+                    className="mb-3 p-2.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-600/30 cursor-pointer hover:from-amber-500 hover:to-amber-600 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg group"
+                  >
+                    <div className="flex items-center gap-2 text-white">
+                      <svg 
+                        className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                      <span className="text-xs font-semibold leading-tight">
+                        Muốn tạo danh mục cho cá nhân bạn? <span className="underline">Bấm vào đây</span>
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-amber-600 drop-shadow">
@@ -453,9 +515,7 @@ const RitualDetail = () => {
                     ))}
                   </ul>
 
-                  <div className="mt-4 text-[11px] text-stone-600">
-                    Checklist được lưu tạm trên thiết bị của bạn 💾
-                  </div>
+                  
                 </div>
               </div>
             </div>

@@ -48,6 +48,8 @@ const Inventory = () => {
   const [units, setUnits] = useState([]); // [{key:'KG', value:'Kilogram'}, ...]
   const [filteredData, setFilteredData] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState(null); // key
+  const [sortedInfo, setSortedInfo] = useState({ field: 'itemId', order: 'ascend' });
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
   // Modal states
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -95,18 +97,19 @@ const Inventory = () => {
     fetchUnits();
   }, []);
 
-  useEffect(() => {
-    // Logic filterData được di chuyển vào đây để tránh lỗi dependency
+  // ✅ Sort và filter data với useMemo để đảm bảo STT luôn tăng dần
+  const processedData = useMemo(() => {
     let filtered = [...data];
 
+    // Filter theo search text
     if (searchText) {
       filtered = filtered.filter((item) =>
         item.itemName?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
 
+    // Filter theo đơn vị
     if (selectedUnit) {
-      // Sử dụng logic getUnitKey trực tiếp để tránh dependency issue
       filtered = filtered.filter((item) => {
         const unit = item.unit;
         if (!unit) return false;
@@ -120,8 +123,33 @@ const Inventory = () => {
       });
     }
 
-    setFilteredData(filtered);
-  }, [searchText, selectedUnit, data, unitLabelToKey]);
+    // ✅ Luôn sort theo itemId tăng dần cuối cùng (secondary sort)
+    filtered.sort((a, b) => {
+      // Nếu có sort theo cột khác
+      if (sortedInfo.field && sortedInfo.field !== 'itemId' && sortedInfo.order) {
+        let primarySort = 0;
+        if (sortedInfo.field === 'itemName') {
+          primarySort = sortedInfo.order === 'ascend' 
+            ? (a.itemName || '').localeCompare(b.itemName || '')
+            : (b.itemName || '').localeCompare(a.itemName || '');
+        } else if (sortedInfo.field === 'stockQuantity') {
+          primarySort = sortedInfo.order === 'ascend'
+            ? a.stockQuantity - b.stockQuantity
+            : b.stockQuantity - a.stockQuantity;
+        }
+        // Nếu bằng nhau, sort theo itemId tăng dần
+        return primarySort !== 0 ? primarySort : a.itemId - b.itemId;
+      }
+      // Mặc định: sort theo itemId tăng dần
+      return a.itemId - b.itemId;
+    });
+
+    return filtered;
+  }, [searchText, selectedUnit, data, unitLabelToKey, sortedInfo]);
+
+  useEffect(() => {
+    setFilteredData(processedData);
+  }, [processedData]);
 
   useEffect(() => {
     // Logic calculateStats được di chuyển vào đây để tránh lỗi dependency
@@ -292,12 +320,16 @@ const Inventory = () => {
 
   const columns = [
     {
-      title: "Mã SP",
-      dataIndex: "itemId",
-      key: "itemId",
+      title: "STT",
+      key: "stt",
       width: 100,
       align: "center",
-      sorter: (a, b) => a.itemId - b.itemId,
+      // ✅ Hiển thị số thứ tự dựa trên vị trí trong danh sách đã filter/sort, có tính đến pagination
+      render: (text, record, index) => {
+        // Tính số thứ tự: (trang hiện tại - 1) * số items/trang + index + 1
+        const stt = (pagination.current - 1) * pagination.pageSize + index + 1;
+        return stt;
+      },
     },
     {
       title: "Tên sản phẩm",
@@ -542,6 +574,32 @@ const Inventory = () => {
             }}
             scroll={{ x: 1000 }}
             bordered
+            onChange={(paginationInfo, filters, sorter) => {
+              // ✅ Cập nhật pagination state
+              if (paginationInfo) {
+                setPagination({
+                  current: paginationInfo.current || 1,
+                  pageSize: paginationInfo.pageSize || 10,
+                });
+              }
+              
+              // ✅ Cập nhật sortedInfo để useMemo tự động sort lại
+              // Luôn đảm bảo itemId được sort tăng dần như secondary sort
+              if (sorter && sorter.field) {
+                // ✅ Nếu sort theo itemId, luôn force là 'ascend'
+                if (sorter.field === 'itemId') {
+                  setSortedInfo({ field: 'itemId', order: 'ascend' });
+                } else {
+                  setSortedInfo({
+                    field: sorter.field,
+                    order: sorter.order || 'ascend'
+                  });
+                }
+              } else {
+                // Nếu không có sort, mặc định sort theo itemId tăng dần
+                setSortedInfo({ field: 'itemId', order: 'ascend' });
+              }
+            }}
           />
         </Card>
 

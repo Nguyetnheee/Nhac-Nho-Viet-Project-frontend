@@ -1,13 +1,15 @@
 // src/pages/Cart.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCartOutlined, MinusOutlined, PlusOutlined, DeleteOutlined, CloseCircleOutlined, CheckCircleOutlined, TagOutlined } from '@ant-design/icons';
+import { ShoppingCartOutlined, MinusOutlined, PlusOutlined, DeleteOutlined, CloseCircleOutlined, CheckCircleOutlined, TagOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Select, Alert } from 'antd';
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { decreaseCartItem, increaseCartItem } from "../services/apiAuth";
 import api from "../services/api";
 import { useToast } from "../components/ToastContainer";
 import { translateToVietnamese } from "../utils/errorMessages";
+import { getAvailableVouchers } from "../services/voucherService";
 // ✅ UNCOMMENT DÒNG NÀY ĐỂ BẬT DEBUG PANEL
 // import VoucherDebugPanel from "../components/VoucherDebugPanel";
 
@@ -51,9 +53,144 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [availableVouchers, setAvailableVouchers] = useState([]);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
+  const [voucherInvalidWarning, setVoucherInvalidWarning] = useState("");
 
   // ✅ Sync local state với context khi component mount
   const appliedCoupon = appliedVoucher;
+
+  // Load danh sách voucher khi component mount
+  useEffect(() => {
+    const loadVouchers = async () => {
+      setLoadingVouchers(true);
+      try {
+        const vouchers = await getAvailableVouchers();
+        setAvailableVouchers(vouchers);
+      } catch (error) {
+        console.error('Error loading vouchers:', error);
+      } finally {
+        setLoadingVouchers(false);
+      }
+    };
+    loadVouchers();
+  }, []);
+
+  // Validate voucher khi giá thay đổi
+  useEffect(() => {
+    const validateCurrentVoucher = async () => {
+      if (!appliedCoupon?.code) {
+        setVoucherInvalidWarning("");
+        return;
+      }
+
+      const currentTotal = getTotalPrice();
+      if (currentTotal <= 0) {
+        setVoucherInvalidWarning("");
+        return;
+      }
+
+      try {
+        // Validate voucher với giá hiện tại
+        await api.post('/api/vouchers/apply', {
+          voucherCode: appliedCoupon.code,
+          orderAmount: currentTotal
+        });
+        
+        // Voucher vẫn hợp lệ
+        setVoucherInvalidWarning("");
+        
+        // Tự động cập nhật giá giảm
+        await handleReapplyVoucher(appliedCoupon.code);
+      } catch (error) {
+        // Voucher không còn hợp lệ
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error ||
+                           "Mã giảm giá không còn phù hợp với đơn hàng hiện tại";
+        setVoucherInvalidWarning(errorMessage);
+        
+        // Xóa voucher khỏi context nhưng giữ mã trong dropdown
+        removeVoucher();
+        // Giữ mã trong dropdown để user biết mã nào đang được chọn
+        setCouponCode(appliedCoupon.code);
+      }
+    };
+
+    // Validate sau khi giá thay đổi (debounce)
+    const timeoutId = setTimeout(() => {
+      validateCurrentVoucher();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totals?.subTotal, appliedCoupon?.code, cartItems.length]);
+
+  // Hàm tái áp dụng voucher (khi giá thay đổi)
+  const handleReapplyVoucher = async (voucherCode) => {
+    try {
+      const currentTotal = getTotalPrice();
+      
+      // Validate lại
+      const validateResponse = await api.post('/api/vouchers/apply', {
+        voucherCode: voucherCode.toUpperCase(),
+        orderAmount: currentTotal
+      });
+
+      // Áp dụng lại vào cart
+      const token = localStorage.getItem('token');
+      try {
+        await api.post('/api/cart/apply-voucher', null, {
+          params: { voucherCode: voucherCode.toUpperCase() },
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (applyError) {
+        // Fallback: tính toán từ validation response
+        const computeDiscountFromValidate = (data, orderAmount) => {
+          if (!data || !orderAmount) return 0;
+          const toNum = (v) => (v === undefined || v === null ? 0 : Number(v));
+          let discount = 0;
+          if (toNum(data.discountAmount) > 0) discount = toNum(data.discountAmount);
+          if (!discount && toNum(data.discount_value) > 0) discount = toNum(data.discount_value);
+          if (!discount && toNum(data.amountOff) > 0) discount = toNum(data.amountOff);
+          if (!discount && toNum(data.fixedAmount) > 0) discount = toNum(data.fixedAmount);
+
+          const type = (data.discountType || data.type || '').toString().toUpperCase();
+          const value = toNum(data.discountValue ?? data.value ?? data.percentage ?? data.percentOff);
+          const maxCap = toNum(data.maxDiscountAmount ?? data.maxDiscount ?? data.maxCap);
+          if (!discount && type) {
+            if (type.includes('PERCENT')) {
+              discount = (orderAmount * value) / 100;
+            } else if (type.includes('FIX') || type.includes('AMOUNT')) {
+              discount = value;
+            }
+          }
+          if (!discount && value > 0 && value <= 100 && (data.percentage !== undefined || data.percentOff !== undefined)) {
+            discount = (orderAmount * value) / 100;
+          }
+          if (maxCap && discount > maxCap) discount = maxCap;
+          if (discount > orderAmount) discount = orderAmount;
+          return Math.max(0, Math.floor(discount));
+        };
+
+        const discountAmount = computeDiscountFromValidate(validateResponse.data, currentTotal);
+        const voucherInfo = {
+          code: voucherCode.toUpperCase(),
+          discountAmount: Math.round(discountAmount),
+          originalAmount: Math.round(currentTotal),
+          finalAmount: Math.round(currentTotal - discountAmount),
+          validated: true,
+          message: `Giảm ${Math.round(discountAmount).toLocaleString('vi-VN')} VNĐ`
+        };
+        applyVoucher(voucherInfo);
+        return;
+      }
+
+      // Refresh cart để lấy giá mới
+      await fetchCart();
+    } catch (error) {
+      console.error('Error reapplying voucher:', error);
+    }
+  };
 
   const currency = totals?.currency || "VNĐ";
 
@@ -511,29 +648,81 @@ const Cart = () => {
             <div className="card sticky top-8">
               <h2 className="text-xl font-semibold text-vietnam-green mb-6">Tóm tắt đơn hàng</h2>
 
-              {/* Phần nhập mã giảm giá */}
+              {/* Phần chọn mã giảm giá */}
               <div className="mb-6 pb-6 border-b">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mã giảm giá
                 </label>
                 
-                {/* Form nhập mã giảm giá - LUÔN HIỂN THỊ */}
+                {/* Thông báo hướng dẫn */}
+                <p className="text-xs text-gray-500 mb-3">
+                  Chọn mã giảm giá có sẵn từ danh sách bên dưới
+                </p>
+                
+                {/* Banner cảnh báo voucher không hợp lệ */}
+                {voucherInvalidWarning && (
+                  <Alert
+                    message={voucherInvalidWarning}
+                    description="Vui lòng chọn lại mã giảm giá khác phù hợp với đơn hàng hiện tại."
+                    type="warning"
+                    icon={<ExclamationCircleOutlined />}
+                    showIcon
+                    className="mb-3"
+                    closable
+                    onClose={() => setVoucherInvalidWarning("")}
+                  />
+                )}
+                
+                {/* Form chọn mã giảm giá */}
                 <div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      onKeyPress={(e) => e.key === 'Enter' && !appliedCoupon && handleApplyCoupon()}
-                      placeholder="Nhập mã giảm giá"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vietnam-green focus:border-transparent disabled:bg-gray-100"
+                  <div className="flex gap-2 items-center">
+                    <Select
+                      style={{ width: '100%' }}
+                      className="voucher-select"
+                      placeholder="Chọn mã giảm giá"
+                      value={appliedCoupon ? appliedCoupon.code : couponCode}
+                      onChange={(value) => {
+                        setCouponCode(value);
+                        setCouponError("");
+                      }}
                       disabled={isApplyingCoupon || appliedCoupon}
+                      loading={loadingVouchers}
+                      showSearch
+                      filterOption={(input, option) => {
+                        const code = (option?.value ?? option?.label ?? '').toLowerCase();
+                        const description = (option?.description ?? '').toLowerCase();
+                        const search = input.toLowerCase();
+                        return code.includes(search) || description.includes(search);
+                      }}
+                      options={availableVouchers.map(v => ({
+                        value: v.code,
+                        label: v.code, // Label chỉ là code để hiển thị khi đã chọn
+                        description: v.description,
+                        minOrderAmount: v.minOrderAmount,
+                        discountType: v.discountType,
+                        discountValue: v.discountValue
+                      }))}
+                      optionRender={(option) => (
+                        <div>
+                          <div className="font-semibold">{option.data.value}</div>
+                          {option.data.description && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {option.data.description}
+                              {option.data.minOrderAmount > 0 && (
+                                <span className="block mt-1 text-amber-600">
+                                  Đơn tối thiểu: {option.data.minOrderAmount.toLocaleString('vi-VN')} VNĐ
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     />
                     {appliedCoupon ? (
                       // Nút xóa khi đã áp dụng
                       <button
                         onClick={handleRemoveCoupon}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap h-[40px]"
                       >
                         Xóa
                       </button>
@@ -542,7 +731,7 @@ const Cart = () => {
                       <button
                         onClick={handleApplyCoupon}
                         disabled={isApplyingCoupon || !couponCode.trim()}
-                        className="px-4 py-2 bg-vietnam-green text-white rounded-lg hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 bg-vietnam-green text-white rounded-lg hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors whitespace-nowrap h-[40px]"
                       >
                         {isApplyingCoupon ? "..." : "Áp dụng"}
                       </button>
@@ -558,7 +747,7 @@ const Cart = () => {
                   )}
                   
                   {/* Thông báo thành công - HIỂN THỊ Ở DƯỚI Ô NHẬP */}
-                  {appliedCoupon && (
+                  {appliedCoupon && !voucherInvalidWarning && (
                     <div className="mt-2 flex items-center gap-1 text-green-600 text-sm">
                       <CheckCircleOutlined className="text-base" />
                       <span>Đã áp dụng mã giảm giá thành công</span>
@@ -631,6 +820,19 @@ const Cart = () => {
 
       {/* ✅ UNCOMMENT ĐỂ BẬT DEBUG PANEL - Hiển thị chi tiết request/response */}
       {/* <VoucherDebugPanel /> */}
+      
+      {/* CSS để căn chỉnh chiều cao Select và chỉ hiển thị code khi đã chọn */}
+      <style>{`
+        .voucher-select .ant-select-selector {
+          height: 40px !important;
+        }
+        .voucher-select .ant-select-selection-item {
+          line-height: 38px !important;
+        }
+        .voucher-select .ant-select-selection-placeholder {
+          line-height: 38px !important;
+        }
+      `}</style>
     </div>
   );
 };
