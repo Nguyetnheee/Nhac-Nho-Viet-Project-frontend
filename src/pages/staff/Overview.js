@@ -165,8 +165,8 @@ const Overview = () => {
       const response = await orderService.getStaffOrders().catch(() => null);
       if (response?.data) {
         const orders = Array.isArray(response.data) ? response.data : response.data.data || [];
-        // 获取全部订单数据
-        setRecentOrders(orders.map((order, index) => ({
+        // Map đơn hàng và sắp xếp theo thứ tự mới nhất lên đầu
+        const mappedOrders = orders.map((order, index) => ({
           key: order.orderId || order.id || index,
           orderId: order.orderId || order.id || 'N/A',
           customerName: order.receiverName || order.fullName || order.customerName || 'N/A',
@@ -176,8 +176,19 @@ const Overview = () => {
           shippingAddress: order.address || order.shippingAddress || 'N/A',
           shippingStatus: order.shippingStatus || 'Chưa vận chuyển',
           shipperName: order.shipperName || 'Chưa phân công'
-        })));
+        }));
 
+        // Sắp xếp theo createdAt (mới nhất lên đầu)
+        const sortedOrders = mappedOrders.sort((a, b) => {
+          // Lấy giá trị date để so sánh
+          const dateA = a.createdAt !== 'N/A' ? new Date(a.createdAt) : new Date(0);
+          const dateB = b.createdAt !== 'N/A' ? new Date(b.createdAt) : new Date(0);
+          
+          // Sắp xếp giảm dần (mới nhất lên đầu)
+          return dateB.getTime() - dateA.getTime();
+        });
+
+        setRecentOrders(sortedOrders);
       }
     } catch (error) {
       console.error('Error fetching recent orders:', error);
@@ -315,7 +326,7 @@ const Overview = () => {
 
   const getStatusTag = (status) => {
     const statusMap = {
-      'PENDING': { color: 'orange', text: 'Chờ xử lý' },
+      'PENDING': { color: 'orange', text: 'Hủy thanh toán' },
       'CONFIRMED': { color: 'blue', text: 'Đã xác nhận' },
       'COMPLETED': { color: 'green', text: 'Đã hoàn thành' },
       'CANCELLED': { color: 'red', text: 'Đã hủy' },
@@ -349,7 +360,7 @@ const Overview = () => {
     });
 
     const statusMap = {
-      'PENDING': 'Chờ xử lý',
+      'PENDING': 'Hủy thanh toán',
       'CONFIRMED': 'Đã xác nhận',
       'COMPLETED': 'Đã hoàn thành',
       'CANCELLED': 'Đã hủy',

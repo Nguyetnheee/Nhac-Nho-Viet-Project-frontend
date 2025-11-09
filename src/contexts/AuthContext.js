@@ -117,11 +117,33 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // Kiểm tra xem có phải là lần đầu khởi động không
+      // Nếu đang ở homepage và có token, xóa token để không tự động đăng nhập
+      const currentPath = window.location.pathname;
+      const isHomePage = currentPath === '/' || currentPath === '';
+      
+      if (token && isHomePage) {
+        // ✅ Nếu đang ở homepage khi khởi động, xóa token để hiển thị trang chủ chưa đăng nhập
+        console.log('🏠 Homepage detected on startup - clearing auth to show unauthenticated state');
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('username');
+        setToken(null);
+        setUser(null);
+        if (api.defaults?.headers?.common['Authorization']) {
+          delete api.defaults.headers.common['Authorization'];
+        }
+        setLoading(false);
+        return;
+      }
+      
       if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         try {
           // Avoid hanging forever if backend is slow
           await withTimeout(fetchUserProfile(roleFromStorage));
+          // ✅ KHÔNG tự động redirect khi khởi động
+          // Chỉ set user state, giữ nguyên route hiện tại
         } catch (err) {
           console.warn('Init auth failed or timed out:', err?.message);
           // Just clear the auth state without redirect on error/timeout
