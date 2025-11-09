@@ -346,7 +346,6 @@ const OrderManagement = () => {
       PAID: 'Đã thanh toán',
       CONFIRMED: 'Đã xác nhận',
       SHIPPING: 'Đang giao',
-      DELIVERED: 'Đã giao',
       COMPLETED: 'Hoàn thành',
       CANCELLED: 'Đã hủy',
     };
@@ -426,7 +425,6 @@ const OrderManagement = () => {
         { text: 'Đã thanh toán', value: 'PAID' },
         { text: 'Đã xác nhận', value: 'CONFIRMED' },
         { text: 'Đang giao', value: 'SHIPPING' },
-        { text: 'Đã giao', value: 'DELIVERED' },
         { text: 'Hoàn thành', value: 'COMPLETED' },
         { text: 'Đã hủy', value: 'CANCELLED' },
       ],
@@ -661,7 +659,7 @@ const OrderManagement = () => {
         scroll={{ x: 1560 }}
         pagination={{
           pageSize: 10,
-          showSizeChanger: true,
+          showSizeChanger: false,
           showTotal: (total) => `Tổng ${total} đơn hàng`,
         }}
         bordered
