@@ -41,7 +41,7 @@ const items = [
   getItem('Quản lý', 'sub1', <EditOutlined />, [
     getItem('Lễ hội', '3'),
     getItem('Mâm cúng', '4'),
-    getItem('Checklist', '5'),
+    getItem('Danh mục', '5'),
   ]),
   getItem('Ưu đãi', '10', <GiftOutlined />),
   getItem('Vai trò', 'sub2', <TeamOutlined />, [getItem('Shipper', '6', <CarOutlined />), getItem('Khách hàng', '8', <UserOutlined />)]),

@@ -283,15 +283,10 @@ const ChecklistManagement = () => {
     setIsModalVisible(false);
   };
 
-  // Lấy danh sách lễ hội chưa có checklist (để hiển thị gợi ý)
+  // Lấy danh sách tất cả lễ hội (cho phép chọn bất kỳ lễ hội nào)
   const getAvailableRituals = () => {
-    // Lấy danh sách ritualId đã có checklist
-    const ritualIdsWithChecklist = new Set(
-      allChecklists.map(checklist => checklist.ritualId).filter(id => id != null)
-    );
-    
-    // Lọc các lễ hội chưa có checklist
-    return rituals.filter(ritual => !ritualIdsWithChecklist.has(ritual.ritualId));
+    // Hiển thị tất cả lễ hội, cho phép thêm vật phẩm vào bất kỳ lễ hội nào
+    return rituals;
   };
 
   // Kiểm tra lễ hội đã có checklist chưa
@@ -594,31 +589,48 @@ const ChecklistManagement = () => {
             label="Chọn Lễ Hội"
             name="ritualId"
             rules={[
-              { required: true, message: 'Vui lòng chọn lễ hội!' }
+              { required: true, message: 'Vui lòng chọn lễ hội!' },
+              {
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === '') {
+                    return Promise.reject(new Error('Vui lòng chọn lễ hội!'));
+                  }
+                  return Promise.resolve();
+                }
+              }
             ]}
           >
             <Select
               placeholder="Chọn một lễ hội"
               showSearch
+              optionFilterProp="children"
               filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
+                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
               }
+              onChange={(value) => {
+                const numValue = value ? Number(value) : undefined;
+                form.setFieldValue('ritualId', numValue);
+                // Trigger validation sau khi set giá trị
+                setTimeout(() => {
+                  form.validateFields(['ritualId']);
+                }, 0);
+              }}
               notFoundContent={
                 getAvailableRituals().length === 0 ? (
                   <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>
-                    Tất cả lễ hội đã có checklist
+                    Không có lễ hội nào
                   </div>
                 ) : null
               }
             >
               {getAvailableRituals().map(ritual => (
-                <Option key={ritual.ritualId} value={ritual.ritualId}>
+                <Option key={ritual.ritualId} value={Number(ritual.ritualId)}>
                   {ritual.ritualName}
                 </Option>
               ))}
             </Select>
             <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
-              Chỉ hiển thị các lễ hội chưa có checklist. Để thêm vật phẩm vào checklist đã có, vui lòng sử dụng chức năng "Sửa".
+              Chọn lễ hội và thêm vật phẩm từ kho hàng vào checklist. Bạn có thể thêm nhiều vật phẩm cho cùng một lễ hội.
             </Text>
           </Form.Item>
 
@@ -626,18 +638,35 @@ const ChecklistManagement = () => {
             label="Chọn Vật Phẩm"
             name="itemId"
             rules={[
-              { required: true, message: 'Vui lòng chọn vật phẩm!' }
+              { required: true, message: 'Vui lòng chọn vật phẩm!' },
+              {
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === '') {
+                    return Promise.reject(new Error('Vui lòng chọn vật phẩm!'));
+                  }
+                  return Promise.resolve();
+                }
+              }
             ]}
           >
             <Select
               placeholder="Chọn vật phẩm từ kho hàng"
               showSearch
+              optionFilterProp="children"
               filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
+                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
               }
+              onChange={(value) => {
+                const numValue = value ? Number(value) : undefined;
+                form.setFieldValue('itemId', numValue);
+                // Trigger validation sau khi set giá trị
+                setTimeout(() => {
+                  form.validateFields(['itemId']);
+                }, 0);
+              }}
             >
               {items.map(item => (
-                <Option key={item.itemId} value={item.itemId}>
+                <Option key={item.itemId} value={Number(item.itemId)}>
                   {item.itemName} {item.unit ? `(${item.unit})` : ''}
                 </Option>
               ))}
@@ -662,7 +691,7 @@ const ChecklistManagement = () => {
           <Form.Item
             label="Ghi Chú"
             name="checkNote"
-            tooltip="Ghi chú này sẽ hiển thị cho khách hàng khi họ xem checklist"
+            tooltip="Ghi chú này sẽ hiển thị cho khách hàng khi họ xem danh mục"
           >
             <TextArea
               placeholder="Nhập ghi chú (tùy chọn)"
