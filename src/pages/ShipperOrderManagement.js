@@ -35,7 +35,7 @@ import shipperService from '../services/shipperService';
 const { TabPane } = Tabs;
 
 const ShipperOrderManagement = () => {
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState('pending');
   const [pendingOrders, setPendingOrders] = useState([]);
   const [activeOrders, setActiveOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
@@ -47,22 +47,69 @@ const ShipperOrderManagement = () => {
   const [proofFile, setProofFile] = useState(null);
   const [proofPreviewUrl, setProofPreviewUrl] = useState(null);
 
-  // Load orders based on active tab
+  // Load all orders on component mount to ensure statistics are accurate
   useEffect(() => {
-    loadOrders(activeTab);
+    loadAllOrders();
+  }, []);
+
+  // Load orders based on active tab when tab changes
+  useEffect(() => {
+    loadOrders(activeTab, true); // Silent load when switching tabs
   }, [activeTab]);
 
-  // Auto refresh every 30 seconds for pending orders
+  // Auto refresh every 30 seconds for all orders to keep statistics updated
   useEffect(() => {
     const interval = setInterval(() => {
-      if (activeTab === 'pending') {
-        loadOrders('pending', true); // Silent refresh
-      }
+      loadAllOrders(true); // Silent refresh all orders
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [activeTab]);
+  }, []);
 
+  // Load all orders to keep statistics synchronized
+  const loadAllOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
+    
+    try {
+      const [pending, active, completed] = await Promise.all([
+        shipperService.getPendingOrders().catch(() => []),
+        shipperService.getActiveOrders().catch(() => []),
+        shipperService.getCompletedOrders().catch(() => [])
+      ]);
+
+      setPendingOrders(Array.isArray(pending) ? pending : []);
+      setActiveOrders(Array.isArray(active) ? active : []);
+      setCompletedOrders(Array.isArray(completed) ? completed : []);
+      
+      if (!silent) {
+        message.success('Tải danh sách đơn hàng thành công');
+      }
+    } catch (error) {
+      console.error('Error loading all orders:', error);
+      if (!silent) {
+        let errorMessage = 'Không thể tải danh sách đơn hàng';
+        
+        if (error.response?.status === 403) {
+          errorMessage = 'Không có quyền truy cập danh sách đơn hàng. Vui lòng kiểm tra lại quyền của tài khoản.';
+          if (error.response?.data?.message) {
+            errorMessage += ` (${error.response.data.message})`;
+          }
+        } else if (error.response?.status === 401) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+        
+        message.error(errorMessage);
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  // Load orders for a specific tab
   const loadOrders = async (tab = activeTab, silent = false) => {
     if (!silent) setLoading(true);
     
@@ -125,9 +172,8 @@ const ShipperOrderManagement = () => {
           setLoading(true);
           await shipperService.acceptOrder(orderId);
           message.success('Đã xác nhận nhận đơn hàng!');
-          // Refresh both pending and active lists
-          await loadOrders('pending', true);
-          await loadOrders('active', true);
+          // Refresh all orders to update statistics
+          await loadAllOrders(true);
           // Switch to active tab
           setActiveTab('active');
         } catch (error) {
@@ -161,9 +207,8 @@ const ShipperOrderManagement = () => {
       setCompleteModalVisible(false);
       setProofFile(null);
       setProofPreviewUrl(null);
-      // Refresh lists
-      await loadOrders('active', true);
-      await loadOrders('completed', true);
+      // Refresh all orders to update statistics
+      await loadAllOrders(true);
       setActiveTab('completed');
     } catch (error) {
       console.error('Error completing order:', error);
@@ -372,7 +417,7 @@ const ShipperOrderManagement = () => {
           <Button
             type="primary"
             icon={<ReloadOutlined />}
-            onClick={() => loadOrders(activeTab)}
+            onClick={() => loadAllOrders()}
             loading={loading}
           >
             Làm mới

@@ -40,17 +40,22 @@ const CustomerManagement = () => {
         customerList = response.data;
       }
 
-      const mappedCustomers = customerList.map(customer => ({
-        id: customer.id,
-        username: customer.username,
-        customerName: customer.customerName || customer.name || 'Chưa cập nhật',
-        email: customer.email,
-        phone: customer.phone || 'Chưa có',
-        gender: customer.gender || 'Chưa rõ',
-        address: customer.address || 'Chưa cập nhật',
-        createdAt: customer.createdAt || new Date().toISOString(),
-        updatedAt: customer.updatedAt || new Date().toISOString()
-      }));
+      const mappedCustomers = customerList.map(customer => {
+        // Debug: Log giá trị gender để kiểm tra
+        console.log(`Customer ${customer.customerName || customer.id}: gender =`, customer.gender, `(type: ${typeof customer.gender})`);
+        
+        return {
+          id: customer.id,
+          username: customer.username,
+          customerName: customer.customerName || customer.name || 'Chưa cập nhật',
+          email: customer.email,
+          phone: customer.phone || 'Chưa có',
+          gender: customer.gender || 'Chưa rõ',
+          address: customer.address || 'Chưa cập nhật',
+          createdAt: customer.createdAt || new Date().toISOString(),
+          updatedAt: customer.updatedAt || new Date().toISOString()
+        };
+      });
 
       setCustomers(mappedCustomers);
       message.success(`Đã tải ${mappedCustomers.length} khách hàng thành công`);
@@ -125,13 +130,20 @@ const CustomerManagement = () => {
   };
 
   const getGenderTag = (gender) => {
+    // Chuẩn hóa giá trị gender trước khi kiểm tra
+    const normalizedGender = gender?.toString().toUpperCase().trim();
+    
     const genderMap = {
       'MALE': { text: 'Nam', color: 'blue' },
+      'NAM': { text: 'Nam', color: 'blue' },
+      'M': { text: 'Nam', color: 'blue' },
       'FEMALE': { text: 'Nữ', color: 'pink' },
-      'OTHER': { text: 'Khác', color: 'default' }
+      'NỮ': { text: 'Nữ', color: 'pink' },
+      'NU': { text: 'Nữ', color: 'pink' },
+      'F': { text: 'Nữ', color: 'pink' },
     };
 
-    const genderInfo = genderMap[gender?.toUpperCase()] || { text: 'Chưa rõ', color: 'default' };
+    const genderInfo = genderMap[normalizedGender] || { text: 'Chưa rõ', color: 'default' };
     return <Tag color={genderInfo.color}>{genderInfo.text}</Tag>;
   };
 
@@ -181,7 +193,6 @@ const CustomerManagement = () => {
       filters: [
         { text: 'Nam', value: 'MALE' },
         { text: 'Nữ', value: 'FEMALE' },
-        { text: 'Khác', value: 'OTHER' },
       ],
       filterResetText: 'Đặt lại',
       onFilter: (value, record) => record.gender?.toUpperCase() === value,
