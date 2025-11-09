@@ -161,52 +161,6 @@ const ShipperManagement = () => {
       render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
       sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     },
-    {
-      title: 'Thao tác',
-      key: 'action',
-      width: 100,
-      align: 'center',
-      render: (_, record) => {
-        const menuItems = [
-          {
-            key: 'view',
-            icon: <EyeOutlined />,
-            label: 'Chi tiết',
-            onClick: () => message.info(`Xem chi tiết shipper ID: ${record.shipperId} (Tính năng đang phát triển)`)
-          },
-          {
-            key: 'edit',
-            icon: <EditOutlined />,
-            label: 'Sửa',
-            onClick: () => handleEdit(record.shipperId)
-          },
-          {
-            type: 'divider',
-          },
-          {
-            key: 'delete',
-            icon: <DeleteOutlined />,
-            label: 'Xóa',
-            danger: true,
-            onClick: () => handleDelete(record)
-          }
-        ];
-
-        return (
-          <Dropdown
-            menu={{ items: menuItems }}
-            trigger={['click']}
-            placement="bottomRight"
-          >
-            <Button 
-              type="text" 
-              icon={<MoreOutlined style={{ fontSize: '18px' }} />}
-              className="hover:bg-gray-100"
-            />
-          </Dropdown>
-        );
-      },
-    },
   ];
 
   if (currentView === 'create') {
@@ -262,7 +216,7 @@ const ShipperManagement = () => {
           loading={loading}
           pagination={{
             pageSize: 10,
-            showSizeChanger: true,
+            showSizeChanger: false,
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} shipper`,
           }}
           scroll={{ x: 1000 }}

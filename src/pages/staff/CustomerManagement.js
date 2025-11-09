@@ -306,7 +306,7 @@ const CustomerManagement = () => {
           loading={loading}
           pagination={{
             pageSize: 10,
-            showSizeChanger: true,
+            showSizeChanger: false,
             showTotal: (total) => `Tổng cộng ${total} khách hàng`,
             pageSizeOptions: ['10', '20', '50', '100'],
             locale: { items_per_page: '/ trang' },

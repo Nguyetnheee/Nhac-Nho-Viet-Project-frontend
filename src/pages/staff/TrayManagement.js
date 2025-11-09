@@ -434,7 +434,7 @@ const TrayManagement = () => {
         loading={loading}
         pagination={{
           // pageSize: 10,
-          showSizeChanger: true,
+          showSizeChanger: false,
           // showQuickJumper: true,
           showTotal: (total, range) =>
             `${range[0]}-${range[1]} của ${total} sản phẩm`,
