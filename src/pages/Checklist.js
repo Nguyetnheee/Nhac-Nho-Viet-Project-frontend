@@ -363,10 +363,10 @@ const Checklist = () => {
           );
           
           await Promise.all(itemPromises);
-          message.success(`Đã thêm ${selectedItems.length} vật phẩm vào checklist!`);
+          message.success(`Đã thêm ${selectedItems.length} vật phẩm vào danh mục!`);
         } catch (itemError) {
           console.error('Error creating checklist items:', itemError);
-          message.warning('Checklist đã được tạo nhưng một số vật phẩm không thể thêm. Vui lòng thêm lại sau.');
+          message.warning('Danh mục đã được tạo nhưng một số vật phẩm không thể thêm. Vui lòng thêm lại sau.');
         }
       }
       
@@ -385,10 +385,10 @@ const Checklist = () => {
       const errorMessage = error.response?.data?.message 
         || error.response?.data?.error 
         || error.message 
-        || 'Không thể tạo checklist. Vui lòng thử lại.';
+        || 'Không thể tạo mới danh mục. Vui lòng kiểm tra và thử lại.';
       
       Modal.error({ 
-        title: 'Không thể tạo checklist', 
+        title: 'Không thể tạo danh mục', 
         content: errorMessage 
       });
     } finally {
@@ -444,7 +444,7 @@ const Checklist = () => {
       }
     } catch (error) {
       console.error('Error loading checklist detail:', error);
-      message.error('Không thể tải chi tiết checklist!');
+      message.error('Không thể tải chi tiết danh mục!');
       setDetailModalOpen(false);
     } finally {
       setDetailLoading(false);
@@ -462,7 +462,7 @@ const Checklist = () => {
 
   const handleToggleItemChecked = async (item, checked) => {
     if (!item.userChecklistItemId) {
-      message.warning('Không thể cập nhật item chưa được lưu!');
+      message.warning('Không thể cập nhật, các vật phẩm chưa được lưu!');
       return;
     }
 
@@ -521,7 +521,7 @@ const Checklist = () => {
 
   const handleAddNewItem = () => {
     if (!checklistDetail?.userChecklistId) {
-      message.error('Không tìm thấy checklist!');
+      message.error('Không tìm thấy danh mục!');
       return;
     }
     newItemForm.resetFields();
@@ -579,7 +579,7 @@ const Checklist = () => {
 
     Modal.confirm({
       title: 'Xác nhận xóa',
-      content: `Bạn có chắc muốn xóa "${item.itemName}" khỏi checklist?`,
+      content: `Bạn có chắc muốn xóa "${item.itemName}" khỏi danh mục?`,
       onOk: async () => {
         try {
           setSavingItem(true);
@@ -601,7 +601,7 @@ const Checklist = () => {
   // Xem chi tiết một item con (sử dụng GET /api/user-checklist-items/{id})
   const handleViewItemDetail = async (userChecklistItemId) => {
     if (!userChecklistItemId) {
-      message.warning('Không tìm thấy ID của vật phẩm!');
+      message.warning('Không tìm thấy vật phẩm!');
       return;
     }
 
@@ -669,7 +669,7 @@ const Checklist = () => {
       const values = await editingItemForm.validateFields();
       
       if (!item.userChecklistItemId) {
-        message.error('Không tìm thấy userChecklistItemId để cập nhật!');
+        message.error('Không tìm thấy danh mục để cập nhật!');
         return;
       }
       
@@ -1050,7 +1050,7 @@ const Checklist = () => {
             label={<span className="text-vietnam-green font-medium">Tiêu Đề Danh Mục</span>}
             name="title"
             rules={[
-              { required: true, message: 'Vui lòng nhập tiêu đề checklist!' },
+              { required: true, message: 'Vui lòng nhập tiêu đề danh mục!' },
               { max: 200, message: 'Tiêu đề không được quá 200 ký tự!' }
             ]}
           >
@@ -1173,14 +1173,9 @@ const Checklist = () => {
                               </div>
                               <div>
                                 <Text className="text-xs text-gray-600">Đơn vị:</Text>
-                                <Input
-                                  value={item.unit}
-                                  onChange={(e) => handleUpdateItemInChecklist(item.itemId, 'unit', e.target.value)}
-                                  size="small"
-                                  className="w-full mt-1"
-                                  disabled={creating}
-                                  placeholder="Đơn vị"
-                                />
+                                <div className="mt-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-sm">
+                                  {item.unit || 'N/A'}
+                                </div>
                               </div>
                             </div>
                             <div className="mt-2">
