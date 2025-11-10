@@ -53,13 +53,8 @@ const Home = () => {
   const location = useLocation();
   const [term, setTerm] = useState("");
   const [rituals, setRituals] = useState([]);
-  // Carousel state
-  const [images, setImages] = useState([]);
-  const [index, setIndex] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragX, setDragX] = useState(0);
-  const startXRef = useRef(0);
-  const autoTimerRef = useRef(null);
+  // Video ref for hero section
+  const videoRef = useRef(null);
   const [selectedKeys, setSelectedKeys] = useState(new Set(["all"]));
   const [searchTerm, setSearchTerm] = useState("");
   const [lastQuery, setLastQuery] = useState("");
@@ -70,23 +65,13 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Lấy ảnh từ API
+  // Đảm bảo video tự động play khi component mount
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await ritualService.getAllRituals();
-        const urls = Array.isArray(data)
-          ? Array.from(
-            new Set(
-              data.map((r) => getImageUrl(r.imageUrl)).filter(Boolean)
-            )
-          ).slice(0, 10)
-          : [];
-        setImages(urls.length ? urls : [getImageUrl(null)]);
-      } catch {
-        setImages([getImageUrl(null)]);
-      }
-    })();
+    if (videoRef.current) {
+      videoRef.current.play().catch(err => {
+        console.log('Video autoplay failed:', err);
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -156,23 +141,6 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKeys]);
 
-  // Auto slide
-  useEffect(() => {
-    if (images.length <= 1) return;
-    startAuto();
-    return stopAuto;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images, index]);
-
-  const startAuto = () => {
-    stopAuto();
-    autoTimerRef.current = setInterval(() => {
-      goTo(index + 1);
-    }, 3000);
-  };
-  const stopAuto = () => {
-    if (autoTimerRef.current) clearInterval(autoTimerRef.current);
-  };
 
   const initialFetch = async () => {
     setLoading(true);
@@ -277,47 +245,6 @@ const Home = () => {
 
   const isActive = (key) => selectedKeys.has(key);
 
-  // Clamp index for carousel
-  const clampIndex = (i) => {
-    const n = images.length;
-    if (n === 0) return 0;
-    return ((i % n) + n) % n;
-  };
-  const goTo = (i) => setIndex(clampIndex(i));
-
-  // Swipe/Drag events
-  const onTouchStart = (e) => {
-    if (!images.length) return;
-    stopAuto();
-    setIsDragging(true);
-    setDragX(0);
-    startXRef.current = e.touches ? e.touches[0].clientX : e.clientX;
-  };
-  const onTouchMove = (e) => {
-    if (!isDragging) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    setDragX(x - startXRef.current);
-  };
-  const onTouchEnd = () => {
-    if (!isDragging) return;
-    const threshold = 60;
-    if (dragX <= -threshold) goTo(index + 1);
-    else if (dragX >= threshold) goTo(index - 1);
-    setIsDragging(false);
-    setDragX(0);
-    startAuto();
-  };
-
-  // Arrow keys navigation for carousel
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "ArrowLeft") goTo(index - 1);
-      if (e.key === "ArrowRight") goTo(index + 1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [index, images.length]);
-
   // Search and region navigation
   const handleSearch = (e) => {
     e.preventDefault();
@@ -328,12 +255,6 @@ const Home = () => {
   const goRegion = (key) => {
     if (key === "all") navigate(`/rituals`);
     else navigate(`/rituals?regions=${REGION_KEY_TO_PARAM[key]}`);
-  };
-
-  // Slide track style for carousel
-  const trackStyle = {
-    transform: `translateX(calc(${-index * 100}% + ${dragX}px))`,
-    transition: isDragging ? "none" : "transform 0.8s ease-in-out",
   };
 
   // Fetch trays
@@ -458,32 +379,30 @@ const Home = () => {
 
   return (
     <div className="min-h-screen font-inter">
-      {/* Vòng quay giới thiệu */}
-      <section
-        className="relative min-h-[65vh] md:min-h-[90vh] text-white overflow-hidden flex items-center justify-center"
-        onMouseEnter={stopAuto}
-        onMouseLeave={startAuto}
-        onMouseDown={onTouchStart}
-        onMouseMove={onTouchMove}
-        onMouseUp={onTouchEnd}
-        onMouseLeaveCapture={onTouchEnd}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        {/* Track ảnh */}
-        <div className="absolute inset-0 h-full flex" style={trackStyle}>
-          {images.map((src, i) => (
-            <div key={i} className="w-full h-full flex-shrink-0 relative">
-              <img
-                src={src}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-                draggable={false}
-              />
-              <div className="absolute inset-0 bg-[#0d3b36]/40" />
-            </div>
-          ))}
+      {/* Hero Section với Video Background */}
+      <section className="relative min-h-[65vh] md:min-h-[90vh] text-white overflow-hidden flex items-center justify-center">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            preload="auto"
+            poster="/login-background.jpg"
+          >
+            <source src="/hero-video.mp4" type="video/mp4" />
+            {/* Fallback cho trình duyệt không hỗ trợ video */}
+            <img 
+              src="/login-background.jpg" 
+              alt="Hero background" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </video>
+          {/* Overlay để đảm bảo text dễ đọc */}
+          <div className="absolute inset-0 bg-[#0d3b36]/40" />
         </div>
 
         {/* Nội dung foreground */}
@@ -512,43 +431,7 @@ const Home = () => {
               </button>
             </div>
           </form>
-          {/* Dots */}
-          {images.length > 1 && (
-            <div className="mt-6 flex gap-2">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goTo(i)}
-                  className={`w-2.5 h-2.5 rounded-full transition ${i === index ? "bg-white scale-110" : "bg-white/50 hover:bg-white/80"
-                    }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                  type="button"
-                />
-              ))}
-            </div>
-          )}
         </div>
-        {/* Arrows (desktop) */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={() => goTo(index - 1)}
-              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 bg-black/35 hover:bg-black/55 text-white w-11 h-11 rounded-full items-center justify-center"
-              aria-label="Previous"
-              type="button"
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => goTo(index + 1)}
-              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 bg-black/35 hover:bg-black/55 text-white w-11 h-11 rounded-full items-center justify-center"
-              aria-label="Next"
-              type="button"
-            >
-              ›
-            </button>
-          </>
-        )}
       </section>
 
       {/* Sản phẩm */}
