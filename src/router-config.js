@@ -14,6 +14,14 @@ import NewsDetail from "./pages/NewsDetail";
 import AboutUs from "./pages/aboutUs/AboutUs";
 import Information from "./pages/aboutUs/Information";
 
+// Blog Pages
+import GioiThieu from "./pages/blogPages/GioiThieu";
+import HuongDanBaoQuan from "./pages/blogPages/HuongDanBaoQuan";
+import FAQ from "./pages/blogPages/FAQ";
+import ChinhSachKhachHang from "./pages/blogPages/ChinhSachKhachHang";
+import ChinhSachVanChuyen from "./pages/blogPages/ChinhSachVanChuyen";
+import ChinhSachBaoMat from "./pages/blogPages/ChinhSachBaoMat";
+
 // Authentication Pages
 import VerifyOTP from "./pages/VerifyOTP";
 import VerifyResetOTP from "./pages/VerifyResetOTP";
@@ -116,6 +124,32 @@ export const router = createBrowserRouter(
        {
         path: "information",
         element: <Information />,  // Make public - view news without login
+      },
+
+      // Blog Pages Routes
+      {
+        path: "blog/gioi-thieu",
+        element: <GioiThieu />,
+      },
+      {
+        path: "blog/huong-dan-bao-quan",
+        element: <HuongDanBaoQuan />,
+      },
+      {
+        path: "blog/faq",
+        element: <FAQ />,
+      },
+      {
+        path: "blog/chinh-sach-khach-hang",
+        element: <ChinhSachKhachHang />,
+      },
+      {
+        path: "blog/chinh-sach-van-chuyen",
+        element: <ChinhSachVanChuyen />,
+      },
+      {
+        path: "blog/chinh-sach-bao-mat",
+        element: <ChinhSachBaoMat />,
       },
 
       // Demo Routes - For testing and development
