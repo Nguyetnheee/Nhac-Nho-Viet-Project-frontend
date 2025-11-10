@@ -217,6 +217,21 @@ const PendingOrderDetail = () => {
     );
   }
 
+  // Hàm map status sang tiếng Việt
+  const getStatusText = (status) => {
+    const statusMap = {
+      'PAID': 'Đã thanh toán',
+      'CONFIRMED': 'Đang chuẩn bị',
+      'PROCESSING': 'Đang xử lý',
+      'SHIPPING': 'Đang giao',
+      'DELIVERED': 'Đã giao',
+      'COMPLETED': 'Hoàn thành',
+      'CANCELLED': 'Đã hủy',
+      'PENDING': 'Đã hủy' // PENDING được map thành CANCELLED
+    };
+    return statusMap[status] || status;
+  };
+
   // Xác định trạng thái và icon
   const getStatusInfo = () => {
     // ⭐ QUY TẮC: PENDING được xử lý như CANCELLED
@@ -290,7 +305,7 @@ const PendingOrderDetail = () => {
                 <div>
                   <p className="text-sm text-gray-600">Mã đơn hàng</p>
                   <p className="font-semibold text-vietnam-green">
-                    {orderData.orderCode || `#${orderData.orderId}`}
+                    {orderData.orderCode || 'N/A'}
                   </p>
                 </div>
                 <div>
@@ -301,9 +316,14 @@ const PendingOrderDetail = () => {
                   <p className="text-sm text-gray-600">Trạng thái</p>
                   <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium 
                     ${(orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'bg-red-100 text-red-800' : 
+                      (orderData.status || orderData.orderStatus) === 'PAID' ? 'bg-yellow-100 text-yellow-800' :
+                      (orderData.status || orderData.orderStatus) === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                      (orderData.status || orderData.orderStatus) === 'PROCESSING' ? 'bg-purple-100 text-purple-800' :
+                      (orderData.status || orderData.orderStatus) === 'SHIPPING' ? 'bg-indigo-100 text-indigo-800' :
+                      (orderData.status || orderData.orderStatus) === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                      (orderData.status || orderData.orderStatus) === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                       'bg-gray-100 text-gray-800'}`}>
-                    {(orderData.status || orderData.orderStatus) === 'CANCELLED' ? 'Đã hủy' : 
-                     (orderData.status || orderData.orderStatus)}
+                    {getStatusText(orderData.status || orderData.orderStatus)}
                   </span>
                 </div>
                 <div>

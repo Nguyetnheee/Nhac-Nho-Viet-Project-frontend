@@ -75,6 +75,7 @@ const PaymentResult = () => {
           setPaymentStatus({ 
             status: 'CANCELLED', 
             orderId: orderInfo?.orderId || orderId,
+            orderCode: orderInfo?.orderCode || orderInfo?.orderId || orderId,
             orderDate: orderInfo?.orderDate,
             orderStatus: orderInfo?.orderStatus,
             totalPrice: orderInfo?.totalPrice || orderInfo?.totalAmount || orderInfo?.total,
@@ -117,6 +118,7 @@ const PaymentResult = () => {
             status: 'SUCCESS',
             paid: true,
             orderId: orderInfo?.orderId || orderId,
+            orderCode: orderInfo?.orderCode || orderInfo?.orderId || orderId,
             orderDate: orderInfo?.orderDate,
             orderStatus: orderInfo?.orderStatus,
             totalPrice: orderInfo?.totalPrice || orderInfo?.totalAmount || orderInfo?.total,
@@ -149,6 +151,7 @@ const PaymentResult = () => {
         setPaymentStatus({ 
           status: 'FAILED',
           orderId: orderInfo?.orderId || orderId,
+          orderCode: orderInfo?.orderCode || orderInfo?.orderId || orderId,
           orderDate: orderInfo?.orderDate,
           orderStatus: orderInfo?.orderStatus,
           totalPrice: orderInfo?.totalPrice || orderInfo?.totalAmount || orderInfo?.total,
@@ -242,10 +245,10 @@ const PaymentResult = () => {
               
               {/* Order Header */}
               <div className="space-y-2 text-sm mb-4">
-                {paymentStatus.orderId && (
+                {(paymentStatus.orderCode || paymentStatus.orderId) && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Mã đơn hàng:</span>
-                    <span className="font-medium">#{paymentStatus.orderId}</span>
+                    <span className="font-medium">#{paymentStatus.orderCode || paymentStatus.orderId}</span>
                   </div>
                 )}
                 {paymentStatus.orderDate && (

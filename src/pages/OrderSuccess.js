@@ -511,7 +511,7 @@ const OrderSuccess = () => {
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Mã đơn hàng</p>
                   <p className="font-semibold text-vietnam-green text-lg">
-                    {orderData.orderCode || orderData.orderId}
+                    {orderData.orderCode || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -681,7 +681,15 @@ const OrderSuccess = () => {
                   <span className={`w-3 h-3 rounded-full mr-2 ${ORDER_STATUS_MAP[orderData.orderStatus]?.color || 'bg-gray-400'}`}></span>
                   <span className="text-sm font-medium text-gray-700">
                     Hiện tại: <span className="text-vietnam-green font-bold">
-                      {ORDER_STATUS_MAP[orderData.orderStatus]?.label || orderData.orderStatus}
+                      {ORDER_STATUS_MAP[orderData.orderStatus]?.label || 
+                       (orderData.orderStatus === 'PAID' ? 'Đã thanh toán' : 
+                        orderData.orderStatus === 'CONFIRMED' ? 'Đang chuẩn bị' :
+                        orderData.orderStatus === 'PROCESSING' ? 'Đang xử lý' :
+                        orderData.orderStatus === 'SHIPPING' ? 'Đang giao' :
+                        orderData.orderStatus === 'DELIVERED' ? 'Đã giao' :
+                        orderData.orderStatus === 'COMPLETED' ? 'Hoàn thành' :
+                        orderData.orderStatus === 'CANCELLED' ? 'Đã hủy' :
+                        orderData.orderStatus)}
                     </span>
                   </span>
                 </div>
