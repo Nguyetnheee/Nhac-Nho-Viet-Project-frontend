@@ -109,6 +109,7 @@ const OrderHistory = () => {
     const normalizedStatus = (status === 'PENDING' || status === 'pending') ? 'CANCELLED' : status;
     const badges = {
       // ⭐ Ở phía customer: CONFIRMED hiển thị là "Đang chuẩn bị" (khách đã thanh toán rồi)
+      'PAID': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Đã thanh toán' },
       'CONFIRMED': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang chuẩn bị' },
       'PROCESSING': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Đang xử lý' },
       'SHIPPING': { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'Đang giao' },
@@ -263,7 +264,7 @@ const OrderHistory = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-800">
-                        Đơn hàng {order.orderCode || order.orderId}
+                        Đơn hàng {order.orderCode || 'N/A'}
                       </h4>
                       <p className="text-sm text-gray-500 mt-1">
                         <i className="far fa-calendar-alt mr-1"></i>
