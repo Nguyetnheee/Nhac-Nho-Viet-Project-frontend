@@ -769,8 +769,8 @@ const Checklist = () => {
                     key: 'reminderDate',
                     render: (date) => {
                       if (!date) return <Text type="secondary">Không có</Text>;
-                      const formatted = dayjs(date).format('DD/MM/YYYY');
-                      const isPast = dayjs(date).isBefore(dayjs(), 'day');
+                      const formatted = dayjs(date).format('DD/MM/YYYY HH:mm');
+                      const isPast = dayjs(date).isBefore(dayjs(), 'minute');
                       const isToday = dayjs(date).isSame(dayjs(), 'day');
                       return (
                         <Tag color={isPast ? 'red' : isToday ? 'orange' : 'blue'}>
@@ -875,17 +875,33 @@ const Checklist = () => {
           </Form.Item>
 
           <Form.Item
-            label={<span className="text-vietnam-green font-medium">Ngày Nhắc Nhở (Tùy chọn)</span>}
+            label={<span className="text-vietnam-green font-medium">Ngày & Giờ Nhắc Nhở (Tùy chọn)</span>}
             name="reminderDate"
-            tooltip="Chọn ngày bạn muốn được nhắc nhở về danh mục này"
+            tooltip="Chọn ngày và giờ bạn muốn được nhắc nhở về danh mục này"
           >
             <DatePicker
-              placeholder="Chọn ngày nhắc nhở"
+              placeholder="Chọn ngày và giờ nhắc nhở"
               size="large"
               style={{ width: '100%' }}
-              format="DD/MM/YYYY"
+              format="DD/MM/YYYY HH:mm"
+              showTime={{ format: 'HH:mm', minuteStep: 5 }}
               disabledDate={(current) => current && current < dayjs().startOf('day')}
-              showTime={false}
+              disabledTime={(current) => {
+                if (!current) return {};
+                const now = dayjs();
+                if (!current.isSame(now, 'day')) {
+                  return {};
+                }
+                const disabledHours = Array.from({ length: now.hour() }, (_, i) => i);
+                const disabledMinutes =
+                  current.hour() === now.hour()
+                    ? Array.from({ length: now.minute() }, (_, i) => i)
+                    : [];
+                return {
+                  disabledHours: () => disabledHours,
+                  disabledMinutes: () => disabledMinutes,
+                };
+              }}
             />
           </Form.Item>
 
@@ -1079,12 +1095,12 @@ const Checklist = () => {
                       <Text type="secondary" className="text-xs block mb-1">Ngày nhắc nhở</Text>
                       <Tag 
                         color={
-                          dayjs(checklistDetail.reminderDate).isBefore(dayjs(), 'day') ? 'red' :
+                          dayjs(checklistDetail.reminderDate).isBefore(dayjs(), 'minute') ? 'red' :
                           dayjs(checklistDetail.reminderDate).isSame(dayjs(), 'day') ? 'orange' : 'blue'
                         }
                         className="text-sm font-semibold"
                       >
-                        {dayjs(checklistDetail.reminderDate).format('DD/MM/YYYY')}
+                        {dayjs(checklistDetail.reminderDate).format('DD/MM/YYYY HH:mm')}
                       </Tag>
                     </div>
                   )}
