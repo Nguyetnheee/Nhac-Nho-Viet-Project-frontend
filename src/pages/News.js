@@ -145,7 +145,7 @@ const News = () => {
     {
       title: "Chính Sách Khách Hàng Thân Thiết tại AN Đồ Lễ",
       image:
-        "https://pos.nvncdn.com/26fee5-146732/art/20241119_wTkFMKfg.jpeg?v=1732027881",
+        "public/Gioi-thieu-poster.jpg",
       link: "/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
       fullLink: "https://andole.vn/chinh-sach-khach-hang-than-thiet-tai-an-do-le-n149790.html",
       description:
