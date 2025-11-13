@@ -19,6 +19,7 @@ const PaymentResult = () => {
         const orderId = searchParams.get('orderId') || 
                        searchParams.get('orderCode') || 
                        searchParams.get('id');
+        const orderCodeParam = searchParams.get('orderCode');
         const status = searchParams.get('status') || searchParams.get('code');
         const cancel = searchParams.get('cancel'); // Kiểm tra nếu user cancel
         
@@ -75,7 +76,7 @@ const PaymentResult = () => {
           setPaymentStatus({ 
             status: 'CANCELLED', 
             orderId: orderInfo?.orderId || orderId,
-            orderCode: orderInfo?.orderCode || orderInfo?.orderId || orderId,
+            orderCode: orderInfo?.orderCode || orderCodeParam || orderInfo?.orderId || orderId,
             orderDate: orderInfo?.orderDate,
             orderStatus: orderInfo?.orderStatus,
             totalPrice: orderInfo?.totalPrice || orderInfo?.totalAmount || orderInfo?.total,
@@ -118,7 +119,7 @@ const PaymentResult = () => {
             status: 'SUCCESS',
             paid: true,
             orderId: orderInfo?.orderId || orderId,
-            orderCode: orderInfo?.orderCode || orderInfo?.orderId || orderId,
+            orderCode: orderInfo?.orderCode || orderCodeParam || orderInfo?.orderId || orderId,
             orderDate: orderInfo?.orderDate,
             orderStatus: orderInfo?.orderStatus,
             totalPrice: orderInfo?.totalPrice || orderInfo?.totalAmount || orderInfo?.total,
@@ -151,7 +152,7 @@ const PaymentResult = () => {
         setPaymentStatus({ 
           status: 'FAILED',
           orderId: orderInfo?.orderId || orderId,
-          orderCode: orderInfo?.orderCode || orderInfo?.orderId || orderId,
+          orderCode: orderInfo?.orderCode || orderCodeParam || orderInfo?.orderId || orderId,
           orderDate: orderInfo?.orderDate,
           orderStatus: orderInfo?.orderStatus,
           totalPrice: orderInfo?.totalPrice || orderInfo?.totalAmount || orderInfo?.total,
@@ -245,12 +246,6 @@ const PaymentResult = () => {
               
               {/* Order Header */}
               <div className="space-y-2 text-sm mb-4">
-                {(paymentStatus.orderCode || paymentStatus.orderId) && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mã đơn hàng:</span>
-                    <span className="font-medium">#{paymentStatus.orderCode || paymentStatus.orderId}</span>
-                  </div>
-                )}
                 {paymentStatus.orderDate && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Ngày đặt:</span>
