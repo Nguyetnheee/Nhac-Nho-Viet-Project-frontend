@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/ToastContainer';
 import { useCart } from '../contexts/CartContext';
@@ -14,6 +14,10 @@ import {
   TagOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
+  DownOutlined,
+  StarFilled,
+  UploadOutlined,
+  CameraOutlined,
   UserOutlined,
   PhoneOutlined,
   MailOutlined,
@@ -38,13 +42,18 @@ const OrderSuccess = () => {
   const { orderId: paramOrderId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { showError } = useToast();
+  const { showError, showSuccess, showWarning } = useToast();
   const { clearCart } = useCart();
 
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(null);
   const [cartCleared, setCartCleared] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewImages, setReviewImages] = useState([]);
+  const reviewSectionRef = useRef(null);
 
   // Lấy orderId từ URL params hoặc route param
   const orderId = paramOrderId || searchParams.get('orderId') || searchParams.get('orderCode');
@@ -69,6 +78,54 @@ const OrderSuccess = () => {
       minute: '2-digit',
       second: '2-digit'
     }).format(date);
+  };
+
+  const handleImageUpload = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const newImages = files.map((file) => ({
+      id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setReviewImages((prev) => [...prev, ...newImages]);
+    event.target.value = '';
+  };
+
+  const removeReviewImage = (id) => {
+    setReviewImages((prev) => {
+      const target = prev.find((img) => img.id === id);
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+      }
+      return prev.filter((img) => img.id !== id);
+    });
+  };
+
+  const resetReviewForm = () => {
+    setReviewRating(0);
+    setHoverRating(0);
+    setReviewComment('');
+    reviewImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    setReviewImages([]);
+  };
+
+  const handleSubmitReview = () => {
+    if (reviewRating === 0) {
+      showWarning('Vui lòng chọn số sao đánh giá trước khi gửi.');
+      return;
+    }
+
+    showSuccess('Cảm ơn bạn đã chia sẻ cảm nhận! Chúng tôi sẽ ghi nhận đánh giá của bạn.');
+    resetReviewForm();
+  };
+
+  const scrollToReview = () => {
+    if (reviewSectionRef.current) {
+      reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   // Fetch order details
@@ -583,6 +640,23 @@ const OrderSuccess = () => {
               </div>
             </div>
 
+            {/* Arrow to scroll down to review - only for COMPLETED orders */}
+            {orderData?.orderStatus === 'COMPLETED' && (
+              <div className="flex flex-col items-center justify-center my-6">
+                <button
+                  type="button"
+                  onClick={scrollToReview}
+                  className="flex flex-col items-center justify-center focus:outline-none group"
+                  aria-label="Lướt xuống để viết đánh giá mâm cúng"
+                >
+                  <span className="text-sm text-gray-500 group-hover:text-vietnam-green transition mb-2">
+                    Lướt xuống để ghi nhận xét của bạn
+                  </span>
+                  <DownOutlined className="text-3xl text-vietnam-green animate-bounce" />
+                </button>
+              </div>
+            )}
+
             {/* Order Items */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-vietnam-green mb-4">
@@ -707,6 +781,136 @@ const OrderSuccess = () => {
                 </div>
               </div>
             </div>
+
+            {/* Review Section */}
+            {orderData?.orderStatus === 'COMPLETED' && (
+              <div ref={reviewSectionRef} className="bg-white rounded-xl shadow-sm border border-green-100 p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-serif font-bold text-vietnam-green">Chia sẻ cảm nhận của bạn</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Đánh giá chất lượng mâm cúng để chúng tôi phục vụ bạn tốt hơn.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Rating */}
+                  <div>
+                    <span className="block text-sm font-medium text-gray-700 mb-3">Đánh giá sao</span>
+                    <div
+                      className="flex items-center gap-2"
+                      onMouseLeave={() => setHoverRating(0)}
+                    >
+                      {[1, 2, 3, 4, 5].map((value) => {
+                        const isActive = value <= (hoverRating || reviewRating);
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            className="focus:outline-none transition-transform transform hover:scale-110"
+                            onClick={() => setReviewRating(value)}
+                            onMouseEnter={() => setHoverRating(value)}
+                            aria-label={`Đánh giá ${value} sao`}
+                          >
+                            <StarFilled className={`text-3xl ${isActive ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {reviewRating > 0 && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Bạn đã chọn {reviewRating}/5 sao.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Comment */}
+                  <div>
+                    <label htmlFor="review-comment" className="block text-sm font-medium text-gray-700 mb-2">
+                      Nhận xét của bạn
+                    </label>
+                    <textarea
+                      id="review-comment"
+                      rows="4"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 focus:border-vietnam-green focus:ring-2 focus:ring-vietnam-green/40 text-sm p-3 transition"
+                      placeholder="Hãy cho chúng tôi biết trải nghiệm của bạn với mâm cúng này..."
+                    ></textarea>
+                  </div>
+
+                  {/* Image upload */}
+                  <div>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">Hình ảnh chia sẻ (tuỳ chọn)</span>
+                    <div className="flex items-center flex-wrap gap-3">
+                      <label
+                        htmlFor="review-image-upload"
+                        className="flex flex-col items-center justify-center border border-dashed border-vietnam-green/40 rounded-lg px-5 py-4 text-center cursor-pointer hover:border-vietnam-green transition bg-vietnam-cream/30 w-full sm:w-auto"
+                      >
+                        <CameraOutlined className="text-2xl text-vietnam-green mb-2" />
+                        <span className="text-sm font-medium text-vietnam-green">Tải ảnh lên</span>
+                        <span className="text-xs text-gray-500 mt-1">Hỗ trợ nhiều ảnh, định dạng JPG/PNG</span>
+                        <input
+                          id="review-image-upload"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={handleImageUpload}
+                        />
+                      </label>
+
+                      {reviewImages.length > 0 && (
+                        <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {reviewImages.map((img) => (
+                            <div key={img.id} className="relative rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm">
+                              <img
+                                src={img.preview}
+                                alt="Ảnh đánh giá"
+                                className="w-full h-32 object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeReviewImage(img.id)}
+                                className="absolute top-2 right-2 bg-white/80 rounded-full p-1 hover:bg-white focus:outline-none"
+                                aria-label="Xoá ảnh này"
+                              >
+                                <CloseCircleOutlined className="text-red-500" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p className="text-xs text-gray-500">
+                      *Đánh giá công tâm của bạn là động lực để chúng tôi phát triển tốt hơn.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={resetReviewForm}
+                        className="btn-outline"
+                      >
+                        Xoá nội dung
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSubmitReview}
+                        className="btn-primary flex items-center gap-2"
+                      >
+                        <UploadOutlined />
+                        Gửi đánh giá
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Support Section */}
             <div className="text-center pt-4 border-t border-gray-200">
