@@ -246,12 +246,6 @@ const PaymentResult = () => {
               
               {/* Order Header */}
               <div className="space-y-2 text-sm mb-4">
-                {(paymentStatus.orderCode || paymentStatus.orderId) && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mã đơn hàng:</span>
-                    <span className="font-medium">#{paymentStatus.orderCode || paymentStatus.orderId}</span>
-                  </div>
-                )}
                 {paymentStatus.orderDate && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Ngày đặt:</span>
