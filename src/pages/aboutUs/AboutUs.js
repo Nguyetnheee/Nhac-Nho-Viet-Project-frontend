@@ -31,15 +31,6 @@ const AboutUs = () => {
       description:
         "Tổng hợp các câu hỏi thường gặp tại Nhắc Nhớ Việt. Tìm hiểu chi tiết về mâm lễ, phong tục và dịch vụ uy tín hàng đầu!",
     },
-
-    {
-      title: "Chính Sách Khách Hàng Thân Thiết tại Nhắc Nhớ Việt",
-      image:
-        "/CS-khach-hang.jpg",
-      link: "/blog/chinh-sach-khach-hang",
-      description:
-        "Tích lũy Điểm Lộc vào Hũ Thần Tài tại Nhắc Nhớ Việt. Giảm giá trực tiếp và tận hưởng ưu đãi hấp dẫn cho khách hàng thân thiết.",
-    },
     {
       title:
         "Chính Sách Vận Chuyển | Nhắc Nhớ Việt - Đồ Cúng Truyền Thống Việt Nam",

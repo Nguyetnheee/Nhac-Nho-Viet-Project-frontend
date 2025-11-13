@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ritualService } from "../services/ritualService";
 import { checklistService } from "../services/checklistService";
+import { trayService } from "../services/trayService";
 import { scrollToTop } from "../utils/scrollUtils";
 
 // ✅ Sử dụng environment variable thay vì hardcode
@@ -45,6 +46,10 @@ const RitualDetail = () => {
   const [items, setItems] = useState([]);
   const [userNotes, setUserNotes] = useState("");
   const [newItemText, setNewItemText] = useState("");
+
+  // suggested trays for this ritual
+  const [suggestedTrays, setSuggestedTrays] = useState([]);
+  const [traysLoading, setTraysLoading] = useState(false);
 
   // progress + parallax listeners
   useEffect(() => {
@@ -152,6 +157,66 @@ const RitualDetail = () => {
     scrollToTop(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Fetch suggested trays for this ritual
+  useEffect(() => {
+    const fetchSuggestedTrays = async () => {
+      if (!id) return;
+      
+      setTraysLoading(true);
+      try {
+        // Thử lấy mâm cúng theo ritual ID
+        let traysData = [];
+        
+        try {
+          // Ưu tiên thử endpoint trực tiếp: /api/products/ritual/{ritualId}
+          const response = await trayService.getTraysByRitual(id);
+          traysData = response?.data?.content || response?.data || [];
+          console.log('✅ Loaded trays from getTraysByRitual endpoint');
+        } catch (directError) {
+          console.log('Direct endpoint failed, trying filter endpoint...');
+          try {
+            // Thử endpoint filter với ritualId
+            const response = await trayService.filterTrays({ ritualId: id });
+            traysData = response?.data?.content || response?.data || [];
+            console.log('✅ Loaded trays from filter endpoint');
+          } catch (filterError) {
+            console.log('Filter endpoint failed, trying getAllTrays with client-side filter...');
+            // Fallback: Lấy tất cả và filter ở client
+            try {
+              const response = await trayService.getAllTrays();
+              const allTrays = response?.data?.content || response?.data || [];
+              // Filter theo ritualId nếu có trong data
+              traysData = Array.isArray(allTrays) 
+                ? allTrays.filter(tray => 
+                    tray.ritualId === parseInt(id) || 
+                    tray.ritual?.ritualId === parseInt(id) ||
+                    tray.ritualId === id ||
+                    tray.ritual?.ritualId === id
+                  )
+                : [];
+              console.log('✅ Loaded trays from getAllTrays with client-side filter');
+            } catch (altError) {
+              console.error('All endpoints failed:', altError);
+            }
+          }
+        }
+        
+        console.log('✅ Suggested trays loaded:', traysData);
+        setSuggestedTrays(Array.isArray(traysData) ? traysData : []);
+      } catch (err) {
+        console.error('❌ Error loading suggested trays:', err);
+        setSuggestedTrays([]);
+      } finally {
+        setTraysLoading(false);
+      }
+    };
+
+    if (id && !loading) {
+      fetchSuggestedTrays();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loading]);
 
   // auto-persist mỗi khi đổi
   useEffect(() => {
@@ -362,6 +427,74 @@ const RitualDetail = () => {
                 )}
               </div>
             </div>
+
+            {/* Suggested Trays Section */}
+            {suggestedTrays.length > 0 && (
+              <div className="mt-8 animate-fadeInUp">
+                <div className="bg-white rounded-2xl shadow-xl border border-amber-200/50 p-7">
+                  <h2 className="text-2xl font-serif font-bold text-vietnam-green mb-6">
+                    Mâm cúng gợi ý cho {ritual.ritualName}
+                  </h2>
+                  
+                  {traysLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-10 w-10 border-4 border-vietnam-green border-t-transparent"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {suggestedTrays.map((tray) => (
+                        <div
+                          key={tray.productId}
+                          className="bg-gradient-to-br from-vietnam-cream to-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border border-amber-200/50 cursor-pointer"
+                          onClick={() => navigate(`/trays/${tray.productId}`)}
+                        >
+                          <div className="relative h-48 overflow-hidden">
+                            <img
+                              src={getImageUrl(tray.productImage)}
+                              alt={tray.productName}
+                              className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200';
+                              }}
+                            />
+                            <div className="absolute top-0 right-0 p-2">
+                              <span className="px-3 py-1 bg-vietnam-green text-white text-xs font-bold rounded-full shadow-md">
+                                Gợi ý
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="p-4">
+                            <h3 className="text-lg font-serif font-semibold text-vietnam-green mb-2 line-clamp-2">
+                              {tray.productName}
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                              {tray.productDescription}
+                            </p>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-bold text-vietnam-green">
+                                {tray.price ? `${Number(tray.price).toLocaleString('vi-VN')} VNĐ` : 'Liên hệ'}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/trays/${tray.productId}`);
+                                }}
+                                className="px-4 py-2 bg-vietnam-green text-white rounded-lg font-semibold hover:bg-vietnam-gold transition-colors text-sm"
+                              >
+                                Xem chi tiết
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT — checklist (hoa sen vàng) */}

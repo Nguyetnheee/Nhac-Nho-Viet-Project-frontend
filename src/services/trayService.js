@@ -20,11 +20,15 @@ export const trayService = {
     // Chỉ thêm các tham số nếu chúng có giá trị thực sự
     if (params.regionId) queryParams.regionId = params.regionId;
     if (params.categoryId) queryParams.categoryId = params.categoryId;
+    if (params.ritualId) queryParams.ritualId = params.ritualId;
     if (params.minPrice) queryParams.minPrice = params.minPrice;
     if (params.maxPrice) queryParams.maxPrice = params.maxPrice;
     
     return api.get('/api/products/filter', { params: queryParams });
   },
+  
+  // Get trays by ritual ID
+  getTraysByRitual: (ritualId) => api.get(`/api/products/ritual/${ritualId}`),
   
   // Get regions
   getRegions: () => api.get('/api/regions'),
