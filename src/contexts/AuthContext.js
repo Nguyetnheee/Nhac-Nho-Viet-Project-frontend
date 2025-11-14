@@ -4,8 +4,10 @@ import api from '../services/api';
 import { translateToVietnamese } from '../utils/errorMessages';
 import {
   fetchCustomerProfile,
+  fetchManagerProfile,
   fetchStaffProfile,
   loginShipper,
+  loginManager,
   loginStaff,
   loginCustomer
 } from '../services/apiAuth';
@@ -43,8 +45,8 @@ export const AuthProvider = ({ children }) => {
       let data;
       const normalizedRole = role?.toUpperCase();
       
-      if (normalizedRole === 'STAFF' || normalizedRole === 'ADMIN') {
-        data = await fetchStaffProfile();
+      if (normalizedRole === 'MANAGER' || normalizedRole === 'ADMIN') {
+        data = await fetchManagerProfile();
       } else if (normalizedRole === 'SHIPPER') {
         data = await shipperService.getProfile();
       } else {
@@ -55,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         data.role = role;
       }
       
-      // Giữ role ở dạng UPPERCASE như database (STAFF, ADMIN, CUSTOMER, SHIPPER)
+      // Giữ role ở dạng UPPERCASE như database (MANAGER, ADMIN, CUSTOMER, SHIPPER)
       if (data.role) {
         const originalRole = data.role;
         data.role = data.role.toUpperCase(); // Đảm bảo luôn là UPPERCASE
@@ -104,9 +106,9 @@ export const AuthProvider = ({ children }) => {
     }
     
     // Redirect dựa trên role
-    // Admin/Staff/Shipper → /admin-login
+    // Admin/Manager/Shipper → /admin-login
     // Customer → /login
-    if (currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'SHIPPER') {
+    if (currentRole === 'ADMIN' || currentRole === 'MANAGER' || currentRole === 'SHIPPER') {
       console.log('Logout from', currentRole, '→ redirecting to /admin-login');
       navigate('/admin-login', { replace: true });
     } else {
@@ -171,15 +173,16 @@ export const AuthProvider = ({ children }) => {
       let dashboardPath;
 
       try {
-        loginResponse = await loginStaff(username, password);
+        loginResponse = await loginManager(username, password);
         
         // Lấy role từ response (giữ nguyên UPPERCASE như database)
-        userRole = loginResponse.data?.role || loginResponse.role || 'STAFF';
+        // API trả về: { token, username, email, role } (không wrap trong data)
+        userRole = loginResponse.role || loginResponse.data?.role || 'MANAGER';
         userRole = userRole.toUpperCase();
         
         switch (userRole) {
-          case 'STAFF':
-            dashboardPath = '/staff-dashboard';
+          case 'MANAGER':
+            dashboardPath = '/manager-dashboard';
             break;
           case 'ADMIN':
             dashboardPath = '/admin-dashboard';
@@ -188,11 +191,11 @@ export const AuthProvider = ({ children }) => {
             dashboardPath = '/shipper-dashboard';
             break;
           default:
-            dashboardPath = '/staff-dashboard';
+            dashboardPath = '/manager-dashboard';
             break;
         }
         
-        console.log('Staff login - role:', userRole, 'will redirect to:', dashboardPath);
+        console.log('Manager login - role:', userRole, 'will redirect to:', dashboardPath);
 
       } catch (staffError) {
         try {
@@ -212,8 +215,8 @@ export const AuthProvider = ({ children }) => {
             case 'SHIPPER':
               dashboardPath = '/shipper-dashboard';
               break;
-            case 'STAFF':
-              dashboardPath = '/staff-dashboard';
+            case 'MANAGER':
+              dashboardPath = '/manager-dashboard';
               break;
             case 'ADMIN':
               dashboardPath = '/admin-dashboard';
@@ -239,17 +242,20 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      if (!loginResponse?.token) {
+      // API trả về: { token, username, email, role } (không wrap trong data)
+      const token = loginResponse.token || loginResponse.data?.token;
+      
+      if (!token) {
         throw new Error('Đăng nhập thất bại, không nhận được token.');
       }
       
-      localStorage.setItem('token', loginResponse.token);
+      localStorage.setItem('token', token);
       localStorage.setItem('role', userRole);
 
-      setToken(loginResponse.token);
+      setToken(token);
       
       // Set API header immediately
-      api.defaults.headers.common['Authorization'] = `Bearer ${loginResponse.token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       // Fetch user profile to ensure user state is set before navigation
       try {
@@ -381,8 +387,8 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       const role = localStorage.getItem('role');
-      const endpoint = role === 'STAFF' || role === 'ADMIN'
-        ? '/api/staff/profile'
+      const endpoint = role === 'MANAGER' || role === 'ADMIN'
+        ? '/api/manager/profile'
         : role === 'SHIPPER'
           ? '/api/shipper/profile'
           : '/api/customer/profile';

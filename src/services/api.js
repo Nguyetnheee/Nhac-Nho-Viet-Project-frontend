@@ -27,7 +27,7 @@ api.interceptors.request.use(
     const publicEndpoints = [
       '/api/customer/register',
       '/api/customer/login',
-      '/api/staff/login',
+      '/api/manager/login',
       '/api/customer/verify-email',
       '/api/customer/resend-otp',
       '/api/customer/forgot-password',

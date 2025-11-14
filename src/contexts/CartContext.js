@@ -27,9 +27,10 @@ export const CartProvider = ({ children }) => {
   // ✅ State cho voucher
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   
-  // ✅ Kiểm tra nếu đang ở trang admin/staff/shipper
+  // ✅ Kiểm tra nếu đang ở trang admin/manager/shipper
   const isAdminRoute = location.pathname.startsWith('/admin-login') ||
                        location.pathname.startsWith('/admin-dashboard') ||
+                       location.pathname.startsWith('/manager-dashboard') ||
                        location.pathname.startsWith('/staff-dashboard') ||
                        location.pathname.startsWith('/staff-login') ||
                        location.pathname.startsWith('/shipper-dashboard') ||

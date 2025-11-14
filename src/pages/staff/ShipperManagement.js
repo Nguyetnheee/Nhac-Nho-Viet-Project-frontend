@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons';
 import CreateShipperForm from './CreateShipperForm';
 import shipperService from '../../services/shipperService';
-import staffService from '../../services/staffService';
+import { managerService, staffService } from '../../services/managerService';
 import viVN from 'antd/locale/vi_VN';
 const { Title, Text } = Typography;
 
@@ -28,7 +28,7 @@ const ShipperManagement = () => {
     setLoading(true);
     try {
       console.log('Đang tải danh sách shipper từ API...');
-      const response = await staffService.getAllShippers();
+      const response = await managerService.getAllShippers();
       console.log('API Response:', response);
       
       // Map dữ liệu từ backend (nếu cần)

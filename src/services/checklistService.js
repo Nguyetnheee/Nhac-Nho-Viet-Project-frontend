@@ -4,7 +4,7 @@ import axios from "axios";
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://isp-7jpp.onrender.com";
 
 // publicApi chỉ dùng cho các API public (không yêu cầu auth)
-// Các API yêu cầu STAFF hoặc CUSTOMER role sẽ dùng `api` từ './api' (có token interceptor)
+// Các API yêu cầu MANAGER hoặc CUSTOMER role sẽ dùng `api` từ './api' (có token interceptor)
 export const publicApi = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -15,7 +15,7 @@ export const publicApi = axios.create({
 
 // Export named export để consistent với cách import
 export const checklistService = {
-  // Lấy tất cả checklists (yêu cầu STAFF)
+  // Lấy tất cả checklists (yêu cầu MANAGER)
   getAllChecklists: async () => {
     try {
       const response = await api.get('/api/checklists');
@@ -33,7 +33,7 @@ export const checklistService = {
     }
   },
 
-  // Alias cho getAllChecklists (để tương thích với code cũ) - yêu cầu STAFF
+  // Alias cho getAllChecklists (để tương thích với code cũ) - yêu cầu MANAGER
   getChecklists: async () => {
     try {
       console.log('🔍 Fetching all checklists...');
@@ -54,20 +54,20 @@ export const checklistService = {
     }
   },
 
-  // Lấy tất cả checklist items (sản phẩm trong kho) - yêu cầu STAFF
+  // Lấy tất cả checklist items (sản phẩm trong kho) - yêu cầu MANAGER
   getChecklistItems: async () => {
     try {
       console.log('🔍 Fetching all checklist items...');
       const response = await api.get('/api/checklist-items');
-      console.log('✅ Checklist items loaded:', response.data);
+      console.log('Checklist items loaded:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error getting checklist items:', error);
+      console.error('Error getting checklist items:', error);
       throw error;
     }
   },
 
-  // Lấy chi tiết một checklist item (yêu cầu STAFF)
+  // Lấy chi tiết một checklist item (yêu cầu MANAGER)
   getChecklistItemById: async (itemId) => {
     try {
       console.log(`🔍 Fetching checklist item ${itemId}...`);
@@ -80,7 +80,7 @@ export const checklistService = {
     }
   },
 
-  // Xóa một checklist item (yêu cầu STAFF)
+  // Xóa một checklist item (yêu cầu MANAGER)
   deleteChecklistItem: async (itemId) => {
     try {
       console.log(`🗑️ Deleting checklist item ${itemId}...`);
@@ -93,7 +93,7 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật checklist item (yêu cầu STAFF)
+  // Cập nhật checklist item (yêu cầu MANAGER)
   updateChecklistItem: async (itemId, data) => {
     try {
       console.log(`✏️ Updating checklist item ${itemId}...`, data);
@@ -106,7 +106,7 @@ export const checklistService = {
     }
   },
 
-  // Tạo checklist item mới (yêu cầu STAFF)
+  // Tạo checklist item mới (yêu cầu MANAGER)
   createChecklistItem: async (data) => {
     try {
       console.log('➕ Creating new checklist item...', data);
@@ -119,7 +119,7 @@ export const checklistService = {
     }
   },
 
-  // Lấy danh sách units (yêu cầu STAFF)
+  // Lấy danh sách units (yêu cầu MANAGER)
   getUnits: async () => {
     try {
       console.log('Fetching all units...');
@@ -188,7 +188,7 @@ export const checklistService = {
     }
   },
 
-  // Lấy checklists đã group theo ritual name (yêu cầu STAFF)
+  // Lấy checklists đã group theo ritual name (yêu cầu MANAGER)
   getGroupedChecklists: async () => {
     try {
       console.log('🔍 Fetching grouped checklists...');
@@ -201,7 +201,7 @@ export const checklistService = {
     }
   },
 
-  // Tạo checklist mới (yêu cầu STAFF)
+  // Tạo checklist mới (yêu cầu MANAGER)
   createChecklist: async (data) => {
     try {
       console.log('➕ Creating new checklist...', data);
@@ -220,7 +220,7 @@ export const checklistService = {
     }
   },
 
-  // Cập nhật checklist (yêu cầu STAFF)
+  // Cập nhật checklist (yêu cầu MANAGER)
   updateChecklist: async (checklistId, data) => {
     try {
       console.log(`✏️ Updating checklist ${checklistId}...`, data);
@@ -239,7 +239,7 @@ export const checklistService = {
     }
   },
 
-  // Xóa checklist (yêu cầu STAFF)
+  // Xóa checklist (yêu cầu MANAGER)
   deleteChecklist: async (checklistId) => {
     try {
       console.log(`🗑️ Deleting checklist ${checklistId}...`);

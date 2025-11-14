@@ -48,11 +48,11 @@ const StaffLogin = () => {
                 
                 // Chỉ hiển thị message, KHÔNG can thiệp vào navigation
                 // AuthContext sẽ tự động redirect dựa vào role
-                if (result.role === 'STAFF' || result.role === 'ADMIN') {
-                    console.log('✅ StaffLogin: Role is STAFF/ADMIN, AuthContext will navigate');
+                if (result.role === 'MANAGER' || result.role === 'ADMIN') {
+                    console.log('✅ StaffLogin: Role is MANAGER/ADMIN, AuthContext will navigate');
                     showSuccess('Đăng nhập thành công!', 'Chào mừng bạn trở lại.');
                 } else {
-                    console.log('⚠️ StaffLogin: Role is not STAFF/ADMIN:', result.role);
+                    console.log('⚠️ StaffLogin: Role is not MANAGER/ADMIN:', result.role);
                     showWarning('Thông báo', `Bạn đã đăng nhập với role: ${result.role}`);
                     // Không logout, để AuthContext navigate đến dashboard phù hợp
                 }

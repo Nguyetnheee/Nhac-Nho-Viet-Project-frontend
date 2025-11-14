@@ -14,7 +14,7 @@ import { trayService } from '../../services/trayService';
 import { orderService } from '../../services/orderService';
 import shipperService from '../../services/shipperService';
 import productService from '../../services/productService';
-import { staffService } from '../../services/staffService';
+import { managerService, staffService } from '../../services/managerService';
 import api from '../../services/api';
 
 const { Title, Text } = Typography;
@@ -87,8 +87,8 @@ const Overview = () => {
 
   const fetchRecentUsers = async () => {
     try {
-      const response = await staffService.getCustomers();
-      // staffService.getCustomers() đã trả về response.data, nên response có thể là mảng trực tiếp
+      const response = await managerService.getCustomers();
+      // managerService.getCustomers() đã trả về response.data, nên response có thể là mảng trực tiếp
       let users = [];
       if (Array.isArray(response)) {
         users = response;
@@ -99,7 +99,7 @@ const Overview = () => {
       }
 
       // Debug: Log để kiểm tra dữ liệu
-      console.log('📊 Raw response from staffService.getCustomers():', response);
+      console.log('📊 Raw response from managerService.getCustomers():', response);
       console.log('📋 Processed users array:', users);
       if (users.length > 0) {
         console.log('👤 First user sample:', users[0]);
@@ -272,7 +272,7 @@ const Overview = () => {
 
   const fetchTopSelling = async () => {
     try {
-      const response = await api.get('/api/staff/orders/top-selling').catch(() => null);
+      const response = await api.get('/api/manager/orders/top-selling').catch(() => null);
       let list = [];
       if (Array.isArray(response?.data)) {
         list = response.data;

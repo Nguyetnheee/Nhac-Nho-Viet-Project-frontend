@@ -137,7 +137,7 @@ const Login = () => {
           showSuccess('Đăng nhập thành công!', 'Chào mừng bạn quay trở lại!');
           navigate('/');
         } else {
-          // Nếu là Admin/Staff/Shipper → Không cho phép đăng nhập
+          // Nếu là Admin/Manager/Shipper → Không cho phép đăng nhập
           console.log('⚠️ Customer Login: Invalid role for customer login:', result.role);
           showError('Đăng nhập thất bại!', 'Tài khoản không thể đăng nhập ở trang này');
           // Logout ngay lập tức

@@ -35,7 +35,7 @@ import {
   WarningOutlined,
   PictureOutlined,
 } from '@ant-design/icons';
-import staffService from '../../services/staffService';
+import { managerService, staffService } from '../../services/managerService';
 import viVN from 'antd/locale/vi_VN';
 const { Option } = Select;
 
@@ -133,7 +133,7 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await staffService.getAllOrders();
+      const response = await managerService.getAllOrders();
 
       console.log('📦 Raw orders from backend:', response);
       console.log('📦 First order sample:', response[0]);
@@ -241,7 +241,7 @@ const OrderManagement = () => {
   const fetchShippers = async () => {
     try {
       console.log('🚚 Loading shippers...');
-      const response = await staffService.getAllShippers();
+      const response = await managerService.getAllShippers();
 
       // Map backend response to frontend format
       const mappedShippers = response.map(shipper => ({
@@ -269,7 +269,7 @@ const OrderManagement = () => {
   const handleConfirmOrder = async (orderId) => {
     try {
       setLoading(true);
-      await staffService.confirmOrder(orderId);
+      await managerService.confirmOrder(orderId);
       message.success('Xác nhận đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
@@ -283,7 +283,7 @@ const OrderManagement = () => {
   const handleCancelOrder = async (orderId) => {
     try {
       setLoading(true);
-      await staffService.cancelOrder(orderId);
+      await managerService.cancelOrder(orderId);
       message.success('Hủy đơn hàng thành công');
       fetchOrders(); // Refresh danh sách
     } catch (error) {
@@ -316,7 +316,7 @@ const OrderManagement = () => {
       setLoading(true);
 
       // ⭐ Gọi API để gán shipper
-      const response = await staffService.assignOrderToShipper(orderId, selectedShipper);
+      const response = await managerService.assignOrderToShipper(orderId, selectedShipper);
       
       console.log('✅ Assign API response:', response);
 
