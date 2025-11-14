@@ -307,17 +307,12 @@ const StaffManagement = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
             <span>Thông tin chi tiết của nhân viên</span>
           </div>
         }
         open={isDetailModalVisible}
         onCancel={() => setIsDetailModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
-            Đóng
-          </Button>,
-        ]}
+        footer={null}
         width={600}
       >
         {selectedStaff && (
@@ -328,8 +323,7 @@ const StaffManagement = () => {
               gridTemplateColumns: 'auto 1fr'
             }}>
               <div style={{ display: 'contents' }}>
-                <Text strong>STT:</Text>
-                <Text>{selectedStaff.staffId}</Text>
+              
 
                 <Text strong>Tên nhân viên:</Text>
                 <Text>{selectedStaff.staffName}</Text>
@@ -352,7 +346,6 @@ const StaffManagement = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <PlusOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
             <span>Tạo tài khoản nhân viên mới</span>
           </div>
         }
