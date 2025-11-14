@@ -12,28 +12,58 @@ import {
   MoreOutlined,
   EyeOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import CreateShipperForm from './CreateShipperForm';
 import shipperService from '../../services/shipperService';
 import { managerService, staffService } from '../../services/managerService';
+import { useAuth } from '../../contexts/AuthContext';
 import viVN from 'antd/locale/vi_VN';
 const { Title, Text } = Typography;
 
 const ShipperManagement = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('list');
   const [shippers, setShippers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
 
+  // Kiểm tra role MANAGER hoặc ADMIN
+  useEffect(() => {
+    const userRole = user?.role?.toUpperCase();
+    if (user && userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+      message.error('Bạn không có quyền truy cập trang này. Chỉ MANAGER và ADMIN mới có thể quản lý shipper.');
+      navigate('/manager-dashboard');
+    }
+  }, [user, navigate]);
+
   const loadShippers = async () => {
+    // Kiểm tra role trước khi gọi API
+    const userRole = user?.role?.toUpperCase();
+    if (userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+      message.error('Bạn không có quyền truy cập API này. Chỉ MANAGER và ADMIN mới có thể xem danh sách shipper.');
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('Đang tải danh sách shipper từ API...');
       const response = await managerService.getAllShippers();
       console.log('API Response:', response);
       
-      // Map dữ liệu từ backend (nếu cần)
-      // Backend trả về: shipperId, shipperName, email, phone, gender
-      const mappedShippers = response.map(shipper => ({
+      // Xử lý response - có thể là array trực tiếp hoặc wrapped trong object
+      let shippersList = [];
+      if (Array.isArray(response)) {
+        shippersList = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        shippersList = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        shippersList = response.data.data;
+      }
+      
+      // Map dữ liệu từ backend
+      // API trả về: shipperId, shipperName, email, phone, gender
+      const mappedShippers = shippersList.map(shipper => ({
         shipperId: shipper.shipperId,
         shipperName: shipper.shipperName,
         username: shipper.username || shipper.email?.split('@')[0], // Tạo username từ email nếu không có
@@ -47,7 +77,14 @@ const ShipperManagement = () => {
       message.success(`Đã tải ${mappedShippers.length} shipper thành công`);
     } catch (error) {
       console.error('Error loading shippers:', error);
-      message.error('Tải danh sách shipper thất bại: ' + (error.response?.data?.message || error.message));
+      
+      // Xử lý lỗi 403 (Forbidden) - Không có quyền
+      if (error.response?.status === 403) {
+        message.error('Bạn không có quyền truy cập API này. Chỉ MANAGER và ADMIN mới có thể xem danh sách shipper.');
+        navigate('/manager-dashboard');
+      } else {
+        message.error('Tải danh sách shipper thất bại: ' + (error.response?.data?.message || error.message));
+      }
       setShippers([]);
     } finally {
       setLoading(false);
@@ -60,9 +97,11 @@ const ShipperManagement = () => {
     }
   }, [currentView]);
 
-  const handleCreateSuccess = (newShipper) => {
+  const handleCreateSuccess = async (newShipper) => {
     message.success('Đã tạo tài khoản shipper thành công!');
     setCurrentView('list');
+    // Reload danh sách shippers sau khi tạo thành công
+    await loadShippers();
   };
 
   const handleBackToList = () => {

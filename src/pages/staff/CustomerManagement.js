@@ -12,18 +12,38 @@ import {
   EnvironmentOutlined,
   PlusOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { managerService, staffService } from '../../services/managerService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
 const CustomerManagement = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
 
+  // Kiểm tra role MANAGER hoặc ADMIN
+  useEffect(() => {
+    const userRole = user?.role?.toUpperCase();
+    if (user && userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+      message.error('Bạn không có quyền truy cập trang này. Chỉ MANAGER và ADMIN mới có thể quản lý khách hàng.');
+      navigate('/manager-dashboard');
+    }
+  }, [user, navigate]);
+
   const loadCustomers = async () => {
+    // Kiểm tra role trước khi gọi API
+    const userRole = user?.role?.toUpperCase();
+    if (userRole !== 'MANAGER' && userRole !== 'ADMIN') {
+      message.error('Bạn không có quyền truy cập API này. Chỉ MANAGER và ADMIN mới có thể xem danh sách khách hàng.');
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('Đang tải danh sách khách hàng từ API...');
@@ -31,13 +51,15 @@ const CustomerManagement = () => {
       console.log('API Response:', response);
 
       // Xử lý dữ liệu từ backend
-      // Backend trả về: id, username, email, phone, customerName, gender, address, createdAt, updatedAt
+      // API trả về: id, username, email, phone, customerName, gender, address, createdAt, updatedAt
       let customerList = [];
 
       if (Array.isArray(response)) {
         customerList = response;
       } else if (response?.data && Array.isArray(response.data)) {
         customerList = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        customerList = response.data.data;
       }
 
       const mappedCustomers = customerList.map(customer => {
@@ -62,29 +84,35 @@ const CustomerManagement = () => {
     } catch (error) {
       console.error('Error loading customers:', error);
 
-      // Thông báo lỗi dễ hiểu cho người dùng
-      let errorMessage = 'Không thể tải danh sách khách hàng. ';
-
-      if (error.response) {
-        // Lỗi từ server
-        if (error.response.status === 404) {
-          errorMessage += 'Không tìm thấy dữ liệu.';
-        } else if (error.response.status === 401 || error.response.status === 403) {
-          errorMessage += 'Bạn không có quyền xem thông tin này.';
-        } else if (error.response.status >= 500) {
-          errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
-        } else {
-          errorMessage += 'Vui lòng thử lại.';
-        }
-      } else if (error.request) {
-        // Không nhận được phản hồi từ server
-        errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
+      // Xử lý lỗi 403 (Forbidden) - Không có quyền
+      if (error.response?.status === 403) {
+        message.error('Bạn không có quyền truy cập API này. Chỉ MANAGER và ADMIN mới có thể xem danh sách khách hàng.');
+        navigate('/manager-dashboard');
       } else {
-        // Lỗi khác
-        errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
-      }
+        // Thông báo lỗi dễ hiểu cho người dùng
+        let errorMessage = 'Không thể tải danh sách khách hàng. ';
 
-      message.error(errorMessage);
+        if (error.response) {
+          // Lỗi từ server
+          if (error.response.status === 404) {
+            errorMessage += 'Không tìm thấy dữ liệu.';
+          } else if (error.response.status === 401) {
+            errorMessage += 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          } else if (error.response.status >= 500) {
+            errorMessage += 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+          } else {
+            errorMessage += 'Vui lòng thử lại.';
+          }
+        } else if (error.request) {
+          // Không nhận được phản hồi từ server
+          errorMessage += 'Không thể kết nối với hệ thống. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+          // Lỗi khác
+          errorMessage += 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+        }
+
+        message.error(errorMessage);
+      }
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -93,6 +121,7 @@ const CustomerManagement = () => {
 
   useEffect(() => {
     loadCustomers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleViewDetail = (record) => {
@@ -318,7 +347,6 @@ const CustomerManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: false,
-            showTotal: (total) => `Tổng cộng ${total} khách hàng`,
             pageSizeOptions: ['10', '20', '50', '100'],
             locale: { items_per_page: '/ trang' },
           }}

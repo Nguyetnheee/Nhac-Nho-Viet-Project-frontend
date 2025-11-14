@@ -393,34 +393,81 @@ export const AuthProvider = ({ children }) => {
           ? '/api/shipper/profile'
           : '/api/customer/profile';
 
-      // Chuẩn bị payload theo đúng format API yêu cầu
-      const payload = {
-        customerName: profileData.customerName,
-        gender: profileData.gender,
-        address: profileData.address,
-        phoneNumber: profileData.phone || profileData.phoneNumber, // API dùng phoneNumber
-        email: profileData.email,
-        birthDate: profileData.birthDate || null
-      };
+      // Chuẩn bị payload theo đúng format API yêu cầu cho từng role
+      let payload;
+      
+      if (role === 'MANAGER' || role === 'ADMIN') {
+        // API manager/profile yêu cầu: managerName, email, phone
+        payload = {
+          managerName: profileData.managerName || profileData.name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || ''
+        };
+      } else if (role === 'SHIPPER') {
+        // API shipper/profile có thể có format riêng
+        payload = {
+          shipperName: profileData.shipperName || profileData.name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          gender: profileData.gender || ''
+        };
+      } else {
+        // API customer/profile
+        payload = {
+          customerName: profileData.customerName,
+          gender: profileData.gender,
+          address: profileData.address,
+          phoneNumber: profileData.phone || profileData.phoneNumber, // API dùng phoneNumber
+          email: profileData.email,
+          birthDate: profileData.birthDate || null
+        };
+      }
 
       console.log('📤 Updating profile with payload:', payload);
       const response = await api.put(endpoint, payload);
       console.log('✅ Profile updated successfully:', response.data);
       
       // Cập nhật user state với dữ liệu mới từ response
-      // Map response fields về user object
-      const updatedUser = {
-        ...user,
-        id: response.data.id,
-        username: response.data.username,
-        email: response.data.email,
-        phone: response.data.phone,
-        phoneNumber: response.data.phone, // Đồng bộ cả hai field
-        customerName: response.data.customerName,
-        gender: response.data.gender,
-        address: response.data.address,
-        birthDate: response.data.birthDate || profileData.birthDate // Backend sẽ bổ sung field này
-      };
+      // Map response fields về user object theo từng role
+      let updatedUser;
+      
+      if (role === 'MANAGER' || role === 'ADMIN') {
+        // API manager/profile trả về: id, managerName, username, email, phone, role
+        updatedUser = {
+          ...user,
+          id: response.data.id,
+          managerName: response.data.managerName,
+          username: response.data.username,
+          email: response.data.email,
+          phone: response.data.phone,
+          role: response.data.role || user.role
+        };
+      } else if (role === 'SHIPPER') {
+        updatedUser = {
+          ...user,
+          id: response.data.id,
+          shipperName: response.data.shipperName,
+          username: response.data.username,
+          email: response.data.email,
+          phone: response.data.phone,
+          gender: response.data.gender,
+          role: response.data.role || user.role
+        };
+      } else {
+        // Customer
+        updatedUser = {
+          ...user,
+          id: response.data.id,
+          username: response.data.username,
+          email: response.data.email,
+          phone: response.data.phone,
+          phoneNumber: response.data.phone, // Đồng bộ cả hai field
+          customerName: response.data.customerName,
+          gender: response.data.gender,
+          address: response.data.address,
+          birthDate: response.data.birthDate || profileData.birthDate
+        };
+      }
       
       setUser(updatedUser);
       console.log('👤 User state updated:', updatedUser);

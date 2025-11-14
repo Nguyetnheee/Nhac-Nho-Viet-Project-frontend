@@ -54,7 +54,7 @@ const StaffManagement = () => {
       });
 
       setStaffs(mappedStaffs);
-      message.success(`Đã tải ${mappedStaffs.length} staff thành công`);
+      message.success(`Đã tải danh sách nhân viên thành công`);
     } catch (error) {
       console.error('Error loading staffs:', error);
 

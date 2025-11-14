@@ -272,14 +272,15 @@ const Overview = () => {
 
   const fetchTopSelling = async () => {
     try {
-      const response = await api.get('/api/manager/orders/top-selling').catch(() => null);
+      // Sử dụng managerService để có role check
+      const data = await managerService.getTopSellingOrders();
       let list = [];
-      if (Array.isArray(response?.data)) {
-        list = response.data;
-      } else if (Array.isArray(response?.data?.data)) {
-        list = response.data.data;
-      } else if (response?.data?.content && Array.isArray(response.data.content)) {
-        list = response.data.content;
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (Array.isArray(data?.data)) {
+        list = data.data;
+      } else if (data?.content && Array.isArray(data.content)) {
+        list = data.content;
       }
       setTopSelling(list.slice(0, 10));
     } catch (error) {
