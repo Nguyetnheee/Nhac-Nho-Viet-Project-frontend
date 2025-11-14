@@ -31,7 +31,7 @@ const shipperService = {
   createShipper: async (shipperData) => {
     try {
       console.log('Creating shipper account:', shipperData);
-      const response = await api.post('/api/staff/shippers', shipperData);
+      const response = await api.post('/api/manager/shippers', shipperData);
       console.log('Shipper created successfully:', response.data);
       return response.data;
     } catch (error) {
@@ -44,7 +44,7 @@ const shipperService = {
   getAllShippers: async () => {
     try {
       console.log('Fetching all shippers...');
-      const response = await api.get('/api/staff/shippers');
+      const response = await api.get('/api/manager/shippers');
       console.log('Shippers response:', response.data);
       return response.data;
     } catch (error) {
@@ -57,7 +57,7 @@ const shipperService = {
   updateShipper: async (shipperId, shipperData) => {
     try {
       console.log('Updating shipper:', shipperId, shipperData);
-      const response = await api.put(`/api/staff/shippers/${shipperId}`, shipperData);
+      const response = await api.put(`/api/manager/shippers/${shipperId}`, shipperData);
       console.log('Shipper updated successfully:', response.data);
       return response.data;
     } catch (error) {
@@ -70,7 +70,7 @@ const shipperService = {
   deleteShipper: async (shipperId) => {
     try {
       console.log('Deleting shipper:', shipperId);
-      const response = await api.delete(`/api/staff/shippers/${shipperId}`);
+      const response = await api.delete(`/api/manager/shippers/${shipperId}`);
       console.log('Shipper deleted successfully:', response.data);
       return response.data;
     } catch (error) {

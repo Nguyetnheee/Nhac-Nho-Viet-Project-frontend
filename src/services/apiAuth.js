@@ -81,38 +81,47 @@ export const loginCustomer = async (username, password) => {
   }
 };
 
-// STAFF API (giữ nguyên)
-export const fetchStaffProfile = async () => {
+// MANAGER API
+export const fetchManagerProfile = async () => {
   try {
-    const response = await apiAuth.get('/api/staff/profile');
+    const response = await apiAuth.get('/api/manager/profile');
     return response.data;
   } catch (error) {
-    console.error('Error fetching staff profile:', error);
+    console.error('Error fetching manager profile:', error);
     throw error;
   }
 };
 
-export const loginStaff = async (username, password) => {
+// Alias để tương thích với code cũ
+export const fetchStaffProfile = fetchManagerProfile;
+
+export const loginManager = async (username, password) => {
   try {
-    const response = await apiAuth.post('/api/staff/login', { username, password });
-    console.log('🔍 loginStaff FULL response:', response);
-    console.log('🔍 loginStaff response.data:', JSON.stringify(response.data, null, 2));
+    const response = await apiAuth.post('/api/manager/login', { username, password });
+    console.log('🔍 loginManager FULL response:', response);
+    console.log('🔍 loginManager response.data:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
-    console.error('Error during staff login:', error);
+    console.error('Error during manager login:', error);
     throw error;
   }
 };
 
-export const updateStaffProfile = async (profileData) => {
+// Alias để tương thích với code cũ
+export const loginStaff = loginManager;
+
+export const updateManagerProfile = async (profileData) => {
   try {
-    const response = await apiAuth.put('/api/staff/profile', profileData);
+    const response = await apiAuth.put('/api/manager/profile', profileData);
     return response.data;
   } catch (error) {
-    console.error('Error updating staff profile:', error);
+    console.error('Error updating manager profile:', error);
     throw error;
   }
 };
+
+// Alias để tương thích với code cũ
+export const updateStaffProfile = updateManagerProfile;
 
 // ⚠️ API MỚI: Login cho Shipper
 export const loginShipper = async (username, password) => {

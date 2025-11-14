@@ -138,15 +138,15 @@ const AdminLogin = () => {
                 console.log('🔐 AdminLogin: Login successful, role:', result.role);
                 console.log('🔐 AdminLogin: Full result:', JSON.stringify(result));
 
-                // Kiểm tra role: Chỉ cho phép ADMIN, STAFF, và SHIPPER
+                // Kiểm tra role: Chỉ cho phép ADMIN, MANAGER, và SHIPPER
                 if (result.role === 'ADMIN') {
                     console.log('✅ Admin login success - redirecting to admin dashboard');
                     showSuccess('Đăng nhập thành công!', 'Chào mừng Admin!');
                     navigate('/admin-dashboard');
-                } else if (result.role === 'STAFF') {
-                    console.log('✅ Staff login success - redirecting to staff dashboard');
-                    showSuccess('Đăng nhập thành công!', 'Chào mừng Staff!');
-                    navigate('/staff-dashboard');
+                } else if (result.role === 'MANAGER') {
+                    console.log('✅ Manager login success - redirecting to manager dashboard');
+                    showSuccess('Đăng nhập thành công!', 'Chào mừng Manager!');
+                    navigate('/manager-dashboard');
                 } else if (result.role === 'SHIPPER') {
                     console.log('✅ Shipper login success - redirecting to shipper dashboard');
                     showSuccess('Đăng nhập thành công!', 'Chào mừng Shipper!');
@@ -154,7 +154,7 @@ const AdminLogin = () => {
                 } else {
                     // Nếu không phải 3 role trên → Không cho phép đăng nhập
                     console.log('⚠️ AdminLogin: Invalid role for admin login:', result.role);
-                    showWarning('Không có quyền truy cập!', `Trang này chỉ dành cho Admin, Staff và Shipper.`);
+                    showWarning('Không có quyền truy cập!', `Trang này chỉ dành cho Admin, Manager và Shipper.`);
                     // Logout ngay lập tức
                     await logout();
                     setLoading(false);
@@ -228,7 +228,7 @@ const AdminLogin = () => {
                                 Đăng nhập Admin
                             </h2>
                             <p className="text-center text-sm text-gray-200 mb-6 animate-fade-in-up animate-delay-100">
-                                Dành cho Staff và Shipper
+                                Dành cho Manager và Shipper
                             </p>
 
                             <form className="space-y-6" onSubmit={handleSubmit}>

@@ -1,5 +1,5 @@
 // src/services/productDetailService.js
-// Tất cả các API liên quan đến product-details (yêu cầu STAFF role)
+// Tất cả các API liên quan đến product-details (yêu cầu MANAGER role)
 
 import api from './api';
 import axios from 'axios';

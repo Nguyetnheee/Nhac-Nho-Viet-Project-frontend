@@ -19,6 +19,7 @@ function App() {
   // ⚠️ Logic kiểm tra: Ẩn Navbar/Footer nếu route là Dashboard/Panel
   const isDashboardRoute = 
     pathname.startsWith('/admin-dashboard') ||
+    pathname.startsWith('/manager-dashboard') ||
     pathname.startsWith('/staff-dashboard') ||
     pathname.startsWith('/shipper-dashboard') ||
     pathname.startsWith('/admin-login');

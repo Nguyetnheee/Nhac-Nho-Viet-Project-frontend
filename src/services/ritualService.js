@@ -57,7 +57,7 @@ export const ritualService = {
     }
   },
 
-  // Thêm lễ hội mới (cho staff)
+  // Thêm lễ hội mới (cho manager)
   createRitual: async (ritualData, file = null) => {
     try {
       const formData = new FormData();
@@ -101,7 +101,7 @@ export const ritualService = {
     }
   },
 
-  // Cập nhật lễ hội (cho staff)
+  // Cập nhật lễ hội (cho manager)
   updateRitual: async (id, ritualData, file = null) => {
     try {
       const formData = new FormData();
@@ -145,7 +145,7 @@ export const ritualService = {
     }
   },
 
-  // Xóa lễ hội (cho staff)
+  // Xóa lễ hội (cho manager)
   deleteRitual: async (id) => {
     try {
       const response = await axiosInstance.delete(`/api/rituals/${id}`);

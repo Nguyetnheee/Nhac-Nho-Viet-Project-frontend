@@ -266,7 +266,7 @@ export const router = createBrowserRouter(
       {
         path: "profile",
         element: (
-          <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
+          <ProtectedRoute roles={["CUSTOMER", "MANAGER", "ADMIN", "SHIPPER"]}>
             <Profile />
           </ProtectedRoute>
         ),
@@ -280,11 +280,21 @@ export const router = createBrowserRouter(
         ),
       },
 
-      // Staff Only Route
+      // Manager Only Route
+      {
+        path: "manager-dashboard",
+        element: (
+          <ProtectedRoute roles={["MANAGER"]}>
+            <StaffDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      
+      // Alias để tương thích với code cũ
       {
         path: "staff-dashboard",
         element: (
-          <ProtectedRoute roles={["STAFF"]}>
+          <ProtectedRoute roles={["MANAGER"]}>
             <StaffDashboard />
           </ProtectedRoute>
         ),
@@ -320,7 +330,7 @@ export const router = createBrowserRouter(
       {
         path: "checklist",
         element: (
-          <ProtectedRoute roles={["CUSTOMER", "STAFF", "ADMIN", "SHIPPER"]}>
+          <ProtectedRoute roles={["CUSTOMER", "MANAGER", "ADMIN", "SHIPPER"]}>
             <Checklist />
           </ProtectedRoute>
         ),

@@ -50,13 +50,16 @@ const ProtectedRoute = ({ children, roles = [], allowedRoles }) => {
     // ✅ CHUYỂN HƯỚNG ĐÚNG THEO ROLE
     const roleRedirects = {
       'ADMIN': '/admin-dashboard',
-      'STAFF': '/staff-dashboard',
+      'MANAGER': '/manager-dashboard',
       'SHIPPER': '/shipper-dashboard', 
       'CUSTOMER': '/',  // Customer về trang chủ nếu truy cập route không được phép
       'ROLE_CUSTOMER': '/',
       'ROLE_ADMIN': '/admin-dashboard',
-      'ROLE_STAFF': '/staff-dashboard',
-      'ROLE_SHIPPER': '/shipper-dashboard'
+      'ROLE_MANAGER': '/manager-dashboard',
+      'ROLE_SHIPPER': '/shipper-dashboard',
+      // Alias để tương thích với code cũ
+      'STAFF': '/manager-dashboard',
+      'ROLE_STAFF': '/manager-dashboard'
     };
     
     const redirectPath = roleRedirects[userRole] || '/login';

@@ -12,7 +12,7 @@ import {
   EnvironmentOutlined,
   PlusOutlined
 } from '@ant-design/icons';
-import staffService from '../../services/staffService';
+import { managerService, staffService } from '../../services/managerService';
 
 const { Title, Text } = Typography;
 
@@ -27,7 +27,7 @@ const CustomerManagement = () => {
     setLoading(true);
     try {
       console.log('Đang tải danh sách khách hàng từ API...');
-      const response = await staffService.getCustomers();
+      const response = await managerService.getCustomers();
       console.log('API Response:', response);
 
       // Xử lý dữ liệu từ backend

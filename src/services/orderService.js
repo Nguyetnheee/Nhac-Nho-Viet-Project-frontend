@@ -25,11 +25,14 @@ export const orderService = {
   // Admin: Lấy đơn hàng theo trạng thái
   getOrdersByStatus: (status) => api.get(`/api/orders/admin/status/${status}`),
   
-  // Staff: Lấy tất cả đơn hàng cho staff
-  getStaffOrders: () => api.get('/api/staff/orders'),
+  // Manager: Lấy tất cả đơn hàng cho manager
+  getManagerOrders: () => api.get('/api/manager/orders'),
+  
+  // Alias để tương thích với code cũ
+  getStaffOrders: () => api.get('/api/manager/orders'),
 
-  // Staff: Top 10 sản phẩm bán chạy
-  getTopSellingProducts: () => api.get('/api/staff/orders/top-selling')
+  // Manager: Top 10 sản phẩm bán chạy
+  getTopSellingProducts: () => api.get('/api/manager/orders/top-selling')
 };
 
 export default orderService;

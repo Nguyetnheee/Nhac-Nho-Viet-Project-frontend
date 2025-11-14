@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const StaffProfileForm = () => {
+const ManagerProfileForm = () => {
   const { user, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -14,13 +14,13 @@ const StaffProfileForm = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadStaffProfile();
+    loadManagerProfile();
   }, []);
 
-  const loadStaffProfile = () => {
+  const loadManagerProfile = () => {
     if (user) {
       setFormData({
-        staffName: user.staffName || '',
+        managerName: user.managerName || user.staffName || '',
         email: user.email || '',
         phone: user.phone || '',
         username: user.username || ''
@@ -76,8 +76,8 @@ const StaffProfileForm = () => {
           <label className="block text-gray-700 mb-2">Họ và tên</label>
           <input
             type="text"
-            name="staffName"
-            value={formData.staffName}
+            name="managerName"
+            value={formData.managerName}
             onChange={handleChange}
             className="w-full p-2 border rounded focus:outline-none focus:border-vietnam-green"
             required
@@ -134,4 +134,8 @@ const StaffProfileForm = () => {
   );
 };
 
-export default StaffProfileForm;
+// Alias để tương thích với code cũ
+const StaffProfileForm = ManagerProfileForm;
+
+export default ManagerProfileForm;
+export { StaffProfileForm };

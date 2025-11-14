@@ -3,13 +3,13 @@ import { api } from "./api";
 
 /**
  * 📋 QUẢN LÝ VOUCHER - Lấy danh sách tất cả vouchers
- * GET /api/vouchers (Requires STAFF authentication)
+ * GET /api/vouchers (Requires MANAGER authentication)
  * @param {Object} params - Query parameters (code, discountType, isActive, startDate, endDate, page, size, sortBy, direction)
  * @returns {Promise} Response data từ backend
  */
 export const getAllVouchers = async (params = {}) => {
   try {
-    console.log('📤 [STAFF AUTH REQUIRED] Fetching all vouchers with params:', params);
+    console.log('📤 [MANAGER AUTH REQUIRED] Fetching all vouchers with params:', params);
     
     // Đảm bảo sử dụng api instance (có gửi token)
     const response = await api.get('/api/vouchers', { params });
@@ -35,14 +35,14 @@ export const getAllVouchers = async (params = {}) => {
 };
 
 /**
- * 👁️ XEM CHI TIẾT VOUCHER - Lấy thông tin chi tiết voucher theo ID (Requires STAFF authentication)
+ * 👁️ XEM CHI TIẾT VOUCHER - Lấy thông tin chi tiết voucher theo ID (Requires MANAGER authentication)
  * GET /api/vouchers/{id}
  * @param {number} voucherId - ID của voucher
  * @returns {Promise} Response data từ backend
  */
 export const getVoucherById = async (voucherId) => {
   try {
-    console.log('📤 [STAFF AUTH REQUIRED] Fetching voucher by ID:', voucherId);
+    console.log('📤 [MANAGER AUTH REQUIRED] Fetching voucher by ID:', voucherId);
     
     const response = await api.get(`/api/vouchers/${voucherId}`);
     
@@ -83,14 +83,14 @@ export const getVoucherById = async (voucherId) => {
 };
 
 /**
- * 🗑️ XÓA VOUCHER - Xóa voucher (Requires STAFF authentication)
+ * 🗑️ XÓA VOUCHER - Xóa voucher (Requires MANAGER authentication)
  * DELETE /api/vouchers/{id}
  * @param {number} voucherId - ID của voucher cần xóa
  * @returns {Promise} Response data từ backend
  */
 export const deleteVoucher = async (voucherId) => {
   try {
-    console.log('📤 [STAFF AUTH REQUIRED] Deleting voucher:', voucherId);
+    console.log('📤 [MANAGER AUTH REQUIRED] Deleting voucher:', voucherId);
     
     const response = await api.delete(`/api/vouchers/${voucherId}`);
     
@@ -120,7 +120,7 @@ export const deleteVoucher = async (voucherId) => {
 };
 
 /**
- * ✏️ CẬP NHẬT VOUCHER - Cập nhật thông tin voucher (Requires STAFF authentication)
+ * ✏️ CẬP NHẬT VOUCHER - Cập nhật thông tin voucher (Requires MANAGER authentication)
  * PUT /api/vouchers/{id}
  * @param {number} voucherId - ID của voucher cần cập nhật
  * @param {Object} voucherData - Dữ liệu voucher cần cập nhật
@@ -137,7 +137,7 @@ export const deleteVoucher = async (voucherId) => {
  */
 export const updateVoucher = async (voucherId, voucherData) => {
   try {
-    console.log('📤 [STAFF AUTH REQUIRED] Updating voucher:', voucherId, voucherData);
+    console.log('📤 [MANAGER AUTH REQUIRED] Updating voucher:', voucherId, voucherData);
     
     const response = await api.put(`/api/vouchers/${voucherId}`, voucherData);
     
@@ -167,7 +167,7 @@ export const updateVoucher = async (voucherId, voucherData) => {
 };
 
 /**
- * ➕ TẠO VOUCHER MỚI - Tạo voucher mới (Requires STAFF authentication)
+ * ➕ TẠO VOUCHER MỚI - Tạo voucher mới (Requires MANAGER authentication)
  * POST /api/vouchers
  * @param {Object} voucherData - Dữ liệu voucher
  * @param {string} voucherData.code - Mã voucher
@@ -184,7 +184,7 @@ export const updateVoucher = async (voucherId, voucherData) => {
  */
 export const createVoucher = async (voucherData) => {
   try {
-    console.log('📤 [STAFF AUTH REQUIRED] Creating voucher:', voucherData);
+    console.log('📤 [MANAGER AUTH REQUIRED] Creating voucher:', voucherData);
     
     const response = await api.post('/api/vouchers', voucherData);
     

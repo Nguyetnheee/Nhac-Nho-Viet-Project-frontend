@@ -21,6 +21,7 @@ import TrayManagement from './staff/TrayManagement';
 import ChecklistManagement from './staff/ChecklistManagement';
 import ShipperManagement from './staff/ShipperManagement';
 import CustomerManagement from './staff/CustomerManagement';
+import StaffManagement from './staff/StaffManagement';
 import OrderManagement from './staff/OrderManagement';
 import VoucherManagement from './staff/VoucherManagement';
 import RegionManagement from './staff/RegionManagement';
@@ -48,7 +49,11 @@ const items = [
     getItem('Phân loại', '11'),
   ]),
   getItem('Ưu đãi', '10', <GiftOutlined />),
-  getItem('Vai trò', 'sub2', <TeamOutlined />, [getItem('Shipper', '6', <CarOutlined />), getItem('Khách hàng', '8', <UserOutlined />)]),
+  getItem('Vai trò', 'sub2', <TeamOutlined />, [
+    getItem('Shipper', '6', <CarOutlined />), 
+    getItem('Khách hàng', '8', <UserOutlined />),
+    getItem('Nhân Viên', '12', <UserOutlined />)
+  ]),
   getItem('Đơn hàng', '9', <FileOutlined />),
 ];
 
@@ -63,7 +68,7 @@ const StaffDashboard = () => {
 
   // Handle logout
   const handleLogout = () => {
-    logout(); // AuthContext sẽ tự động redirect về /admin-login cho STAFF
+    logout(); // AuthContext sẽ tự động redirect về /admin-login cho MANAGER
   };
 
   // Function để render content dựa trên menu được chọn
@@ -91,6 +96,8 @@ const StaffDashboard = () => {
         return <OrderManagement />;
       case '10':
         return <VoucherManagement />;
+      case '12':
+        return <StaffManagement />;
       default:
         return <Overview />;
     }
@@ -109,6 +116,7 @@ const StaffDashboard = () => {
       '9': [{ title: 'Dashboard' }, { title: 'Đơn hàng' }],
       '10': [{ title: 'Dashboard' }, { title: 'Ưu đãi' }],
       '11': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Danh mục' }],
+      '12': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Nhân viên' }],
     };
     return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
   };
@@ -156,7 +164,7 @@ const StaffDashboard = () => {
           borderBottom: '1px solid #f0f0f0'
         }}>
           <h3 style={{ margin: 0, color: '#1890ff' }}>
-            Xin chào, {user?.username || 'Staff'}!
+            Xin chào, {user?.username || 'Manager'}!
           </h3>
           <Button
             type="primary"
@@ -184,7 +192,7 @@ const StaffDashboard = () => {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          Nhắc Nhớ Việt ©{new Date().getFullYear()} - Staff Management System
+          Nhắc Nhớ Việt ©{new Date().getFullYear()} - Manager Management System
         </Footer>
       </Layout>
     </Layout>

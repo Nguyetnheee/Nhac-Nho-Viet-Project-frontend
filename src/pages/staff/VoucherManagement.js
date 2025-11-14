@@ -198,7 +198,7 @@ const VoucherManagement = () => {
       if (error.message.includes('no session')) {
         errorMsg = 'Lỗi hệ thống: Backend session issue. Vui lòng liên hệ quản trị viên.';
       } else if (error.response?.status === 403) {
-        errorMsg = 'Bạn không có quyền truy cập. Vui lòng đăng nhập với tài khoản STAFF.';
+        errorMsg = 'Bạn không có quyền truy cập. Vui lòng đăng nhập với tài khoản MANAGER.';
       } else if (error.message) {
         errorMsg = error.message;
       }
@@ -393,7 +393,7 @@ const VoucherManagement = () => {
       const errorMsg = error?.response?.data?.message || error?.message || 'Không thể xóa voucher';
       message.error(errorMsg);
       if (error?.response?.status === 401) {
-        // Token hết hạn: chuyển tới trang đăng nhập STAFF
+        // Token hết hạn: chuyển tới trang đăng nhập MANAGER
         setTimeout(() => navigate('/admin-login'), 600);
       }
     }
@@ -782,8 +782,8 @@ const VoucherManagement = () => {
           initialValues={{ discountType: 'PERCENTAGE', isActive: true }}
           onFinish={async (values) => {
             try {
-              // Lấy staff ID từ user object
-              const staffId = user?.id || user?.staffId || user?.staff_id || 0;
+              // Lấy manager ID từ user object
+              const managerId = user?.id || user?.managerId || user?.manager_id || 0;
               
               // Xử lý date range - values.dateRange là dayjs objects
               let startDate, endDate;
@@ -810,7 +810,7 @@ const VoucherManagement = () => {
                 startDate: startDate,
                 endDate: endDate,
                 isActive: values.isActive !== undefined ? values.isActive : true,
-                createdBy: Number(staffId),
+                createdBy: Number(managerId),
               };
               
               console.log('📤 Creating voucher with payload:', payload);
@@ -824,7 +824,7 @@ const VoucherManagement = () => {
               const msg = e?.message || 'Không thể tạo voucher';
               message.error(msg);
               if (e?.response?.status === 401) {
-                // Token hết hạn: chuyển tới trang đăng nhập STAFF
+                // Token hết hạn: chuyển tới trang đăng nhập MANAGER
                 setTimeout(() => navigate('/admin-login'), 600);
               }
             }
@@ -961,7 +961,7 @@ const VoucherManagement = () => {
               const msg = e?.response?.data?.message || e?.message || 'Không thể cập nhật voucher';
               message.error(msg);
               if (e?.response?.status === 401) {
-                // Token hết hạn: chuyển tới trang đăng nhập STAFF
+                // Token hết hạn: chuyển tới trang đăng nhập MANAGER
                 setTimeout(() => navigate('/admin-login'), 600);
               }
             }
