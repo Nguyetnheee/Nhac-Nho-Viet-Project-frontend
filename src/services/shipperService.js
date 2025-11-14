@@ -27,15 +27,30 @@ const shipperService = {
     }
   },
 
-  // Tạo tài khoản shipper mới
+  // Tạo tài khoản shipper mới (chỉ dành cho MANAGER và ADMIN)
   createShipper: async (shipperData) => {
     try {
+      // Kiểm tra role trước khi gọi API
+      const role = localStorage.getItem('role')?.toUpperCase();
+      if (role !== 'MANAGER' && role !== 'ADMIN') {
+        const error = new Error('Chỉ MANAGER và ADMIN mới có quyền tạo shipper');
+        error.response = { status: 403, data: { message: error.message } };
+        throw error;
+      }
+
       console.log('Creating shipper account:', shipperData);
       const response = await api.post('/api/manager/shippers', shipperData);
       console.log('Shipper created successfully:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating shipper:', error);
+      
+      // Xử lý lỗi 403 (Forbidden) - Không có quyền
+      if (error.response?.status === 403) {
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền tạo shipper. Chỉ MANAGER và ADMIN mới có thể thực hiện thao tác này.';
+        console.error('🚫 403 Forbidden:', errorMessage);
+      }
+      
       throw error;
     }
   },

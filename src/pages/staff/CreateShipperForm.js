@@ -32,8 +32,15 @@ const CreateShipperForm = ({ onBack, onSuccess }) => {
       }
     } catch (error) {
       console.error('Error creating shipper:', error);
-      const errorMessage = error.response?.data?.message || 'Tạo tài khoản thất bại!';
-      message.error(errorMessage);
+      
+      // Xử lý lỗi 403 (Forbidden) - Không có quyền
+      if (error.response?.status === 403) {
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền tạo shipper. Chỉ MANAGER và ADMIN mới có thể thực hiện thao tác này.';
+        message.error(errorMessage);
+      } else {
+        const errorMessage = error.response?.data?.message || 'Tạo tài khoản thất bại!';
+        message.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   GiftOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Breadcrumb, Layout, Menu, theme, Button } from 'antd';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +27,7 @@ import OrderManagement from './staff/OrderManagement';
 import VoucherManagement from './staff/VoucherManagement';
 import RegionManagement from './staff/RegionManagement';
 import CategoryManagement from './staff/CategoryManagement';
+import ManagerProfile from './staff/ManagerProfile';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -55,6 +57,7 @@ const items = [
     getItem('Nhân Viên', '12', <UserOutlined />)
   ]),
   getItem('Đơn hàng', '9', <FileOutlined />),
+  getItem('Thông tin cá nhân', '13', <SettingOutlined />),
 ];
 
 const StaffDashboard = () => {
@@ -98,6 +101,8 @@ const StaffDashboard = () => {
         return <VoucherManagement />;
       case '12':
         return <StaffManagement />;
+      case '13':
+        return <ManagerProfile />;
       default:
         return <Overview />;
     }
@@ -117,6 +122,7 @@ const StaffDashboard = () => {
       '10': [{ title: 'Dashboard' }, { title: 'Ưu đãi' }],
       '11': [{ title: 'Dashboard' }, { title: 'Quản lý' }, { title: 'Danh mục' }],
       '12': [{ title: 'Dashboard' }, { title: 'Vai trò' }, { title: 'Nhân viên' }],
+      '13': [{ title: 'Dashboard' }, { title: 'Thông tin cá nhân' }],
     };
     return breadcrumbMap[selectedKey] || [{ title: 'Dashboard' }];
   };
