@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ToastContainer';
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
+import { loginStaff } from '../../services/apiAuth';
+import api from '../../services/api';
 
 // Thêm CSS animations vào component
 const styles = `
@@ -129,45 +131,79 @@ const AdminLogin = () => {
             // Hiển thị thông báo đang kết nối (hữu ích khi backend cold start)
             showInfo('Đang kết nối...', 'Vui lòng đợi trong giây lát.');
 
-            // Gọi hàm login từ AuthContext - nó sẽ tự động phân loại role và redirect
-            const result = await login(formData.username, formData.password);
+            // Thử login với API staff trước
+            let loginResponse;
+            let userRole;
+            let dashboardPath;
 
-            console.log('🔐 AdminLogin: Login result:', result);
-
-            if (result.success) {
-                console.log('🔐 AdminLogin: Login successful, role:', result.role);
-                console.log('🔐 AdminLogin: Full result:', JSON.stringify(result));
-
-                // Kiểm tra role: Chỉ cho phép ADMIN, MANAGER, và SHIPPER
-                if (result.role === 'ADMIN') {
-                    console.log('✅ Admin login success - redirecting to admin dashboard');
-                    showSuccess('Đăng nhập thành công!', 'Chào mừng Admin!');
-                    navigate('/admin-dashboard');
-                } else if (result.role === 'MANAGER') {
-                    console.log('✅ Manager login success - redirecting to manager dashboard');
-                    showSuccess('Đăng nhập thành công!', 'Chào mừng Manager!');
-                    navigate('/manager-dashboard');
-                } else if (result.role === 'SHIPPER') {
-                    console.log('✅ Shipper login success - redirecting to shipper dashboard');
-                    showSuccess('Đăng nhập thành công!', 'Chào mừng Shipper!');
-                    navigate('/shipper-dashboard');
-                } else {
-                    // Nếu không phải 3 role trên → Không cho phép đăng nhập
-                    console.log('⚠️ AdminLogin: Invalid role for admin login:', result.role);
-                    showWarning('Không có quyền truy cập!', `Trang này chỉ dành cho Admin, Manager và Shipper.`);
-                    // Logout ngay lập tức
-                    await logout();
-                    setLoading(false);
+            try {
+                console.log('🔐 AdminLogin: Trying staff login with /api/staff/login...');
+                loginResponse = await loginStaff(formData.username, formData.password);
+                
+                userRole = loginResponse.role || 'STAFF';
+                userRole = userRole.toUpperCase();
+                
+                console.log('🔐 AdminLogin: Staff login successful, role:', userRole);
+                
+                if (userRole === 'STAFF') {
+                    // Lưu token và role vào localStorage
+                    localStorage.setItem('token', loginResponse.token);
+                    localStorage.setItem('role', userRole);
+                    localStorage.setItem('username', loginResponse.username || formData.username);
+                    
+                    // Set Authorization header
+                    api.defaults.headers.common['Authorization'] = `Bearer ${loginResponse.token}`;
+                    
+                    console.log('✅ Staff login success - redirecting to staff dashboard');
+                    showSuccess('Đăng nhập thành công!', 'Chào mừng Staff!');
+                    setTimeout(() => {
+                        window.location.href = '/staff-dashboard';
+                    }, 500);
                     return;
                 }
-            } else {
-                console.log('❌ AdminLogin: Login failed:', result.error);
+            } catch (staffError) {
+                console.log('🔐 AdminLogin: Staff login failed, trying AuthContext login...');
+                
+                // Nếu không phải staff, thử login với AuthContext (cho ADMIN, MANAGER, SHIPPER)
+                const result = await login(formData.username, formData.password);
 
-                // Kiểm tra nếu lỗi là timeout
-                if (result.error && result.error.includes('timeout')) {
-                    showError('Không thể kết nối!', 'Backend đang khởi động lại. Vui lòng đợi 30 giây và thử lại.');
+                console.log('🔐 AdminLogin: Login result:', result);
+
+                if (result.success) {
+                    console.log('🔐 AdminLogin: Login successful, role:', result.role);
+                    console.log('🔐 AdminLogin: Full result:', JSON.stringify(result));
+
+                    // Kiểm tra role: Chỉ cho phép ADMIN, MANAGER, và SHIPPER
+                    if (result.role === 'ADMIN') {
+                        console.log('✅ Admin login success - redirecting to admin dashboard');
+                        showSuccess('Đăng nhập thành công!', 'Chào mừng Admin!');
+                        navigate('/admin-dashboard');
+                    } else if (result.role === 'MANAGER') {
+                        console.log('✅ Manager login success - redirecting to manager dashboard');
+                        showSuccess('Đăng nhập thành công!', 'Chào mừng Manager!');
+                        navigate('/manager-dashboard');
+                    } else if (result.role === 'SHIPPER') {
+                        console.log('✅ Shipper login success - redirecting to shipper dashboard');
+                        showSuccess('Đăng nhập thành công!', 'Chào mừng Shipper!');
+                        navigate('/shipper-dashboard');
+                    } else {
+                        // Nếu không phải 3 role trên → Không cho phép đăng nhập
+                        console.log('⚠️ AdminLogin: Invalid role for admin login:', result.role);
+                        showWarning('Không có quyền truy cập!', `Trang này chỉ dành cho Admin, Manager, Shipper và Staff.`);
+                        // Logout ngay lập tức
+                        await logout();
+                        setLoading(false);
+                        return;
+                    }
                 } else {
-                    showError('Đăng nhập thất bại!', result.error || 'Tên đăng nhập hoặc mật khẩu không đúng.');
+                    console.log('❌ AdminLogin: Login failed:', result.error);
+
+                    // Kiểm tra nếu lỗi là timeout
+                    if (result.error && result.error.includes('timeout')) {
+                        showError('Không thể kết nối!', 'Backend đang khởi động lại. Vui lòng đợi 30 giây và thử lại.');
+                    } else {
+                        showError('Đăng nhập thất bại!', result.error || 'Tên đăng nhập hoặc mật khẩu không đúng.');
+                    }
                 }
             }
         } catch (error) {
@@ -228,7 +264,7 @@ const AdminLogin = () => {
                                 Đăng nhập Admin
                             </h2>
                             <p className="text-center text-sm text-gray-200 mb-6 animate-fade-in-up animate-delay-100">
-                                Dành cho Manager và Shipper
+                                Dành cho Admin, Manager, Shipper và Staff
                             </p>
 
                             <form className="space-y-6" onSubmit={handleSubmit}>

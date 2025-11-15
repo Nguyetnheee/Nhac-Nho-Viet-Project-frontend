@@ -49,6 +49,10 @@ export const AuthProvider = ({ children }) => {
         data = await fetchManagerProfile();
       } else if (normalizedRole === 'SHIPPER') {
         data = await shipperService.getProfile();
+      } else if (normalizedRole === 'STAFF') {
+        // STAFF sử dụng staffService để lấy profile
+        const staffService = (await import('../services/staffService')).default;
+        data = await staffService.getProfile();
       } else {
         data = await fetchCustomerProfile();
       }
@@ -106,9 +110,9 @@ export const AuthProvider = ({ children }) => {
     }
     
     // Redirect dựa trên role
-    // Admin/Manager/Shipper → /admin-login
+    // Admin/Manager/Shipper/Staff → /admin-login
     // Customer → /login
-    if (currentRole === 'ADMIN' || currentRole === 'MANAGER' || currentRole === 'SHIPPER') {
+    if (currentRole === 'ADMIN' || currentRole === 'MANAGER' || currentRole === 'SHIPPER' || currentRole === 'STAFF') {
       console.log('Logout from', currentRole, '→ redirecting to /admin-login');
       navigate('/admin-login', { replace: true });
     } else {
@@ -190,6 +194,9 @@ export const AuthProvider = ({ children }) => {
           case 'SHIPPER':
             dashboardPath = '/shipper-dashboard';
             break;
+          case 'STAFF':
+            dashboardPath = '/staff-dashboard';
+            break;
           default:
             dashboardPath = '/manager-dashboard';
             break;
@@ -220,6 +227,9 @@ export const AuthProvider = ({ children }) => {
               break;
             case 'ADMIN':
               dashboardPath = '/admin-dashboard';
+              break;
+            case 'STAFF':
+              dashboardPath = '/staff-dashboard';
               break;
             default:
               dashboardPath = '/';

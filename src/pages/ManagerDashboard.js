@@ -60,7 +60,7 @@ const items = [
   getItem('Thông tin cá nhân', '13', <SettingOutlined />),
 ];
 
-const StaffDashboard = () => {
+const ManagerDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState('1'); // State để tracking menu được chọn
   const { user, logout } = useAuth(); // Lấy thông tin user và logout function
@@ -205,4 +205,5 @@ const StaffDashboard = () => {
   );
 };
 
-export default StaffDashboard;
+export default ManagerDashboard;
+
