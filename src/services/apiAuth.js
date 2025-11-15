@@ -107,8 +107,7 @@ export const loginManager = async (username, password) => {
   }
 };
 
-// Alias để tương thích với code cũ
-export const loginStaff = loginManager;
+// Note: loginStaff đã được định nghĩa riêng ở dưới cho API /api/staff/login
 
 export const updateManagerProfile = async (profileData) => {
   try {
@@ -133,6 +132,20 @@ export const loginShipper = async (username, password) => {
     return response.data;
   } catch (error) {
     console.error('Error during shipper login:', error);
+    throw error;
+  }
+};
+
+// ⚠️ API MỚI: Login cho Staff
+export const loginStaff = async (username, password) => {
+  try {
+    // Endpoint: POST: /api/staff/login
+    const response = await apiAuth.post('/api/staff/login', { username, password });
+    console.log('🔍 loginStaff FULL response:', response);
+    console.log('🔍 loginStaff response.data:', JSON.stringify(response.data, null, 2));
+    return response.data;
+  } catch (error) {
+    console.error('Error during staff login:', error);
     throw error;
   }
 };

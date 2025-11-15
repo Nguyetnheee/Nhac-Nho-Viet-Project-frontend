@@ -35,7 +35,8 @@ import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import AdminPanel from "./pages/AdminPanel";
 import ShipperPanel from "./pages/ShipperPanel";
-import StaffDashboard from "./pages/StaffDashboard";
+import StaffPanel from "./pages/StaffPanel";
+import ManagerDashboard from "./pages/ManagerDashboard";
 import Checklist from "./pages/Checklist";
 import PaymentResult from "./pages/PaymentResult";
 import OrderSuccess from "./pages/OrderSuccess";
@@ -285,17 +286,7 @@ export const router = createBrowserRouter(
         path: "manager-dashboard",
         element: (
           <ProtectedRoute roles={["MANAGER"]}>
-            <StaffDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      
-      // Alias để tương thích với code cũ
-      {
-        path: "staff-dashboard",
-        element: (
-          <ProtectedRoute roles={["MANAGER"]}>
-            <StaffDashboard />
+            <ManagerDashboard />
           </ProtectedRoute>
         ),
       },
@@ -322,6 +313,16 @@ export const router = createBrowserRouter(
         element: (
           <ProtectedRoute roles={["SHIPPER"]}>
             <ShipperPanel />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Staff Only Route
+      {
+        path: "staff-dashboard",
+        element: (
+          <ProtectedRoute roles={["STAFF"]}>
+            <StaffPanel />
           </ProtectedRoute>
         ),
       },

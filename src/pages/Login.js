@@ -123,36 +123,104 @@ const Login = () => {
       // Hiển thị thông báo đang kết nối
       showInfo('Đang kết nối...', 'Vui lòng đợi trong giây lát.');
 
-      // Gọi hàm login từ AuthContext
-      const result = await login(formData.username, formData.password);
-
-      console.log('🔐 Customer Login: Login result:', result);
-
-      if (result.success) {
-        console.log('🔐 Customer Login: Login successful, role:', result.role);
-
-        // Chỉ cho phép customer đăng nhập
-        if (result.role === 'CUSTOMER') {
+      // CHỈ cho phép CUSTOMER đăng nhập ở trang này
+      // Thử login với customer API trước để kiểm tra role
+      let loginResponse;
+      let userRole;
+      
+      try {
+        // Import loginCustomer để thử login trực tiếp
+        const { loginCustomer } = await import('../services/apiAuth');
+        loginResponse = await loginCustomer(formData.username, formData.password);
+        
+        userRole = loginResponse.role || loginResponse.data?.role || 'CUSTOMER';
+        userRole = userRole.toUpperCase();
+        
+        console.log('🔐 Customer Login: Customer API response, role:', userRole);
+        
+        // CHỈ cho phép CUSTOMER đăng nhập ở trang này
+        if (userRole !== 'CUSTOMER') {
+          console.log('⚠️ Customer Login: Invalid role for customer login:', userRole);
+          showError('Đăng nhập thất bại!', `Tài khoản ${userRole} không thể đăng nhập ở trang này. Vui lòng sử dụng trang đăng nhập phù hợp.`);
+          setLoading(false);
+          return;
+        }
+        
+        // Nếu là CUSTOMER, lưu token và set state
+        const token = loginResponse.token || loginResponse.data?.token;
+        if (!token) {
+          throw new Error('Không nhận được token từ server');
+        }
+        
+        // Lưu vào localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', userRole);
+        localStorage.setItem('username', loginResponse.username || formData.username);
+        
+        // Set API header
+        const api = (await import('../services/api')).default;
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Gọi AuthContext login để set state (nhưng không redirect vì đã có token)
+        // Chỉ cần trigger state update
+        const result = await login(formData.username, formData.password);
+        
+        if (result.success && result.role === 'CUSTOMER') {
           console.log('✅ Customer login success - redirecting to home');
           showSuccess('Đăng nhập thành công!', 'Chào mừng bạn quay trở lại!');
           navigate('/');
         } else {
-          // Nếu là Admin/Manager/Shipper → Không cho phép đăng nhập
-          console.log('⚠️ Customer Login: Invalid role for customer login:', result.role);
+          // Double check - nếu vẫn không phải CUSTOMER, logout ngay
+          console.log('⚠️ Customer Login: Role mismatch after AuthContext login:', result.role);
           showError('Đăng nhập thất bại!', 'Tài khoản không thể đăng nhập ở trang này');
-          // Logout ngay lập tức
           logout();
           setLoading(false);
           return;
         }
-      } else {
-        console.log('❌ Customer Login: Login failed:', result.error);
-
-        // Kiểm tra nếu lỗi là timeout
-        if (result.error && result.error.includes('timeout')) {
-          showError('Không thể kết nối!', 'Backend đang khởi động lại. Vui lòng đợi 30 giây và thử lại.');
-        } else {
-          showError('Đăng nhập thất bại!', result.error || 'Tên đăng nhập hoặc mật khẩu không đúng.');
+      } catch (customerError) {
+        // Nếu customer API fail, có thể là tài khoản không phải customer
+        console.log('🔐 Customer Login: Customer API failed, checking if it\'s a non-customer account...');
+        
+        // Thử các API khác để xác định role
+        try {
+          const { loginManager, loginShipper, loginStaff } = await import('../services/apiAuth');
+          let nonCustomerResponse = null;
+          let detectedRole = null;
+          
+          // Thử manager API
+          try {
+            nonCustomerResponse = await loginManager(formData.username, formData.password);
+            detectedRole = (nonCustomerResponse.role || 'MANAGER').toUpperCase();
+          } catch (e) {
+            // Thử shipper API
+            try {
+              nonCustomerResponse = await loginShipper(formData.username, formData.password);
+              detectedRole = (nonCustomerResponse.role || 'SHIPPER').toUpperCase();
+            } catch (e2) {
+              // Thử staff API
+              try {
+                nonCustomerResponse = await loginStaff(formData.username, formData.password);
+                detectedRole = (nonCustomerResponse.role || 'STAFF').toUpperCase();
+              } catch (e3) {
+                // Không phải bất kỳ role nào
+                throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
+              }
+            }
+          }
+          
+          // Nếu tìm thấy role và không phải CUSTOMER
+          if (detectedRole && detectedRole !== 'CUSTOMER') {
+            console.log('⚠️ Customer Login: Non-customer account tried to login:', detectedRole);
+            showError('Đăng nhập thất bại!', `Tài khoản ${detectedRole} không thể đăng nhập ở trang này. Vui lòng sử dụng trang đăng nhập phù hợp (ví dụ: /admin-login).`);
+            setLoading(false);
+            return;
+          }
+          
+          // Nếu không tìm thấy hoặc là CUSTOMER, hiển thị lỗi chung
+          throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
+        } catch (detectionError) {
+          console.error('❌ Customer Login: Error detecting role:', detectionError);
+          showError('Đăng nhập thất bại!', detectionError.message || 'Tên đăng nhập hoặc mật khẩu không đúng.');
         }
       }
     } catch (error) {
