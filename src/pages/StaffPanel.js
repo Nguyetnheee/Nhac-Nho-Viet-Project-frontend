@@ -1,15 +1,15 @@
 // src/pages/StaffPanel.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Layout, 
-  Menu, 
-  Card, 
-  Button, 
-  Descriptions, 
-  Form, 
-  Input, 
-  Select, 
-  Modal, 
+import {
+  Layout,
+  Menu,
+  Card,
+  Button,
+  Descriptions,
+  Form,
+  Input,
+  Select,
+  Modal,
   message,
   Tag,
 } from 'antd';
@@ -18,21 +18,28 @@ import {
   UserOutlined,
   EditOutlined,
   SaveOutlined,
+  ShoppingCartOutlined,
+  AppstoreOutlined,
+
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import staffService from '../services/staffService';
+import OrderManagement from './staff/OrderManagement';
+import TrayViewOnly from './staff/TrayViewOnly';
+import ChecklistItemsViewOnly from './staff/ChecklistItemsViewOnly';
 
 const { Header, Sider, Content } = Layout;
 const { Option } = Select;
 
 const StaffPanel = () => {
   const { user, logout } = useAuth();
-  const [activeMenu, setActiveMenu] = useState('profile');
+  const [activeMenu, setActiveMenu] = useState('orders');
   const [collapsed, setCollapsed] = useState(false);
   const [staffProfile, setStaffProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  
+
   const staffUsername = staffProfile?.staffName || staffProfile?.username || user?.username || "Staff";
 
   // Fetch profile khi component mount
@@ -81,6 +88,21 @@ const StaffPanel = () => {
 
   const menuItems = [
     {
+      key: 'orders',
+      icon: <ShoppingCartOutlined />,
+      label: 'Quản lý đơn hàng',
+    },
+    {
+      key: 'trays',
+      icon: <AppstoreOutlined />,
+      label: 'Mâm cúng',
+    },
+    {
+      key: 'inventory',
+      icon: <DatabaseOutlined />,
+      label: 'Kho nguyên liệu',
+    },
+    {
       key: 'profile',
       icon: <UserOutlined />,
       label: 'Thông tin cá nhân',
@@ -89,14 +111,20 @@ const StaffPanel = () => {
 
   const renderContent = () => {
     switch (activeMenu) {
+      case 'orders':
+        return <OrderManagement />;
+      case 'trays':
+        return <TrayViewOnly />;
+      case 'inventory':
+        return <ChecklistItemsViewOnly />;
       case 'profile':
         return (
           <div style={{ margin: '24px' }}>
-            <Card 
-              title="Thông tin cá nhân" 
+            <Card
+              title="Thông tin cá nhân"
               extra={
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   icon={<EditOutlined />}
                   onClick={showEditModal}
                 >
@@ -120,16 +148,16 @@ const StaffPanel = () => {
                     {staffProfile.phone || 'N/A'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Giới tính">
-                    {staffProfile.gender === 'MALE' ? 'Nam' : 
-                     staffProfile.gender === 'FEMALE' ? 'Nữ' : 
-                     staffProfile.gender === 'OTHER' ? 'Khác' : 
-                     staffProfile.gender || 'N/A'}
+                    {staffProfile.gender === 'MALE' ? 'Nam' :
+                      staffProfile.gender === 'FEMALE' ? 'Nữ' :
+                        staffProfile.gender === 'OTHER' ? 'Khác' :
+                          staffProfile.gender || 'N/A'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Trạng thái">
                     <Tag color={staffProfile.status === 'ACTIVE' ? 'green' : 'red'}>
-                      {staffProfile.status === 'ACTIVE' ? 'Hoạt động' : 
-                       staffProfile.status === 'INACTIVE' ? 'Không hoạt động' : 
-                       staffProfile.status || 'N/A'}
+                      {staffProfile.status === 'ACTIVE' ? 'Hoạt động' :
+                        staffProfile.status === 'INACTIVE' ? 'Không hoạt động' :
+                          staffProfile.status || 'N/A'}
                     </Tag>
                   </Descriptions.Item>
                 </Descriptions>
@@ -158,16 +186,16 @@ const StaffPanel = () => {
                     {staffProfile.phone || 'N/A'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Giới tính">
-                    {staffProfile.gender === 'MALE' ? 'Nam' : 
-                     staffProfile.gender === 'FEMALE' ? 'Nữ' : 
-                     staffProfile.gender === 'OTHER' ? 'Khác' : 
-                     staffProfile.gender || 'N/A'}
+                    {staffProfile.gender === 'MALE' ? 'Nam' :
+                      staffProfile.gender === 'FEMALE' ? 'Nữ' :
+                        staffProfile.gender === 'OTHER' ? 'Khác' :
+                          staffProfile.gender || 'N/A'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Trạng thái">
                     <Tag color={staffProfile.status === 'ACTIVE' ? 'green' : 'red'}>
-                      {staffProfile.status === 'ACTIVE' ? 'Hoạt động' : 
-                       staffProfile.status === 'INACTIVE' ? 'Không hoạt động' : 
-                       staffProfile.status || 'N/A'}
+                      {staffProfile.status === 'ACTIVE' ? 'Hoạt động' :
+                        staffProfile.status === 'INACTIVE' ? 'Không hoạt động' :
+                          staffProfile.status || 'N/A'}
                     </Tag>
                   </Descriptions.Item>
                 </Descriptions>
@@ -188,10 +216,10 @@ const StaffPanel = () => {
         onCollapse={setCollapsed}
         style={{ background: '#001529' }}
       >
-        <div style={{ 
-          height: '64px', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          height: '64px',
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
           fontSize: '18px',
@@ -200,7 +228,7 @@ const StaffPanel = () => {
         }}>
           {!collapsed ? 'Staff Panel' : '👤'}
         </div>
-        
+
         <Menu
           theme="dark"
           mode="inline"
@@ -226,7 +254,7 @@ const StaffPanel = () => {
               Chào mừng, <strong>{staffUsername}</strong>!
             </h2>
           </div>
-          
+
           <Button
             type="primary"
             danger
@@ -330,9 +358,9 @@ const EditProfileModal = ({ visible, onCancel, onSubmit, initialValues, loading 
         </Form.Item>
 
         <Form.Item>
-          <Button 
-            type="primary" 
-            htmlType="submit" 
+          <Button
+            type="primary"
+            htmlType="submit"
             loading={loading}
             icon={<SaveOutlined />}
             block
