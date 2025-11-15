@@ -29,13 +29,13 @@ export const managerService = {
     }
   },
 
-  // Lấy danh sách tất cả shipper (dành cho MANAGER và ADMIN)
+  // Lấy danh sách tất cả shipper (dành cho MANAGER, ADMIN và STAFF)
   getAllShippers: async () => {
     try {
-      // Kiểm tra role trước khi gọi API
+      // Kiểm tra role trước khi gọi API - cho phép MANAGER, ADMIN và STAFF
       const role = localStorage.getItem('role')?.toUpperCase();
-      if (role !== 'MANAGER' && role !== 'ADMIN') {
-        const error = new Error('Chỉ MANAGER và ADMIN mới có quyền truy cập API này');
+      if (role !== 'MANAGER' && role !== 'ADMIN' && role !== 'STAFF') {
+        const error = new Error('Chỉ MANAGER, ADMIN và STAFF mới có quyền truy cập API này');
         error.response = { status: 403, data: { message: error.message } };
         throw error;
       }
@@ -49,7 +49,7 @@ export const managerService = {
       
       // Xử lý lỗi 403 (Forbidden) - Không có quyền
       if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER và ADMIN mới có thể xem danh sách shipper.';
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER, ADMIN và STAFF mới có thể xem danh sách shipper.';
         console.error('🚫 403 Forbidden:', errorMessage);
       }
       
@@ -57,13 +57,13 @@ export const managerService = {
     }
   },
 
-  // Lấy danh sách tất cả đơn hàng (dành cho MANAGER only)
+  // Lấy danh sách tất cả đơn hàng (dành cho MANAGER và STAFF)
   getAllOrders: async () => {
     try {
-      // Kiểm tra role trước khi gọi API - chỉ cho phép MANAGER
+      // Kiểm tra role trước khi gọi API - cho phép MANAGER và STAFF
       const role = localStorage.getItem('role')?.toUpperCase();
-      if (role !== 'MANAGER') {
-        const error = new Error('Chỉ MANAGER mới có quyền truy cập API này');
+      if (role !== 'MANAGER' && role !== 'STAFF') {
+        const error = new Error('Chỉ MANAGER và STAFF mới có quyền truy cập API này');
         error.response = { status: 403, data: { message: error.message } };
         throw error;
       }
@@ -77,7 +77,7 @@ export const managerService = {
       
       // Xử lý lỗi 403 (Forbidden) - Không có quyền
       if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER mới có thể xem danh sách đơn hàng.';
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER và STAFF mới có thể xem danh sách đơn hàng.';
         console.error('🚫 403 Forbidden:', errorMessage);
       }
       
@@ -85,13 +85,13 @@ export const managerService = {
     }
   },
 
-  // Xác nhận đơn hàng (dành cho MANAGER only)
+  // Xác nhận đơn hàng (dành cho MANAGER và STAFF)
   confirmOrder: async (orderId) => {
     try {
-      // Kiểm tra role trước khi gọi API - chỉ cho phép MANAGER
+      // Kiểm tra role trước khi gọi API - cho phép MANAGER và STAFF
       const role = localStorage.getItem('role')?.toUpperCase();
-      if (role !== 'MANAGER') {
-        const error = new Error('Chỉ MANAGER mới có quyền truy cập API này');
+      if (role !== 'MANAGER' && role !== 'STAFF') {
+        const error = new Error('Chỉ MANAGER và STAFF mới có quyền truy cập API này');
         error.response = { status: 403, data: { message: error.message } };
         throw error;
       }
@@ -105,7 +105,7 @@ export const managerService = {
       
       // Xử lý lỗi 403 (Forbidden) - Không có quyền
       if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER mới có thể xác nhận đơn hàng.';
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER và STAFF mới có thể xác nhận đơn hàng.';
         console.error('🚫 403 Forbidden:', errorMessage);
       }
       
@@ -113,13 +113,13 @@ export const managerService = {
     }
   },
 
-  // Hủy đơn hàng (dành cho MANAGER only)
+  // Hủy đơn hàng (dành cho MANAGER và STAFF)
   cancelOrder: async (orderId) => {
     try {
-      // Kiểm tra role trước khi gọi API - chỉ cho phép MANAGER
+      // Kiểm tra role trước khi gọi API - cho phép MANAGER và STAFF
       const role = localStorage.getItem('role')?.toUpperCase();
-      if (role !== 'MANAGER') {
-        const error = new Error('Chỉ MANAGER mới có quyền truy cập API này');
+      if (role !== 'MANAGER' && role !== 'STAFF') {
+        const error = new Error('Chỉ MANAGER và STAFF mới có quyền truy cập API này');
         error.response = { status: 403, data: { message: error.message } };
         throw error;
       }
@@ -134,7 +134,7 @@ export const managerService = {
       
       // Xử lý lỗi 403 (Forbidden) - Không có quyền
       if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER mới có thể hủy đơn hàng.';
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER và STAFF mới có thể hủy đơn hàng.';
         console.error('🚫 403 Forbidden:', errorMessage);
       }
       
@@ -142,13 +142,13 @@ export const managerService = {
     }
   },
 
-  // Gán đơn hàng cho shipper (dành cho MANAGER only)
+  // Gán đơn hàng cho shipper (dành cho MANAGER và STAFF)
   assignOrderToShipper: async (orderId, shipperId) => {
     try {
-      // Kiểm tra role trước khi gọi API - chỉ cho phép MANAGER
+      // Kiểm tra role trước khi gọi API - cho phép MANAGER và STAFF
       const role = localStorage.getItem('role')?.toUpperCase();
-      if (role !== 'MANAGER') {
-        const error = new Error('Chỉ MANAGER mới có quyền truy cập API này');
+      if (role !== 'MANAGER' && role !== 'STAFF') {
+        const error = new Error('Chỉ MANAGER và STAFF mới có quyền truy cập API này');
         error.response = { status: 403, data: { message: error.message } };
         throw error;
       }
@@ -162,7 +162,7 @@ export const managerService = {
       
       // Xử lý lỗi 403 (Forbidden) - Không có quyền
       if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER mới có thể gán đơn hàng cho shipper.';
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER và STAFF mới có thể gán đơn hàng cho shipper.';
         console.error('🚫 403 Forbidden:', errorMessage);
       }
       
@@ -170,13 +170,13 @@ export const managerService = {
     }
   },
 
-  // Lấy danh sách sản phẩm bán chạy (dành cho MANAGER only)
+  // Lấy danh sách sản phẩm bán chạy (dành cho MANAGER và STAFF)
   getTopSellingOrders: async () => {
     try {
-      // Kiểm tra role trước khi gọi API - chỉ cho phép MANAGER
+      // Kiểm tra role trước khi gọi API - cho phép MANAGER và STAFF
       const role = localStorage.getItem('role')?.toUpperCase();
-      if (role !== 'MANAGER') {
-        const error = new Error('Chỉ MANAGER mới có quyền truy cập API này');
+      if (role !== 'MANAGER' && role !== 'STAFF') {
+        const error = new Error('Chỉ MANAGER và STAFF mới có quyền truy cập API này');
         error.response = { status: 403, data: { message: error.message } };
         throw error;
       }
@@ -190,7 +190,7 @@ export const managerService = {
       
       // Xử lý lỗi 403 (Forbidden) - Không có quyền
       if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER mới có thể xem danh sách sản phẩm bán chạy.';
+        const errorMessage = error.response?.data?.message || 'Bạn không có quyền truy cập API này. Chỉ MANAGER và STAFF mới có thể xem danh sách sản phẩm bán chạy.';
         console.error('🚫 403 Forbidden:', errorMessage);
       }
       

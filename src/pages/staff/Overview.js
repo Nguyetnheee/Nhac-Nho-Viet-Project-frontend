@@ -331,9 +331,8 @@ const Overview = () => {
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount || 0);
+      
+    }).format(amount || 0) + ' VNĐ';
   };
 
   const formatCurrencyVND = (amount) => {
