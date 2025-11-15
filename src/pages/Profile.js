@@ -209,9 +209,9 @@ const Profile = () => {
                 >
                   <i className="fa-solid fa-shopping-bag mr-3 text-[#0b3d3c]"></i>Đơn hàng của tôi
                 </button>
-                <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
+                {/* <button className="flex items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-[#0b3d3c]">
                   <i className="fa-solid fa-bell mr-3 text-[#0b3d3c]"></i>Thông báo
-                </button>
+                </button> */}
               </div>
 
             </div>

@@ -25,8 +25,11 @@ import {
   SearchOutlined,
   ReloadOutlined,
   EyeOutlined,
+  StarFilled,
+  UserOutlined,
 } from '@ant-design/icons';
 import viVN from 'antd/locale/vi_VN';
+import api from '../../services/api';
 
 import CreateTrayProduct from './CreateTrayProduct';
 import EditTrayProduct from './EditTrayProduct';
@@ -50,6 +53,16 @@ const TrayManagement = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [productDetailData, setProductDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  
+  // Feedbacks
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackPagination, setFeedbackPagination] = useState({
+    current: 0,
+    pageSize: 5,
+    total: 0,
+    totalPages: 0
+  });
 
   // Modal gán checklist
   const [assignChecklistModalVisible, setAssignChecklistModalVisible] =
@@ -103,6 +116,170 @@ const TrayManagement = () => {
     setCurrentView('edit');
   };
 
+  // Fetch feedbacks
+  const fetchFeedbacks = async (productId, page = 0) => {
+    try {
+      setFeedbackLoading(true);
+      console.log('📤 Fetching feedbacks for product:', productId, 'page:', page);
+      
+      const response = await api.get('/api/feedbacks', {
+        params: {
+          page: page,
+          size: feedbackPagination.pageSize,
+          sort: 'createdAt,desc'
+        }
+      });
+      
+      console.log('✅ Feedbacks response:', response.data);
+      
+      const data = response.data;
+      
+      // Filter feedbacks by productId (nếu backend chưa hỗ trợ filter)
+      // Giả sử feedback có orderId, cần map orderId -> productId
+      // Tạm thời hiển thị tất cả feedbacks
+      setFeedbacks(data.content || []);
+      setFeedbackPagination({
+        current: data.number || 0,
+        pageSize: data.size || 5,
+        total: data.totalElements || 0,
+        totalPages: data.totalPages || 0
+      });
+      
+      setFeedbackLoading(false);
+    } catch (error) {
+      console.error('❌ Error fetching feedbacks:', error);
+      setFeedbacks([]);
+      setFeedbackLoading(false);
+    }
+  };
+
+  const handleFeedbackPageChange = (newPage, productId) => {
+    fetchFeedbacks(productId, newPage);
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  // Render stars
+  const renderStars = (rating) => {
+    return (
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <StarFilled
+            key={star}
+            style={{
+              fontSize: 16,
+              color: star <= rating ? '#fadb14' : '#d9d9d9'
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // Tính trung bình sao
+  const calculateAverageRating = () => {
+    if (!feedbacks || feedbacks.length === 0) return 0;
+    const sum = feedbacks.reduce((acc, fb) => acc + (fb.star || 0), 0);
+    return (sum / feedbacks.length).toFixed(1);
+  };
+
+  // Xóa feedback
+  const handleDeleteFeedback = (feedback) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa đánh giá',
+      icon: <DeleteOutlined />,
+      content: (
+        <div>
+          <p>Bạn có chắc chắn muốn xóa đánh giá này không?</p>
+          <div
+            style={{
+              padding: '10px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '4px',
+              marginTop: '10px',
+            }}
+          >
+            <strong>Người đánh giá:</strong> {feedback.userName || 'Khách hàng'}
+            <br />
+            <strong>Số sao:</strong> {feedback.star}/5
+            <br />
+            {feedback.content && (
+              <>
+                <strong>Nội dung:</strong> {feedback.content.substring(0, 100)}
+                {feedback.content.length > 100 && '...'}
+              </>
+            )}
+          </div>
+          <div style={{ marginTop: 10, color: '#ff4d4f' }}>
+            <strong>Lưu ý:</strong> Hành động này không thể hoàn tác!
+          </div>
+        </div>
+      ),
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      width: 500,
+      onOk: async () => {
+        try {
+          console.log('🗑️ Deleting feedback:', feedback.fbId);
+          
+          await api.delete(`/api/feedbacks/${feedback.fbId}`);
+          
+          message.success('Đã xóa đánh giá thành công!');
+          
+          // Reload feedbacks
+          if (productDetailData?.productId) {
+            await fetchFeedbacks(productDetailData.productId, feedbackPagination.current);
+          }
+        } catch (error) {
+          console.error('❌ Delete feedback error:', error);
+          
+          if (error.response) {
+            const { status } = error.response;
+            switch (status) {
+              case 400:
+                message.error('Không thể xóa đánh giá này!');
+                break;
+              case 401:
+                message.error('Bạn không có quyền xóa đánh giá!');
+                break;
+              case 403:
+                message.error('Truy cập bị từ chối!');
+                break;
+              case 404:
+                message.error('Đánh giá không tồn tại hoặc đã bị xóa!');
+                // Reload để cập nhật danh sách
+                if (productDetailData?.productId) {
+                  await fetchFeedbacks(productDetailData.productId, feedbackPagination.current);
+                }
+                break;
+              case 500:
+                message.error('Lỗi server! Vui lòng thử lại sau.');
+                break;
+              default:
+                message.error(`Lỗi không xác định: ${status}`);
+            }
+          } else if (error.request) {
+            message.error('Không thể kết nối đến server!');
+          } else {
+            message.error(`Lỗi: ${error.message}`);
+          }
+        }
+      },
+    });
+  };
+
   // Xem chi tiết mâm cúng
   const handleViewDetail = async (record) => {
     const productId = record.productId;
@@ -114,6 +291,7 @@ const TrayManagement = () => {
     setDetailModalVisible(true);
     setDetailLoading(true);
     setProductDetailData(null);
+    setFeedbacks([]);
 
     try {
       const detailData =
@@ -121,6 +299,9 @@ const TrayManagement = () => {
           productId
         );
       setProductDetailData(detailData);
+      
+      // Fetch feedbacks
+      await fetchFeedbacks(productId, 0);
     } catch (error) {
       console.error('Error fetching product detail:', error);
       const status = error.response?.status;
@@ -932,6 +1113,142 @@ const TrayManagement = () => {
                   <Text type="secondary">
                     Chưa có nguyên liệu nào
                   </Text>
+                </div>
+              )}
+            </div>
+
+            <Divider />
+
+            {/* Feedbacks Section */}
+            <div style={{ marginTop: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Title level={4} style={{ marginBottom: 0 }}>
+                  Đánh giá từ khách hàng
+                </Title>
+                {feedbacks.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <StarFilled style={{ fontSize: 20, color: '#fadb14' }} />
+                      <span style={{ fontSize: 20, fontWeight: 'bold', color: '#52c41a' }}>
+                        {calculateAverageRating()}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#999' }}>/ 5.0</span>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      ({feedbackPagination.total} đánh giá)
+                    </Text>
+                  </div>
+                )}
+              </div>
+
+              {feedbackLoading ? (
+                <div style={{ textAlign: 'center', padding: 40 }}>
+                  <Spin size="large" />
+                  <div style={{ marginTop: 16, color: '#999' }}>
+                    Đang tải đánh giá...
+                  </div>
+                </div>
+              ) : feedbacks.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, backgroundColor: '#fafafa', borderRadius: 8 }}>
+                  <Text type="secondary" style={{ fontSize: 14 }}>
+                    Chưa có đánh giá nào cho sản phẩm này
+                  </Text>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {feedbacks.map((feedback) => (
+                      <div
+                        key={feedback.fbId}
+                        style={{
+                          border: '1px solid #f0f0f0',
+                          borderRadius: 8,
+                          padding: 16,
+                          backgroundColor: '#fafafa',
+                          transition: 'all 0.3s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                backgroundColor: '#e6f7ff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <UserOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+                            </div>
+                            <div>
+                              <Text strong style={{ display: 'block' }}>
+                                {feedback.userName || 'Khách hàng'}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                {formatDate(feedback.createdAt)}
+                              </Text>
+                            </div>
+                          </div>
+                          {renderStars(feedback.star)}
+                        </div>
+
+                        {feedback.content && (
+                          <Text style={{ display: 'block', marginLeft: 52, color: '#595959', lineHeight: 1.6 }}>
+                            {feedback.content}
+                          </Text>
+                        )}
+
+                        {/* Delete button */}
+                        <div style={{ marginTop: 12, marginLeft: 52 }}>
+                          <Button
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleDeleteFeedback(feedback)}
+                          >
+                            Xóa đánh giá
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {feedbackPagination.totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                      <Button
+                        size="small"
+                        onClick={() => handleFeedbackPageChange(feedbackPagination.current - 1, productDetailData.productId)}
+                        disabled={feedbackPagination.current === 0}
+                      >
+                        ← Trước
+                      </Button>
+                      
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {[...Array(feedbackPagination.totalPages)].map((_, index) => (
+                          <Button
+                            key={index}
+                            size="small"
+                            type={index === feedbackPagination.current ? 'primary' : 'default'}
+                            onClick={() => handleFeedbackPageChange(index, productDetailData.productId)}
+                          >
+                            {index + 1}
+                          </Button>
+                        ))}
+                      </div>
+
+                      <Button
+                        size="small"
+                        onClick={() => handleFeedbackPageChange(feedbackPagination.current + 1, productDetailData.productId)}
+                        disabled={feedbackPagination.current >= feedbackPagination.totalPages - 1}
+                      >
+                        Sau →
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

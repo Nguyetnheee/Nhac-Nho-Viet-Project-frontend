@@ -4,11 +4,13 @@ import { useToast } from '../components/ToastContainer';
 import { useCart } from '../contexts/CartContext';
 import api from '../services/api';
 import { translateToVietnamese } from '../utils/errorMessages';
-import { 
-  FileTextOutlined, 
-  CheckCircleOutlined, 
-  SyncOutlined, 
-  CarOutlined, 
+import { useAuth } from '../contexts/AuthContext';
+
+import {
+  FileTextOutlined,
+  CheckCircleOutlined,
+  SyncOutlined,
+  CarOutlined,
   SmileOutlined,
   CloseCircleOutlined,
   TagOutlined,
@@ -54,6 +56,7 @@ const OrderSuccess = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewImages, setReviewImages] = useState([]);
   const reviewSectionRef = useRef(null);
+  const { user } = useAuth();
 
   // Lấy orderId từ URL params hoặc route param
   const orderId = paramOrderId || searchParams.get('orderId') || searchParams.get('orderCode');
@@ -112,14 +115,60 @@ const OrderSuccess = () => {
     setReviewImages([]);
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (reviewRating === 0) {
       showWarning('Vui lòng chọn số sao đánh giá trước khi gửi.');
       return;
     }
 
-    showSuccess('Cảm ơn bạn đã chia sẻ cảm nhận! Chúng tôi sẽ ghi nhận đánh giá của bạn.');
-    resetReviewForm();
+    try {
+      // Lấy userId từ localStorage
+      const { id } = user;
+
+      if (!id) {
+        showError('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+        return;
+      }
+
+      // Chuẩn bị payload
+      const feedbackPayload = {
+        orderId: parseInt(orderData.orderId || orderData.id),
+        userID: parseInt(id),
+        content: reviewComment.trim() || '',
+        star: reviewRating,
+        createdAt: new Date().toISOString()
+      };
+
+      console.log('📤 Sending feedback:', feedbackPayload);
+
+      // Gọi API
+      const response = await api.post('/api/feedbacks', feedbackPayload);
+
+      console.log('✅ Feedback submitted successfully:', response.data);
+
+      showSuccess('Cảm ơn bạn đã chia sẻ cảm nhận! Chúng tôi sẽ ghi nhận đánh giá của bạn.');
+      resetReviewForm();
+
+    } catch (error) {
+      console.error('❌ Submit feedback error:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.response?.data?.message
+      });
+
+      let errorMessage = 'Không thể gửi đánh giá. Vui lòng thử lại sau.';
+
+      if (error.response?.status === 401) {
+        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || 'Thông tin đánh giá không hợp lệ.';
+      } else if (error.response?.data?.message) {
+        errorMessage = translateToVietnamese(error.response.data.message);
+      }
+
+      showError(errorMessage);
+    }
   };
 
   const scrollToReview = () => {
@@ -132,7 +181,7 @@ const OrderSuccess = () => {
   const fetchOrderDetails = async () => {
     try {
       console.log('📤 Fetching order details for orderId:', orderId);
-      
+
       // DEBUG: Kiểm tra token và authorization
       const token = localStorage.getItem('token');
       const role = localStorage.getItem('role');
@@ -155,7 +204,7 @@ const OrderSuccess = () => {
               exp: new Date(payload.exp * 1000).toLocaleString('vi-VN'),
               isExpired: payload.exp * 1000 < Date.now()
             });
-            
+
             // Kiểm tra token hết hạn
             if (payload.exp * 1000 < Date.now()) {
               showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -170,7 +219,7 @@ const OrderSuccess = () => {
           console.error('❌ Cannot decode token:', decodeError);
         }
       }
-      
+
       let response = null;
       let lastError = null;
 
@@ -186,7 +235,7 @@ const OrderSuccess = () => {
       for (const endpoint of endpoints) {
         try {
           console.log(`🔄 Trying endpoint: ${endpoint.url} (auth: ${endpoint.auth})`);
-          
+
           if (endpoint.auth) {
             response = await api.get(endpoint.url);
           } else {
@@ -195,7 +244,7 @@ const OrderSuccess = () => {
               headers: { 'X-Skip-Auth': 'true' }
             });
           }
-          
+
           console.log(`✅ Success with endpoint: ${endpoint.url}`, response.data);
           break; // Thành công thì thoát vòng lặp
         } catch (err) {
@@ -205,30 +254,22 @@ const OrderSuccess = () => {
             data: err.response?.data
           });
           lastError = err;
-          // Tiếp tục thử endpoint tiếp theo
         }
       }
 
-      // Nếu tất cả endpoint đều thất bại
       if (!response) {
         console.error('🚨 ALL ENDPOINTS FAILED - This is likely a backend issue');
         console.error('📋 Tested endpoints:', endpoints.map(e => e.url));
         throw lastError || new Error('All endpoints failed');
       }
-      
-      // Map field names để đảm bảo tương thích với backend
+
       let rawData = response.data;
-      
-      // ✅ Kiểm tra nếu data nằm trong nested object
+
       if (rawData.data) {
         console.log('⚠️ Data is nested in .data property');
         rawData = rawData.data;
       }
-      
-      // ✅ Log toàn bộ raw data để debug
-      console.log('🔍 RAW DATA FROM BACKEND:', JSON.stringify(rawData, null, 2));
-      console.log('🔍 All keys in rawData:', Object.keys(rawData));
-      
+
       let mappedData = {
         ...rawData,
         orderStatus: rawData.orderStatus || rawData.status, // Backend có thể dùng 'status' hoặc 'orderStatus'
@@ -236,22 +277,22 @@ const OrderSuccess = () => {
         orderCode: rawData.orderCode || rawData.orderId || rawData.id, // ✅ Lấy orderCode
         orderDate: rawData.orderDate || rawData.createdAt || rawData.createdDate,
         // ✅ Thông tin khách hàng - thử nhiều variations
-        customerName: rawData.customerName || rawData.fullName || rawData.name || 
-                     rawData.receiverName || rawData.recipientName || 
-                     rawData.customer?.name || rawData.customer?.fullName || '',
-        customerEmail: rawData.customerEmail || rawData.email || 
-                      rawData.customer?.email || rawData.user?.email || '',
-        customerPhone: rawData.customerPhone || rawData.phone || rawData.phoneNumber || 
-                      rawData.receiverPhone || rawData.customer?.phone || 
-                      rawData.customer?.phoneNumber || '',
-        customerAddress: rawData.customerAddress || rawData.address || rawData.shippingAddress || 
-                        rawData.deliveryAddress || rawData.receiverAddress ||
-                        rawData.customer?.address || rawData.shipping?.address || '',
+        customerName: rawData.customerName || rawData.fullName || rawData.name ||
+          rawData.receiverName || rawData.recipientName ||
+          rawData.customer?.name || rawData.customer?.fullName || '',
+        customerEmail: rawData.customerEmail || rawData.email ||
+          rawData.customer?.email || rawData.user?.email || '',
+        customerPhone: rawData.customerPhone || rawData.phone || rawData.phoneNumber ||
+          rawData.receiverPhone || rawData.customer?.phone ||
+          rawData.customer?.phoneNumber || '',
+        customerAddress: rawData.customerAddress || rawData.address || rawData.shippingAddress ||
+          rawData.deliveryAddress || rawData.receiverAddress ||
+          rawData.customer?.address || rawData.shipping?.address || '',
       };
-      
+
       console.log('📊 Order data mapping:', {
-        raw: { 
-          status: rawData.status, 
+        raw: {
+          status: rawData.status,
           orderStatus: rawData.orderStatus,
           orderCode: rawData.orderCode,
           orderId: rawData.orderId,
@@ -271,7 +312,7 @@ const OrderSuccess = () => {
           deliveryAddress: rawData.deliveryAddress,
           receiverAddress: rawData.receiverAddress,
         },
-        mapped: { 
+        mapped: {
           orderStatus: mappedData.orderStatus,
           orderCode: mappedData.orderCode,
           customerName: mappedData.customerName,
@@ -280,7 +321,7 @@ const OrderSuccess = () => {
           customerAddress: mappedData.customerAddress,
         }
       });
-      
+
       // ⭐ QUY TẮC: PENDING (Chờ thanh toán) được xử lý như CANCELLED (Đã hủy)
       // Normalize status: map PENDING thành CANCELLED
       let normalizedStatus = mappedData.orderStatus;
@@ -290,14 +331,14 @@ const OrderSuccess = () => {
         mappedData.orderStatus = 'CANCELLED';
         mappedData.status = 'CANCELLED';
       }
-      
+
       // ✅ KIỂM TRA: Nếu đơn hàng CANCELLED (bao gồm cả PENDING đã được map) -> redirect sang PendingOrderDetail
       if (normalizedStatus === 'CANCELLED') {
         console.log('⚠️ Order is CANCELLED (including PENDING mapped to CANCELLED), redirecting to PendingOrderDetail');
         navigate(`/pending-order/${orderId}`, { replace: true });
         return;
       }
-      
+
       // 🔁 Fallback: Nếu thiếu thông tin giao hàng, lấy từ danh sách đơn hàng của khách
       const missingCustomerInfo = !mappedData.customerName || !mappedData.customerPhone || !mappedData.customerAddress;
       if (missingCustomerInfo) {
@@ -334,7 +375,7 @@ const OrderSuccess = () => {
         method: error.config?.method,
         headers: error.config?.headers
       });
-      
+
       // Thông báo dễ hiểu cho người dùng
       let errorMessage = 'Không thể tải thông tin đơn hàng';
       if (error.response?.status === 403) {
@@ -351,7 +392,7 @@ const OrderSuccess = () => {
         // Dịch message từ backend sang tiếng Việt
         errorMessage = translateToVietnamese(error.response.data.message);
       }
-      
+
       showError(errorMessage);
       setLoading(false);
     }
@@ -390,8 +431,8 @@ const OrderSuccess = () => {
   // Lấy tiêu đề header theo status
   const getHeaderTitle = () => {
     const status = orderData?.orderStatus;
-    
-    switch(status) {
+
+    switch (status) {
       case 'PAID':
         return 'Thanh toán thành công';
       case 'CONFIRMED':
@@ -426,13 +467,13 @@ const OrderSuccess = () => {
   const renderTimeline = () => {
     const currentStep = getCurrentStep();
     const status = orderData?.orderStatus;
-    
+
     console.log('📊 Timeline Debug:', {
       status: status,
       currentStep: currentStep,
       statusMapping: ORDER_STATUS_MAP[status]
     });
-    
+
     // Nếu đơn hàng bị hủy
     if (status === 'CANCELLED') {
       return (
@@ -458,11 +499,11 @@ const OrderSuccess = () => {
       <div className="relative">
         {/* Progress bar */}
         <div className="absolute top-6 left-0 w-full h-1 bg-gray-200">
-          <div 
+          <div
             className="h-full bg-vietnam-green transition-all duration-500"
-            style={{ 
-              width: currentStep >= 1 
-                ? `${((currentStep - 1) / (steps.length - 1)) * 100}%` 
+            style={{
+              width: currentStep >= 1
+                ? `${((currentStep - 1) / (steps.length - 1)) * 100}%`
                 : '0%'
             }}
           />
@@ -474,21 +515,21 @@ const OrderSuccess = () => {
             const isCompleted = currentStep >= item.step;
             const isCurrent = currentStep === item.step;
             const { Icon } = item;
-            
+
             return (
               <div key={item.step} className="flex flex-col items-center">
-                <div 
+                <div
                   className={`
                     w-12 h-12 rounded-full flex items-center justify-center
                     transition-all duration-300 border-4 border-white shadow-lg
-                    ${isCompleted 
-                      ? 'bg-vietnam-green text-white' 
+                    ${isCompleted
+                      ? 'bg-vietnam-green text-white'
                       : 'bg-gray-200 text-gray-500'
                     }
                     ${isCurrent ? 'ring-4 ring-vietnam-gold ring-opacity-50 scale-110' : ''}
                   `}
                 >
-                  <Icon 
+                  <Icon
                     className={`text-2xl ${isCurrent && isCompleted ? 'animate-pulse' : ''}`}
                     spin={isCurrent && item.step === 3} // Spin icon cho "Đang xử lý"
                   />
@@ -540,7 +581,7 @@ const OrderSuccess = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4 animate-bounce">
             <CheckCircleOutlined className="text-5xl text-green-600" />
           </div>
-          
+
           <h1 className="text-3xl sm:text-4xl font-serif font-bold text-vietnam-green mb-2">
             {getHeaderTitle()}
           </h1>
@@ -557,7 +598,7 @@ const OrderSuccess = () => {
               <h2 className="text-2xl font-serif font-bold text-vietnam-green mb-4">
                 Hóa đơn mua hàng
               </h2>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Ngày đặt hàng</p>
@@ -580,7 +621,7 @@ const OrderSuccess = () => {
                 <UserOutlined className="mr-2" />
                 Thông tin giao hàng
               </h3>
-              
+
               <div className="space-y-3">
                 {orderData.customerName && (
                   <div className="flex items-start">
@@ -593,7 +634,7 @@ const OrderSuccess = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {orderData.customerPhone && (
                   <div className="flex items-start">
                     <PhoneOutlined className="text-gray-500 mr-3 mt-1" />
@@ -605,7 +646,7 @@ const OrderSuccess = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {orderData.customerEmail && (
                   <div className="flex items-start">
                     <MailOutlined className="text-gray-500 mr-3 mt-1" />
@@ -617,7 +658,7 @@ const OrderSuccess = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {orderData.customerAddress && (
                   <div className="flex items-start">
                     <EnvironmentOutlined className="text-gray-500 mr-3 mt-1" />
@@ -629,7 +670,7 @@ const OrderSuccess = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Hiển thị thông báo nếu không có thông tin */}
                 {!orderData.customerName && !orderData.customerPhone && !orderData.customerEmail && !orderData.customerAddress && (
                   <div className="text-center py-4 text-gray-500">
@@ -662,11 +703,11 @@ const OrderSuccess = () => {
               <h3 className="text-lg font-semibold text-vietnam-green mb-4">
                 Sản phẩm đã đặt
               </h3>
-              
+
               <div className="space-y-3">
                 {orderData.items && orderData.items.length > 0 ? (
                   orderData.items.map((item, index) => (
-                    <div 
+                    <div
                       key={index}
                       className="bg-vietnam-cream rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
@@ -707,7 +748,7 @@ const OrderSuccess = () => {
                   <span>Tạm tính:</span>
                   <span className="font-medium">{(orderData.totalPrice || 0).toLocaleString('vi-VN')} VNĐ</span>
                 </div>
-                
+
                 {/* Hiển thị voucher nếu có */}
                 {orderData.voucherCode && orderData.discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
@@ -718,7 +759,7 @@ const OrderSuccess = () => {
                     <span className="font-medium">-{formatMoney(orderData.discountAmount)}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between text-gray-600">
                   <span>Phí vận chuyển:</span>
                   <span className="text-green-600 font-medium">Miễn phí</span>
@@ -747,23 +788,23 @@ const OrderSuccess = () => {
                   Làm mới
                 </button>
               </div>
-              
+
               {renderTimeline()}
-              
+
               <div className="mt-6 text-center">
                 <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm">
                   <span className={`w-3 h-3 rounded-full mr-2 ${ORDER_STATUS_MAP[orderData.orderStatus]?.color || 'bg-gray-400'}`}></span>
                   <span className="text-sm font-medium text-gray-700">
                     Hiện tại: <span className="text-vietnam-green font-bold">
-                      {ORDER_STATUS_MAP[orderData.orderStatus]?.label || 
-                       (orderData.orderStatus === 'PAID' ? 'Đã thanh toán' : 
-                        orderData.orderStatus === 'CONFIRMED' ? 'Đang chuẩn bị' :
-                        orderData.orderStatus === 'PROCESSING' ? 'Đang xử lý' :
-                        orderData.orderStatus === 'SHIPPING' ? 'Đang giao' :
-                        orderData.orderStatus === 'DELIVERED' ? 'Đã giao' :
-                        orderData.orderStatus === 'COMPLETED' ? 'Hoàn thành' :
-                        orderData.orderStatus === 'CANCELLED' ? 'Đã hủy' :
-                        orderData.orderStatus)}
+                      {ORDER_STATUS_MAP[orderData.orderStatus]?.label ||
+                        (orderData.orderStatus === 'PAID' ? 'Đã thanh toán' :
+                          orderData.orderStatus === 'CONFIRMED' ? 'Đang chuẩn bị' :
+                            orderData.orderStatus === 'PROCESSING' ? 'Đang xử lý' :
+                              orderData.orderStatus === 'SHIPPING' ? 'Đang giao' :
+                                orderData.orderStatus === 'DELIVERED' ? 'Đã giao' :
+                                  orderData.orderStatus === 'COMPLETED' ? 'Hoàn thành' :
+                                    orderData.orderStatus === 'CANCELLED' ? 'Đã hủy' :
+                                      orderData.orderStatus)}
                     </span>
                   </span>
                 </div>
